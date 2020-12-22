@@ -116,7 +116,7 @@ def loss_fn(
 value_and_grad_fn = jax.jit(jax.value_and_grad(loss_fn))
 
 # @markdown The frequency of saving checkpoints.
-save_every_n = 20  # @param{'type': 'integer'}
+save_every_n = 10  # @param{'type': 'integer'}
 
 loss_record = []
 
@@ -149,7 +149,7 @@ def np_value_and_grad_fn(flatten_params):
 
 # @title Use L-BFGS optimizer to update neural network functional
 # @markdown This cell trains the model. Each step takes about 1.6s.
-max_train_steps = 200  # @param{'type': 'integer'}
+max_train_steps = 100  # @param{'type': 'integer'}
 
 _, _, info = scipy.optimize.fmin_l_bfgs_b(
   np_value_and_grad_fn,
@@ -160,3 +160,6 @@ _, _, info = scipy.optimize.fmin_l_bfgs_b(
   m=20,
   pgtol=1e-14)
 print(info)
+
+
+
