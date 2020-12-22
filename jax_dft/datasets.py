@@ -171,7 +171,7 @@ class Dataset(object):
     else:
       selected_ions = set(selected_ions)
       mask = np.array([
-        (z, self.num_electrons) in selected_ions
+        (z[0], self.num_electrons) in selected_ions
         for z in self.nuclear_charges])
       if len(selected_ions) != np.sum(mask):
         raise ValueError(
