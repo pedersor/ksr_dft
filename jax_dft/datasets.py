@@ -88,7 +88,7 @@ class Dataset(object):
     for name, array in data.items():
       setattr(self, name, array)
     self._set_num_grids(num_grids)
-    self.total_num_samples = self.distances.shape[0]
+    self.total_num_samples = self.total_energies.shape[0]
 
   def _load_from_path(self, path):
     """Loads npy files from path."""
@@ -163,18 +163,19 @@ class Dataset(object):
             'dataset.')
     return mask
 
-  def get_mask_atoms(self, selected_z=None):
-    """Gets mask from selected_z, a list of atomic numbers Z."""
-    if selected_z is None:
+  def get_mask_atoms(self, selected_ions=None):
+    """Gets from selected_ions, a list of tuples corresponding to
+    (atomic number Z, number of electrons)."""
+    if selected_ions is None:
       mask = np.ones(self.total_num_samples, dtype=bool)
     else:
-      selected_z = set(selected_z)
+      selected_ions = set(selected_ions)
       mask = np.array([
-        z in selected_z
+        (z, self.num_electrons) in selected_ions
         for z in self.nuclear_charges])
-      if len(selected_z) != np.sum(mask):
+      if len(selected_ions) != np.sum(mask):
         raise ValueError(
-          'selected_z contains atomic number Z that is not in the '
+          'selected_ions contains (z, num_el) that is not in the '
           'dataset.')
     return mask
 
@@ -219,10 +220,10 @@ class Dataset(object):
         converged=np.repeat(True, repeats=num_samples),
         )
 
-  def get_atoms(self, selected_z=None):
-    """Selects atoms from selected_z, a list of integers corresponding to
-    atomic numbers Z."""
-    mask = self.get_mask_atoms(selected_z)
+  def get_atoms(self, selected_ions=None):
+    """Selects atoms from selected_ions, a list of tuples corresponding to
+    (atomic number Z, number of electrons)."""
+    mask = self.get_mask_atoms(selected_ions)
     num_samples = np.sum(mask)
 
     return scf.KohnShamState(
