@@ -99,6 +99,9 @@ for ckpt_path in ckpt_list:
 test_idx = 0
 print(states.total_energy[:, -1])
 
+print(states.xc_energy[:, -1])
+print(states.kinetic_energy[:, -1])
+
 plt.plot(grids,
          states.density[test_idx][-1] * states.xc_energy_density[test_idx][-1])
 

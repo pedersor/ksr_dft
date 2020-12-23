@@ -299,6 +299,8 @@ class KohnShamState(typing.NamedTuple):
   external_potential: jnp.ndarray
   grids: jnp.ndarray
   num_electrons: ArrayLike
+  xc_energy: Optional[ArrayLike] = None
+  kinetic_energy: Optional[ArrayLike] = None
   hartree_potential: Optional[jnp.ndarray] = None
   xc_potential: Optional[jnp.ndarray] = None
   xc_energy_density: Optional[jnp.ndarray] = None
@@ -366,23 +368,28 @@ def kohn_sham_iteration(
       num_electrons=num_electrons,
       grids=state.grids)
 
+  # KS kinetic energy = total_eigen_energies - external_potential_energy
+  kinetic_energy = total_eigen_energies - get_external_potential_energy(
+      external_potential=ks_potential,
+      density=density,
+      grids=state.grids)
+
+  # xc energy
+  xc_energy = get_xc_energy(
+      density=density,
+      xc_energy_density_fn=xc_energy_density_fn,
+      grids=state.grids)
+
   total_energy = (
-      # kinetic energy = total_eigen_energies - external_potential_energy
-      total_eigen_energies
-      - get_external_potential_energy(
-          external_potential=ks_potential,
-          density=density,
-          grids=state.grids)
+      # kinetic energy
+      kinetic_energy
       # Hartree energy
       + get_hartree_energy(
           density=density,
           grids=state.grids,
           interaction_fn=interaction_fn)
       # xc energy
-      + get_xc_energy(
-          density=density,
-          xc_energy_density_fn=xc_energy_density_fn,
-          grids=state.grids)
+      + xc_energy
       # external energy
       + get_external_potential_energy(
           external_potential=state.external_potential,
@@ -399,6 +406,8 @@ def kohn_sham_iteration(
       total_energy=total_energy,
       hartree_potential=hartree_potential,
       xc_potential=xc_potential,
+      xc_energy=xc_energy,
+      kinetic_energy=kinetic_energy,
       xc_energy_density=xc_energy_density,
       gap=gap)
 
