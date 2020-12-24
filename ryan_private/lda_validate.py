@@ -21,7 +21,8 @@ import sys
 
 config.update('jax_enable_x64', True)
 
-dataset = datasets.Dataset(path='../data/atoms/num_electrons_4/', num_grids=513)
+dataset = datasets.Dataset(path='../data/ions/num_electrons_4/', num_grids=513)
+
 grids = dataset.grids
 # test set
 to_test = [(4, 4)]

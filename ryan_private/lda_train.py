@@ -21,7 +21,7 @@ import sys
 
 config.update('jax_enable_x64', True)
 
-dataset = datasets.Dataset(path='../data/atoms/num_electrons_2', num_grids=513)
+dataset = datasets.Dataset(path='../data/ions/num_electrons_2', num_grids=513)
 grids = dataset.grids
 train_set = dataset.get_atoms([2])
 
@@ -31,8 +31,6 @@ if not np.all(utils.location_center_at_grids_center_point(
   raise ValueError(
     'Training set contains examples '
     'not centered at the center of the grids.')
-
-
 
 # @title Initialize network
 network = neural_xc.build_sliding_net(
@@ -89,9 +87,9 @@ _batch_jit_kohn_sham = jax.vmap(_kohn_sham, in_axes=(None, 0, 0, 0))
 
 grids_integration_factor = utils.get_dx(grids) * len(grids)
 
-
 # @title Initial density
 initial_densities = scf.get_initial_density(train_set, method='noninteracting')
+
 
 def loss_fn(
     flatten_params, locations, nuclear_charges,
@@ -162,6 +160,3 @@ _, _, info = scipy.optimize.fmin_l_bfgs_b(
   m=20,
   pgtol=1e-14)
 print(info)
-
-
-
