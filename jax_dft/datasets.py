@@ -221,7 +221,7 @@ class Dataset(object):
         )
 
   def get_atoms(self, selected_ions=None):
-    """Gets atoms from selected_ions, a list of ints corresponding to
+    """Gets ions from selected_ions, a list of ints corresponding to
     atomic numbers {Z}."""
     mask = self.get_mask_atoms(selected_ions)
     num_samples = np.sum(mask)

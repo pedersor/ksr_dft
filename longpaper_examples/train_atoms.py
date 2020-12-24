@@ -169,7 +169,7 @@ class Train_atoms:
 
 
 if __name__ == '__main__':
-  two_electrons = Train_atoms('../data/atoms/num_electrons_2')
+  two_electrons = Train_atoms('../data/ions/num_electrons_2')
   two_electrons.get_complete_dataset(num_grids=513)
 
   # get training set
