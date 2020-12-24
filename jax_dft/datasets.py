@@ -88,7 +88,7 @@ class Dataset(object):
     for name, array in data.items():
       setattr(self, name, array)
     self._set_num_grids(num_grids)
-    self.total_num_samples = self.distances.shape[0]
+    self.total_num_samples = self.total_energies.shape[0]
 
   def _load_from_path(self, path):
     """Loads npy files from path."""
@@ -103,16 +103,18 @@ class Dataset(object):
       data['locations'] = np.load(f)
     with file_open(os.path.join(path, 'nuclear_charges.npy'), 'rb') as f:
       data['nuclear_charges'] = np.load(f)
-    with file_open(os.path.join(path, 'distances_x100.npy'), 'rb') as f:
-      data['distances_x100'] = np.load(f).astype(int)
-    with file_open(os.path.join(path, 'distances.npy'), 'rb') as f:
-      data['distances'] = np.load(f)
     with file_open(os.path.join(path, 'total_energies.npy'), 'rb') as f:
       data['total_energies'] = np.load(f)
     with file_open(os.path.join(path, 'densities.npy'), 'rb') as f:
       data['densities'] = np.load(f)
     with file_open(os.path.join(path, 'external_potentials.npy'), 'rb') as f:
       data['external_potentials'] = np.load(f)
+    if os.path.isfile(os.path.join(path, 'distances_x100.npy')):
+      with file_open(os.path.join(path, 'distances_x100.npy'), 'rb') as f:
+        data['distances_x100'] = np.load(f).astype(int)
+    if os.path.isfile(os.path.join(path, 'distances.npy')):
+      with file_open(os.path.join(path, 'distances.npy'), 'rb') as f:
+        data['distances'] = np.load(f)
     return data
 
   def _set_num_grids(self, num_grids):
@@ -161,6 +163,22 @@ class Dataset(object):
             'dataset.')
     return mask
 
+  def get_mask_atoms(self, selected_ions=None):
+    """Gets mask from selected_ions, a list of ints corresponding to
+    atomic numbers {Z}."""
+    if selected_ions is None:
+      mask = np.ones(self.total_num_samples, dtype=bool)
+    else:
+      selected_ions = set(selected_ions)
+      mask = np.array([
+        nuclear_charge[0] in selected_ions
+        for nuclear_charge in self.nuclear_charges])
+      if len(selected_ions) != np.sum(mask):
+        raise ValueError(
+          'selected_ions contains atomic number Z that is not in the '
+          'dataset.')
+    return mask
+
   def get_test_mask(self):
     """Gets mask for test set."""
     return self.get_mask(_TEST_DISTANCE_X100[self.name])
@@ -188,6 +206,24 @@ class Dataset(object):
   def get_molecules(self, selected_distance_x100=None):
     """Selects molecules from list of integers."""
     mask = self.get_mask(selected_distance_x100)
+    num_samples = np.sum(mask)
+
+    return scf.KohnShamState(
+        density=self.densities[mask],
+        total_energy=self.total_energies[mask],
+        locations=self.locations[mask],
+        nuclear_charges=self.nuclear_charges[mask],
+        external_potential=self.external_potentials[mask],
+        grids=np.tile(
+            np.expand_dims(self.grids, axis=0), reps=(num_samples, 1)),
+        num_electrons=np.repeat(self.num_electrons, repeats=num_samples),
+        converged=np.repeat(True, repeats=num_samples),
+        )
+
+  def get_atoms(self, selected_ions=None):
+    """Gets atoms from selected_ions, a list of ints corresponding to
+    atomic numbers {Z}."""
+    mask = self.get_mask_atoms(selected_ions)
     num_samples = np.sum(mask)
 
     return scf.KohnShamState(
