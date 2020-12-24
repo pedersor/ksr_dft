@@ -21,10 +21,10 @@ import sys
 
 config.update('jax_enable_x64', True)
 
-dataset = datasets.Dataset(path='../data/atoms/', num_grids=513)
+dataset = datasets.Dataset(path='../data/atoms/num_electrons_4/', num_grids=513)
 grids = dataset.grids
 # test set
-to_test = [(3, 2), (4, 2)]
+to_test = [(4, 4)]
 test_set = dataset.get_atoms(to_test)
 initial_densities = scf.get_initial_density(
   test_set, method='noninteracting')

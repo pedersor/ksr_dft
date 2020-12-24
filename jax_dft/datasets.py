@@ -164,18 +164,18 @@ class Dataset(object):
     return mask
 
   def get_mask_atoms(self, selected_ions=None):
-    """Gets from selected_ions, a list of tuples corresponding to
-    (atomic number Z, number of electrons)."""
+    """Gets mask from selected_ions, a list of ints corresponding to
+    atomic numbers {Z}."""
     if selected_ions is None:
       mask = np.ones(self.total_num_samples, dtype=bool)
     else:
       selected_ions = set(selected_ions)
       mask = np.array([
-        (z[0], self.num_electrons) in selected_ions
-        for z in self.nuclear_charges])
+        nuclear_charge[0] in selected_ions
+        for nuclear_charge in self.nuclear_charges])
       if len(selected_ions) != np.sum(mask):
         raise ValueError(
-          'selected_ions contains (z, num_el) that is not in the '
+          'selected_ions contains atomic number Z that is not in the '
           'dataset.')
     return mask
 
@@ -221,8 +221,8 @@ class Dataset(object):
         )
 
   def get_atoms(self, selected_ions=None):
-    """Selects atoms from selected_ions, a list of tuples corresponding to
-    (atomic number Z, number of electrons)."""
+    """Gets atoms from selected_ions, a list of ints corresponding to
+    atomic numbers {Z}."""
     mask = self.get_mask_atoms(selected_ions)
     num_samples = np.sum(mask)
 

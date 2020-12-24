@@ -21,9 +21,9 @@ import sys
 
 config.update('jax_enable_x64', True)
 
-dataset = datasets.Dataset(path='../data/atoms/', num_grids=513)
+dataset = datasets.Dataset(path='../data/atoms/num_electrons_2', num_grids=513)
 grids = dataset.grids
-train_set = dataset.get_atoms([(2, 2)])
+train_set = dataset.get_atoms([2])
 
 # @title Check distances are symmetric
 if not np.all(utils.location_center_at_grids_center_point(
@@ -32,8 +32,7 @@ if not np.all(utils.location_center_at_grids_center_point(
     'Training set contains examples '
     'not centered at the center of the grids.')
 
-# @title Initial density
-initial_density = scf.get_initial_density(train_set, method='noninteracting')
+
 
 # @title Initialize network
 network = neural_xc.build_sliding_net(
@@ -91,6 +90,9 @@ _batch_jit_kohn_sham = jax.vmap(_kohn_sham, in_axes=(None, 0, 0, 0))
 grids_integration_factor = utils.get_dx(grids) * len(grids)
 
 
+# @title Initial density
+initial_densities = scf.get_initial_density(train_set, method='noninteracting')
+
 def loss_fn(
     flatten_params, locations, nuclear_charges,
     initial_density, target_energy, target_density):
@@ -129,7 +131,7 @@ def np_value_and_grad_fn(flatten_params):
     flatten_params,
     locations=train_set.locations,
     nuclear_charges=train_set.nuclear_charges,
-    initial_density=initial_density,
+    initial_density=initial_densities,
     target_energy=train_set.total_energy,
     target_density=train_set.density)
   step_time = time.time() - start_time
