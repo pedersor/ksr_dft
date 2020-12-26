@@ -34,7 +34,11 @@ class Test_atoms(Train_atoms):
     """Sets the validation set from a list of ions."""
     self.validation_set = self.complete_dataset.get_atoms(
       selected_ions=selected_ions)
-
+    # obtain initial densities
+    initial_densities = scf.get_initial_density(self.validation_set,
+                                                method='noninteracting')
+    self.validation_set = self.validation_set._replace(
+      initial_densities=initial_densities)
     return self
 
   def _get_states(self, ckpt_path):
@@ -42,12 +46,12 @@ class Test_atoms(Train_atoms):
     with open(ckpt_path, 'rb') as handle:
       params = pickle.load(handle)
     states = []
-    for i in range(len(to_test)):
-      states.append(kohn_sham(
+    for i in range(len(self.validation_set.locations)):
+      states.append(self.kohn_sham(
         params,
-        locations=test_set.locations[i],
-        nuclear_charges=test_set.nuclear_charges[i],
-        initial_density=initial_densities[i]))
+        locations=self.validation_set.locations[i],
+        nuclear_charges=self.validation_set.nuclear_charges[i],
+        initial_densities=self.validation_set.initial_densities[i]))
     return tree_util.tree_multimap(lambda *x: jnp.stack(x), *states)
 
   def get_optimal_ckpt(self, path_to_ckpts):
@@ -56,14 +60,16 @@ class Test_atoms(Train_atoms):
 
     states = []
     for ckpt_path in ckpt_list:
-      if ckpt_path == 'ckpt-00040':
-        states = self._get_states(ckpt_path)
+        states.append(self._get_states(ckpt_path))
 
+    return
 
 if __name__ == '__main__':
   two_electrons = Test_atoms('../data/ions/num_electrons_2')
   two_electrons.get_complete_dataset(num_grids=513)
 
-  # set training set
+  # set validation set
   to_validate = [3]
-  two_electrons.set_training_set(selected_ions=to_validate)
+  two_electrons.set_validation_set(selected_ions=to_validate)
+
+  two_electrons.get_optimal_ckpt('.')

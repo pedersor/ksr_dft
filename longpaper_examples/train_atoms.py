@@ -51,9 +51,11 @@ class Train_atoms:
   def set_training_set(self, selected_ions):
     self.training_set = self.complete_dataset.get_atoms(
       selected_ions=selected_ions)
-    # obtain nitial densities
-    self.initial_densities = scf.get_initial_density(self.training_set,
-                                                     method='noninteracting')
+    # obtain initial densities
+    initial_densities = scf.get_initial_density(self.training_set,
+                                                method='noninteracting')
+    self.training_set = self.training_set._replace(
+      initial_densities=initial_densities)
 
     return self
 
@@ -107,14 +109,17 @@ class Train_atoms:
         'density_mse_converge_tolerance'],
       stop_gradient_step=self.ks_params['stop_gradient_step'])
 
-  def kohn_sham(self, flatten_params):
-    return self._kohn_sham(flatten_params, self.training_set.locations,
-                           self.training_set.nuclear_charges,
-                           self.initial_densities)
+  def kohn_sham(self, flatten_params, locations, nuclear_charges,
+                initial_densities):
+    return self._kohn_sham(flatten_params, locations,
+                           nuclear_charges,
+                           initial_densities)
 
   def loss_fn(self, flatten_params):
     """Get losses."""
-    states = self.kohn_sham(flatten_params)
+    states = self.kohn_sham(flatten_params, self.training_set.locations,
+                            self.training_set.nuclear_charges,
+                            self.training_set.initial_densities)
     # Energy loss
     loss_value = losses.trajectory_mse(
       target=self.training_set.total_energy,
