@@ -48,7 +48,7 @@ class Train_atoms:
     self.complete_dataset = dataset
     return self
 
-  def get_training_set(self, selected_ions):
+  def set_training_set(self, selected_ions):
     self.training_set = self.complete_dataset.get_atoms(
       selected_ions=selected_ions)
     # obtain nitial densities
@@ -169,12 +169,12 @@ class Train_atoms:
 
 
 if __name__ == '__main__':
-  two_electrons = Train_atoms('../data/atoms/num_electrons_2')
+  two_electrons = Train_atoms('../data/ions/num_electrons_2')
   two_electrons.get_complete_dataset(num_grids=513)
 
-  # get training set
+  # set training set
   to_train = [2]
-  two_electrons.get_training_set(selected_ions=to_train)
+  two_electrons.set_training_set(selected_ions=to_train)
 
   # get ML model for xc functional
   key = jax.random.PRNGKey(0)
