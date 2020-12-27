@@ -299,6 +299,7 @@ class KohnShamState(typing.NamedTuple):
   external_potential: jnp.ndarray
   grids: jnp.ndarray
   num_electrons: ArrayLike
+  initial_densities: Optional[jnp.ndarray] = None
   xc_energy: Optional[ArrayLike] = None
   kinetic_energy: Optional[ArrayLike] = None
   hartree_potential: Optional[jnp.ndarray] = None
