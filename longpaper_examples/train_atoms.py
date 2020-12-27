@@ -59,7 +59,7 @@ class Train_atoms:
 
     return self
 
-  def init_ksr_lda_model(self, key):
+  def init_ksr_lda_model(self, key=jax.random.PRNGKey(0)):
     # KSR-LDA model. Window size = 1 constrains model to only local information.
     network = neural_xc.build_sliding_net(
       window_size=1,
@@ -87,7 +87,7 @@ class Train_atoms:
     return self
 
   @partial(jax.vmap, in_axes=(None, None, 0, 0, 0))
-  def _kohn_sham(self, flatten_params, locations, nuclear_charges,
+  def _kohn_sham(self, params, locations, nuclear_charges,
                  initial_densities):
     return jit_scf.kohn_sham(
       locations=locations,
@@ -96,7 +96,7 @@ class Train_atoms:
       grids=self.grids,
       xc_energy_density_fn=tree_util.Partial(
         self.neural_xc_energy_density_fn,
-        params=np_utils.unflatten(self.spec, flatten_params)),
+        params=params),
       interaction_fn=utils.exponential_coulomb,
       # The initial density of KS self-consistent calculations.
       initial_density=initial_densities,
@@ -109,15 +109,16 @@ class Train_atoms:
         'density_mse_converge_tolerance'],
       stop_gradient_step=self.ks_params['stop_gradient_step'])
 
-  def kohn_sham(self, flatten_params, locations, nuclear_charges,
+  def kohn_sham(self, params, locations, nuclear_charges,
                 initial_densities):
-    return self._kohn_sham(flatten_params, locations,
+    return self._kohn_sham(params, locations,
                            nuclear_charges,
                            initial_densities)
 
   def loss_fn(self, flatten_params):
     """Get losses."""
-    states = self.kohn_sham(flatten_params, self.training_set.locations,
+    params = np_utils.unflatten(self.spec, flatten_params)
+    states = self.kohn_sham(params, self.training_set.locations,
                             self.training_set.nuclear_charges,
                             self.training_set.initial_densities)
     # Energy loss

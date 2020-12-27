@@ -27,7 +27,6 @@ config.update('jax_enable_x64', True)
 
 class Test_atoms(Train_atoms):
   def __init__(self, datasets_base_dir):
-
     super(Test_atoms, self).__init__(datasets_base_dir)
 
   def set_validation_set(self, selected_ions):
@@ -45,31 +44,57 @@ class Test_atoms(Train_atoms):
     print(f'Load {ckpt_path}')
     with open(ckpt_path, 'rb') as handle:
       params = pickle.load(handle)
-    states = []
-    for i in range(len(self.validation_set.locations)):
-      states.append(self.kohn_sham(
-        params,
-        locations=self.validation_set.locations[i],
-        nuclear_charges=self.validation_set.nuclear_charges[i],
-        initial_densities=self.validation_set.initial_densities[i]))
-    return tree_util.tree_multimap(lambda *x: jnp.stack(x), *states)
+
+    states = self.kohn_sham(
+      params,
+      locations=self.validation_set.locations,
+      nuclear_charges=self.validation_set.nuclear_charges,
+      initial_densities=self.validation_set.initial_densities)
+    return states
 
   def get_optimal_ckpt(self, path_to_ckpts):
     ckpt_list = sorted(
       glob.glob(os.path.join(path_to_ckpts, 'ckpt-?????')))
 
-    states = []
     for ckpt_path in ckpt_list:
-        states.append(self._get_states(ckpt_path))
+      states = self._get_states(ckpt_path)
+
+      print(states.total_energy)
 
     return
+
 
 if __name__ == '__main__':
   two_electrons = Test_atoms('../data/ions/num_electrons_2')
   two_electrons.get_complete_dataset(num_grids=513)
 
   # set validation set
-  to_validate = [3]
+  to_validate = [3, 4]
   two_electrons.set_validation_set(selected_ions=to_validate)
 
-  two_electrons.get_optimal_ckpt('.')
+  # set ML model
+  two_electrons.init_ksr_lda_model()
+  print(f'number of parameters: {two_electrons.num_parameters}')
+
+  # get KS parameters
+  two_electrons.set_ks_parameters(
+    # The number of Kohn-Sham iterations in training.
+    num_iterations=15,
+    # @The density linear mixing factor.
+    alpha=0.5,
+    # Decay factor of density linear mixing factor.
+    alpha_decay=0.9,
+    # Enforce reflection symmetry across the origin.
+    enforce_reflection_symmetry=True,
+    # The number of density differences in the previous iterations to mix the
+    # density. Linear mixing is num_mixing_iterations = 1.
+    num_mixing_iterations=1,
+    # The stopping criteria of Kohn-Sham iteration on density.
+    density_mse_converge_tolerance=-1.,
+    # Apply stop gradient on the output state of this step and all steps
+    # before. The first KS step is indexed as 0. Default -1, no stop gradient
+    # is applied.
+    stop_gradient_step=-1
+  )
+
+  two_electrons.get_optimal_ckpt('')
