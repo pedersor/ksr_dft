@@ -50,18 +50,40 @@ class Test_atoms(Train_atoms):
       locations=self.validation_set.locations,
       nuclear_charges=self.validation_set.nuclear_charges,
       initial_densities=self.validation_set.initial_densities)
-    return states
+    return params, states
 
   def get_optimal_ckpt(self, path_to_ckpts):
+    # TODO: non-jitted/vmapped option. Dynamic num_electrons.
     ckpt_list = sorted(
       glob.glob(os.path.join(path_to_ckpts, 'ckpt-?????')))
 
+    optimal_ckpt_params = None
+    min_loss = None
     for ckpt_path in ckpt_list:
-      states = self._get_states(ckpt_path)
+      params, states = self._get_states(ckpt_path)
 
-      print(states.total_energy)
+      # Energy loss
+      loss_value = losses.mean_square_error(
+        target=self.validation_set.total_energy,
+        predict=states.total_energy[:, -1]) / self.num_electrons
 
-    return
+      # Density loss (however, KSR paper does not use this for validation)
+      loss_value += losses.mean_square_error(
+        target=self.validation_set.density, predict=states.density[:, -1, :]
+      ) * self.grids_integration_factor / self.num_electrons
+
+      if optimal_ckpt_params is None or loss_value < min_loss:
+        optimal_ckpt_params = params
+        min_loss = loss_value
+
+    optimal_ckpt_path = os.path.join(path_to_ckpts, 'optimal_ckpt.pkl')
+    print(f'optimal checkpoint loss: {min_loss}')
+    print(f'Save {optimal_ckpt_path}')
+    with open(optimal_ckpt_path, 'wb') as handle:
+      pickle.dump(optimal_ckpt_params, handle)
+
+    self.optimal_ckpt_params = optimal_ckpt_params
+    return self
 
 
 if __name__ == '__main__':
@@ -69,7 +91,7 @@ if __name__ == '__main__':
   two_electrons.get_complete_dataset(num_grids=513)
 
   # set validation set
-  to_validate = [3, 4]
+  to_validate = [3]
   two_electrons.set_validation_set(selected_ions=to_validate)
 
   # set ML model
