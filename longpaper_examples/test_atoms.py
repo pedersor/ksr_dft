@@ -40,6 +40,29 @@ class Test_atoms(Train_atoms):
       initial_densities=initial_densities)
     return self
 
+  def set_test_set(self, selected_ions):
+    """Sets the validation set from a list of ions."""
+    self.test_set = self.complete_dataset.get_atoms(
+      selected_ions=selected_ions)
+    # obtain initial densities
+    initial_densities = scf.get_initial_density(self.test_set,
+                                                method='noninteracting')
+    self.test_set = self.test_set._replace(
+      initial_densities=initial_densities)
+    return self
+
+  def get_test_states(self, optimal_ckpt_path=None):
+    if optimal_ckpt_path is not None:
+      with open(optimal_ckpt_path, 'rb') as handle:
+        self.optimal_ckpt_params = pickle.load(handle)
+
+    states = self.kohn_sham(
+      self.optimal_ckpt_params,
+      locations=self.test_set.locations,
+      nuclear_charges=self.test_set.nuclear_charges,
+      initial_densities=self.test_set.initial_densities)
+    return states
+
   def _get_states(self, ckpt_path):
     print(f'Load {ckpt_path}')
     with open(ckpt_path, 'rb') as handle:
@@ -68,9 +91,9 @@ class Test_atoms(Train_atoms):
         predict=states.total_energy[:, -1]) / self.num_electrons
 
       # Density loss (however, KSR paper does not use this for validation)
-      loss_value += losses.mean_square_error(
-        target=self.validation_set.density, predict=states.density[:, -1, :]
-      ) * self.grids_integration_factor / self.num_electrons
+      # loss_value += losses.mean_square_error(
+      #  target=self.validation_set.density, predict=states.density[:, -1, :]
+      # ) * self.grids_integration_factor / self.num_electrons
 
       if optimal_ckpt_params is None or loss_value < min_loss:
         optimal_ckpt_params = params
@@ -87,6 +110,7 @@ class Test_atoms(Train_atoms):
 
 
 if __name__ == '__main__':
+  """Obtain optimal parameters from validation."""
   two_electrons = Test_atoms('../data/ions/num_electrons_2')
   two_electrons.get_complete_dataset(num_grids=513)
 
@@ -119,4 +143,16 @@ if __name__ == '__main__':
     stop_gradient_step=-1
   )
 
+  # get optimal checkpoint from validation
   two_electrons.get_optimal_ckpt('')
+
+  # set test set
+  to_test = [4]
+  two_electrons.set_test_set(selected_ions=to_test)
+
+  # solve KS systems with optimal ML model
+  test_states = two_electrons.get_test_states()
+
+  # TODO: final states [-1]..
+  print(test_states.total_energy.shape)
+  print(two_electrons.test_set.total_energy[0])
