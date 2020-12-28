@@ -63,6 +63,11 @@ class Test_atoms(Train_atoms):
       initial_densities=self.test_set.initial_densities)
     return states
 
+  def get_final_test_states(self, optimal_ckpt_path=None):
+    states = self.get_test_states(optimal_ckpt_path=optimal_ckpt_path)
+    # get only converged results
+    return tree_util.tree_map(lambda x: x[:, -1], states)
+
   def _get_states(self, ckpt_path):
     print(f'Load {ckpt_path}')
     with open(ckpt_path, 'rb') as handle:
