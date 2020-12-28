@@ -51,3 +51,9 @@ if __name__ == '__main__':
 
   # test set converged total energies
   print(final_states.total_energy)
+
+  # KS kinetic energies
+  print(final_states.kinetic_energy)
+
+  # xc energies
+  print(final_states.xc_energy)

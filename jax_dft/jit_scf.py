@@ -78,23 +78,28 @@ def _kohn_sham_iteration(
       num_electrons=num_electrons,
       grids=grids)
 
+  # KS kinetic energy = total_eigen_energies - external_potential_energy
+  kinetic_energy = total_eigen_energies - scf.get_external_potential_energy(
+      external_potential=ks_potential,
+      density=density,
+      grids=grids)
+
+  # xc energy
+  xc_energy = scf.get_xc_energy(
+      density=density,
+      xc_energy_density_fn=xc_energy_density_fn,
+      grids=grids)
+
   total_energy = (
-      # kinetic energy = total_eigen_energies - external_potential_energy
-      total_eigen_energies
-      - scf.get_external_potential_energy(
-          external_potential=ks_potential,
-          density=density,
-          grids=grids)
+      # kinetic energy
+      kinetic_energy
       # Hartree energy
       + scf.get_hartree_energy(
           density=density,
           grids=grids,
           interaction_fn=interaction_fn)
       # xc energy
-      + scf.get_xc_energy(
-          density=density,
-          xc_energy_density_fn=xc_energy_density_fn,
-          grids=grids)
+      + xc_energy
       # external energy
       + scf.get_external_potential_energy(
           external_potential=external_potential,
@@ -108,6 +113,8 @@ def _kohn_sham_iteration(
   return (
       density,
       total_energy,
+      kinetic_energy,
+      xc_energy,
       hartree_potential,
       xc_potential,
       xc_energy_density,
@@ -144,6 +151,8 @@ def kohn_sham_iteration(
   (
       density,
       total_energy,
+      kinetic_energy,
+      xc_energy,
       hartree_potential,
       xc_potential,
       xc_energy_density,
@@ -159,6 +168,8 @@ def kohn_sham_iteration(
       density=density,
       total_energy=total_energy,
       hartree_potential=hartree_potential,
+      xc_energy=xc_energy,
+      kinetic_energy=kinetic_energy,
       xc_potential=xc_potential,
       xc_energy_density=xc_energy_density,
       gap=gap)
@@ -236,6 +247,8 @@ def _kohn_sham(
       num_electrons=num_electrons,
       # Add dummy fields so the input and output of lax.scan have the same type
       # structure.
+      xc_energy=0.,
+      kinetic_energy=0.,
       hartree_potential=jnp.zeros_like(grids),
       xc_potential=jnp.zeros_like(grids),
       xc_energy_density=jnp.zeros_like(grids),
