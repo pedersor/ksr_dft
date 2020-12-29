@@ -14,7 +14,7 @@ test on all else: Be++, Li, Be+, Be.
 """
 
 if __name__ == '__main__':
-  two_electrons = Test_atoms('../data/ions/num_electrons_2')
+  two_electrons = Test_atoms('../data/ions/num_electrons_1')
   two_electrons.get_complete_dataset(num_grids=513)
 
   # set ML model
@@ -42,7 +42,7 @@ if __name__ == '__main__':
   )
 
   # set test set
-  to_test = [3, 4]
+  to_test = [1, 2, 3, 4]
   two_electrons.set_test_set(selected_ions=to_test)
 
   # load optimal checkpoint params
@@ -50,7 +50,8 @@ if __name__ == '__main__':
     optimal_ckpt_path='optimal_ckpt.pkl')
 
   # test set converged total energies
-  print(final_states.total_energy)
+  print('KS-LDA total E =', final_states.total_energy)
+  print('LDA total E =', two_electrons.test_set.total_energy)
 
   # KS kinetic energies
   print(final_states.kinetic_energy)

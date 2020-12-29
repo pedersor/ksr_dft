@@ -150,14 +150,3 @@ if __name__ == '__main__':
 
   # get optimal checkpoint from validation
   two_electrons.get_optimal_ckpt('')
-
-  # set test set
-  to_test = [4]
-  two_electrons.set_test_set(selected_ions=to_test)
-
-  # solve KS systems with optimal ML model
-  test_states = two_electrons.get_test_states()
-
-  # TODO: final states [-1]..
-  print(test_states.total_energy.shape)
-  print(two_electrons.test_set.total_energy[0])
