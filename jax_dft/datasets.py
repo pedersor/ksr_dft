@@ -117,6 +117,14 @@ class Dataset(object):
         data['distances'] = np.load(f)
     return data
 
+  def load_misc_from_path(self, path, file, attribute):
+    """Load miscellaneous quantities from file. E.g. exchange-correlation
+    energies."""
+    file_open = open
+    with file_open(os.path.join(path, file), 'rb') as f:
+      setattr(self, attribute, np.load(f))
+    return self
+
   def _set_num_grids(self, num_grids):
     """Sets number of grids and trim arrays with grids dimension."""
     # grids is 1d array.

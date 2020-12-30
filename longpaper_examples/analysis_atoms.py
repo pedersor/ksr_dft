@@ -2,6 +2,7 @@ from test_atoms import Test_atoms
 from jax_dft import scf
 
 """ TODO:
+-LDA data (not LSD)
 
 Train on He, validate on Li+
 test on all else: Be++, Li, Be+, Be.
@@ -14,8 +15,11 @@ test on all else: Be++, Li, Be+, Be.
 """
 
 if __name__ == '__main__':
-  two_electrons = Test_atoms('../data/ions/num_electrons_1')
+  path = '../data/ions/num_electrons_1'
+  two_electrons = Test_atoms(datasets_base_dir=path)
   two_electrons.get_complete_dataset(num_grids=513)
+  two_electrons.complete_dataset.load_misc_from_path(path, 'xc_energies.npy',
+                                                     'xc_energies')
 
   # set ML model
   two_electrons.init_ksr_lda_model()
@@ -50,11 +54,9 @@ if __name__ == '__main__':
     optimal_ckpt_path='optimal_ckpt.pkl')
 
   # test set converged total energies
-  print('KS-LDA total E =', final_states.total_energy)
+  print('KSR-LDA total E =', final_states.total_energy)
   print('LDA total E =', two_electrons.test_set.total_energy)
-
-  # KS kinetic energies
-  print(final_states.kinetic_energy)
 
   # xc energies
   print(final_states.xc_energy)
+  print(two_electrons.complete_dataset.xc_energies)
