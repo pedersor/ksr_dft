@@ -60,7 +60,8 @@ class Test_atoms(Train_atoms):
       self.optimal_ckpt_params,
       locations=self.test_set.locations,
       nuclear_charges=self.test_set.nuclear_charges,
-      initial_densities=self.test_set.initial_densities)
+      initial_densities=self.test_set.initial_densities,
+      num_electrons=self.test_set.num_electrons)
     return states
 
   def get_final_test_states(self, optimal_ckpt_path=None):

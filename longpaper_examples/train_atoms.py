@@ -86,13 +86,13 @@ class Train_atoms:
     self.ks_params = kwargs
     return self
 
-  @partial(jax.vmap, in_axes=(None, None, 0, 0, 0))
+  @partial(jax.vmap, in_axes=(None, None, 0, 0, 0, 0))
   def _kohn_sham(self, params, locations, nuclear_charges,
-                 initial_densities):
+                 initial_densities, num_electrons):
     return jit_scf.kohn_sham(
       locations=locations,
       nuclear_charges=nuclear_charges,
-      num_electrons=self.num_electrons,
+      num_electrons=num_electrons,
       grids=self.grids,
       xc_energy_density_fn=tree_util.Partial(
         self.neural_xc_energy_density_fn,
@@ -110,17 +110,18 @@ class Train_atoms:
       stop_gradient_step=self.ks_params['stop_gradient_step'])
 
   def kohn_sham(self, params, locations, nuclear_charges,
-                initial_densities):
+                initial_densities, num_electrons):
     return self._kohn_sham(params, locations,
                            nuclear_charges,
-                           initial_densities)
+                           initial_densities, num_electrons)
 
   def loss_fn(self, flatten_params):
     """Get losses."""
     params = np_utils.unflatten(self.spec, flatten_params)
     states = self.kohn_sham(params, self.training_set.locations,
                             self.training_set.nuclear_charges,
-                            self.training_set.initial_densities)
+                            self.training_set.initial_densities,
+                            self.training_set.num_electrons)
     # Energy loss
     loss_value = losses.trajectory_mse(
       target=self.training_set.total_energy,
@@ -175,11 +176,11 @@ class Train_atoms:
 
 
 if __name__ == '__main__':
-  two_electrons = Train_atoms('../data/ions/num_electrons_3')
+  two_electrons = Train_atoms('../data/ions/num_electrons_2')
   two_electrons.get_complete_dataset(num_grids=513)
 
   # set training set
-  to_train = [3]
+  to_train = [2]
   two_electrons.set_training_set(selected_ions=to_train)
 
   # get ML model for xc functional

@@ -72,7 +72,7 @@ def get_kinetic_matrix(grids):
 
 
 @functools.partial(jax.jit, static_argnums=(0,))
-def _wavefunctions_to_density(num_electrons, wavefunctions, grids):
+def _wavefunctions_to_density_old(num_electrons, wavefunctions, grids):
   """Converts wavefunctions to density."""
   # Reduce the amount of computation by removing most of the unoccupid states.
   wavefunctions = wavefunctions[:num_electrons]
@@ -82,6 +82,29 @@ def _wavefunctions_to_density(num_electrons, wavefunctions, grids):
   # Each eigenstate has spin up and spin down.
   intensities = jnp.repeat(wavefunctions ** 2, repeats=2, axis=0)
   return jnp.sum(intensities[:num_electrons], axis=0)
+
+
+@functools.partial(jax.jit)
+def _wavefunctions_to_density(num_electrons, wavefunctions, grids):
+  """Converts wavefunctions to density."""
+
+  helper = jnp.arange(len(grids)*2)
+  one_hot = jnp.where(helper < num_electrons,
+                      1.0, 0.0)
+  one_hot = jnp.expand_dims(one_hot, axis=1)
+
+
+
+  # Normalize the wavefunctions.
+  wavefunctions = wavefunctions / jnp.sqrt(jnp.sum(
+    wavefunctions ** 2, axis=1, keepdims=True) * utils.get_dx(grids))
+
+  #wavefunctions = jnp.nan_to_num(wavefunctions)
+
+  wavefunctions = jnp.repeat(wavefunctions, repeats=2, axis=0) * one_hot
+
+  # Each eigenstate has spin up and spin down.
+  return jnp.sum(wavefunctions ** 2, axis=0)
 
 
 def wavefunctions_to_density(num_electrons, wavefunctions, grids):
@@ -114,6 +137,12 @@ def get_total_eigen_energies(num_electrons, eigen_energies):
   Returns:
     Float.
   """
+  helper = jnp.arange(len(eigen_energies)*2)
+  one_hot = jnp.where(helper < num_electrons, 1.0, 0.0)
+
+
+
+  return jnp.sum(one_hot*jnp.repeat(eigen_energies, repeats=2))
   return jnp.sum(jnp.repeat(eigen_energies, repeats=2)[:num_electrons])
 
 
@@ -137,7 +166,7 @@ def get_gap(num_electrons, eigen_energies):
   return lumo - homo
 
 
-@functools.partial(jax.jit, static_argnums=(1,))
+@functools.partial(jax.jit)
 def _solve_noninteracting_system(external_potential, num_electrons, grids):
   """Solves noninteracting system."""
   eigen_energies, wavefunctions_transpose = jnp.linalg.eigh(

@@ -44,7 +44,7 @@ def _connection_weights(num_iterations, num_mixing_iterations):
   return mask / jnp.sum(mask, axis=1, keepdims=True)
 
 
-@functools.partial(jax.jit, static_argnums=(3, 5, 6))
+@functools.partial(jax.jit, static_argnums=(5, 6))
 def _kohn_sham_iteration(
     density,
     external_potential,
@@ -175,7 +175,7 @@ def kohn_sham_iteration(
       gap=gap)
 
 
-@functools.partial(jax.jit, static_argnums=(2, 3, 6, 8, 9, 10, 11, 12, 13))
+@functools.partial(jax.jit, static_argnums=(3, 6, 8, 9, 10, 11, 12, 13))
 def _kohn_sham(
     locations,
     nuclear_charges,

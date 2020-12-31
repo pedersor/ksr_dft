@@ -15,7 +15,7 @@ test on all else: Be++, Li, Be+, Be.
 """
 
 if __name__ == '__main__':
-  path = '../data/ions/num_electrons_1'
+  path = '../data/ions/num_electrons_2'
   two_electrons = Test_atoms(datasets_base_dir=path)
   two_electrons.get_complete_dataset(num_grids=513)
   two_electrons.complete_dataset.load_misc_from_path(path, 'xc_energies.npy',
@@ -46,7 +46,7 @@ if __name__ == '__main__':
   )
 
   # set test set
-  to_test = [1, 2, 3, 4]
+  to_test = [4]
   two_electrons.set_test_set(selected_ions=to_test)
 
   # load optimal checkpoint params
