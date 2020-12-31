@@ -22,7 +22,7 @@ import jax
 import jax.numpy as jnp
 
 
-def mean_square_error(target, predict):
+def mean_square_error(target, predict, num_electrons):
   """Computes mean square error.
 
   Args:
@@ -32,7 +32,7 @@ def mean_square_error(target, predict):
   Returns:
     Float.
   """
-  return jnp.mean((target - predict) ** 2)
+  return jnp.mean((target - predict) ** 2 / num_electrons)
 
 
 def _get_discount_coefficients(num_steps, discount):
@@ -84,7 +84,7 @@ def trajectory_error(error, discount):
 
 
 @functools.partial(jax.jit, static_argnums=(2,))
-def _trajectory_mse(target, predict, discount):
+def _trajectory_mse(target, predict, discount, num_electrons):
   """Computes trajectory mean square error."""
   if predict.ndim < 2:
     raise ValueError(
@@ -97,10 +97,10 @@ def _trajectory_mse(target, predict, discount):
         f'but got predict ({predict.ndim}) and target ({target.ndim})')
   # Insert a dimension for num_steps on target.
   target = jnp.expand_dims(target, axis=1)
-  return trajectory_error((target - predict) ** 2, discount)
+  return trajectory_error((target - predict) ** 2 / num_electrons, discount)
 
 
-def trajectory_mse(target, predict, discount):
+def trajectory_mse(target, predict, discount, num_electrons):
   """Computes trajectory mean square error.
 
   A trajectory discount factor can be applied. The last step is not discounted.
@@ -112,8 +112,9 @@ def trajectory_mse(target, predict, discount):
     predict: Float numpy array with shape
         (batch_size, num_steps, *feature_dims).
     discount: Float, the discount factor over the trajectory.
+    num_electrons: Float numpy array
 
   Returns:
     Float.
   """
-  return _trajectory_mse(target, predict, discount)
+  return _trajectory_mse(target, predict, discount, num_electrons)

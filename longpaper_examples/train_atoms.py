@@ -130,11 +130,13 @@ class Train_atoms:
               # starting states (here 10) in loss.
               :, 10:],
       # The discount factor in the trajectory loss.
-      discount=0.9) / self.num_electrons
+      discount=0.9,
+      num_electrons=self.training_set.num_electrons)
     # Density loss
     loss_value += losses.mean_square_error(
-      target=self.training_set.density, predict=states.density[:, -1, :]
-    ) * self.grids_integration_factor / self.num_electrons
+      target=self.training_set.density,
+      predict=states.density[:, -1, :],
+      num_electrons=self.training_set.num_electrons) * self.grids_integration_factor
     return loss_value
 
   def setup_optimization(self, **kwargs):

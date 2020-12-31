@@ -97,6 +97,8 @@ class Dataset(object):
     with file_open(os.path.join(path, 'num_electrons.npy'), 'rb') as f:
       # make sure num_electrons is scalar not np.array(scalar)
       data['num_electrons'] = int(np.load(f))
+      # change this...
+
     with file_open(os.path.join(path, 'grids.npy'), 'rb') as f:
       data['grids'] = np.load(f)
     with file_open(os.path.join(path, 'locations.npy'), 'rb') as f:
