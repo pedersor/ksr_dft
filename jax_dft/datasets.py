@@ -116,12 +116,16 @@ class Dataset(object):
         data['distances'] = np.load(f)
     return data
 
-  def load_misc_from_path(self, path, file, attribute):
-    """Load miscellaneous quantities from file. E.g. exchange-correlation
-    energies."""
-    file_open = open
-    with file_open(os.path.join(path, file), 'rb') as f:
-      setattr(self, attribute, np.load(f))
+  def load_misc(self, attribute, array=None, path=None, file=None):
+    """Load miscellaneous quantities from file or array.
+    E.g. exchange-correlation energies."""
+    if array is not None:
+      setattr(self, attribute, array)
+    else:
+      file_open = open
+      with file_open(os.path.join(path, file), 'rb') as f:
+        setattr(self, attribute, np.load(f))
+
     return self
 
   def _set_num_grids(self, num_grids):
