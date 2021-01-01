@@ -32,6 +32,7 @@ def mean_square_error(target, predict, num_electrons):
   Returns:
     Float.
   """
+  num_electrons = jnp.expand_dims(num_electrons, axis=1)
   return jnp.mean((target - predict) ** 2 / num_electrons)
 
 
@@ -95,8 +96,9 @@ def _trajectory_mse(target, predict, discount, num_electrons):
         'The size of the shape of predict should be greater than '
         'the size of the shape of target by 1, '
         f'but got predict ({predict.ndim}) and target ({target.ndim})')
-  # Insert a dimension for num_steps on target.
+  # Insert a dimension for num_steps on target and num_electrons.
   target = jnp.expand_dims(target, axis=1)
+  num_electrons = jnp.expand_dims(num_electrons, axis=1)
   return trajectory_error((target - predict) ** 2 / num_electrons, discount)
 
 

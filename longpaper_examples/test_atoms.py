@@ -78,7 +78,8 @@ class Test_atoms(Train_atoms):
       params,
       locations=self.validation_set.locations,
       nuclear_charges=self.validation_set.nuclear_charges,
-      initial_densities=self.validation_set.initial_densities)
+      initial_densities=self.validation_set.initial_densities,
+      num_electrons=self.validation_set.num_electrons)
     return params, states
 
   def get_optimal_ckpt(self, path_to_ckpts):
@@ -94,7 +95,8 @@ class Test_atoms(Train_atoms):
       # Energy loss
       loss_value = losses.mean_square_error(
         target=self.validation_set.total_energy,
-        predict=states.total_energy[:, -1]) / self.num_electrons
+        predict=states.total_energy[:, -1],
+        num_electrons=self.validation_set.num_electrons)
 
       # Density loss (however, KSR paper does not use this for validation)
       # loss_value += losses.mean_square_error(
@@ -117,11 +119,11 @@ class Test_atoms(Train_atoms):
 
 if __name__ == '__main__':
   """Obtain optimal parameters from validation."""
-  two_electrons = Test_atoms('../data/ions/num_electrons_2')
+  two_electrons = Test_atoms('../data/ions/basic_all')
   two_electrons.get_complete_dataset(num_grids=513)
 
   # set validation set
-  to_validate = [3]
+  to_validate = [(1,1)]
   two_electrons.set_validation_set(selected_ions=to_validate)
 
   # set ML model
