@@ -123,7 +123,7 @@ if __name__ == '__main__':
   two_electrons.get_complete_dataset(num_grids=513)
 
   # set validation set
-  to_validate = [(1,1)]
+  to_validate = [(1, 1)]
   two_electrons.set_validation_set(selected_ions=to_validate)
 
   # set ML model

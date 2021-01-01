@@ -178,11 +178,11 @@ class Train_atoms:
 
 
 if __name__ == '__main__':
-  two_electrons = Train_atoms('../data/ions/He_Li')
+  two_electrons = Train_atoms('../data/ions/basic_all')
   two_electrons.get_complete_dataset(num_grids=513)
 
   # set training set
-  to_train = [(2,2), (3,3)]
+  to_train = [(2, 2), (3, 3)]
   two_electrons.set_training_set(selected_ions=to_train)
 
   # get ML model for xc functional
