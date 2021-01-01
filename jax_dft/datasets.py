@@ -95,8 +95,7 @@ class Dataset(object):
     file_open = open
     data = {}
     with file_open(os.path.join(path, 'num_electrons.npy'), 'rb') as f:
-      # make sure num_electrons is scalar not np.array(scalar)
-      data['num_electrons'] = int(np.load(f))
+      data['num_electrons'] = np.load(f)
     with file_open(os.path.join(path, 'grids.npy'), 'rb') as f:
       data['grids'] = np.load(f)
     with file_open(os.path.join(path, 'locations.npy'), 'rb') as f:
@@ -117,12 +116,16 @@ class Dataset(object):
         data['distances'] = np.load(f)
     return data
 
-  def load_misc_from_path(self, path, file, attribute):
-    """Load miscellaneous quantities from file. E.g. exchange-correlation
-    energies."""
-    file_open = open
-    with file_open(os.path.join(path, file), 'rb') as f:
-      setattr(self, attribute, np.load(f))
+  def load_misc(self, attribute, array=None, path=None, file=None):
+    """Load miscellaneous quantities from file or array.
+    E.g. exchange-correlation energies."""
+    if array is not None:
+      setattr(self, attribute, array)
+    else:
+      file_open = open
+      with file_open(os.path.join(path, file), 'rb') as f:
+        setattr(self, attribute, np.load(f))
+
     return self
 
   def _set_num_grids(self, num_grids):
@@ -179,8 +182,9 @@ class Dataset(object):
     else:
       selected_ions = set(selected_ions)
       mask = np.array([
-        nuclear_charge[0] in selected_ions
-        for nuclear_charge in self.nuclear_charges])
+        (nuclear_charge[0], num_electron) in selected_ions
+        for (nuclear_charge, num_electron) in zip(self.nuclear_charges,
+                                                  self.num_electrons)])
       if len(selected_ions) != np.sum(mask):
         raise ValueError(
           'selected_ions contains atomic number Z that is not in the '
@@ -242,6 +246,6 @@ class Dataset(object):
         external_potential=self.external_potentials[mask],
         grids=np.tile(
             np.expand_dims(self.grids, axis=0), reps=(num_samples, 1)),
-        num_electrons=np.repeat(self.num_electrons, repeats=num_samples),
+        num_electrons=self.num_electrons[mask],
         converged=np.repeat(True, repeats=num_samples),
         )
