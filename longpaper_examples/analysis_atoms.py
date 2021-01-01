@@ -46,12 +46,17 @@ if __name__ == '__main__':
   )
 
   # set test set
-  to_test = [(3, 2), (4, 3), (4, 4)]
+  to_test = None # tests all in dataset
+  mask = two_electrons.complete_dataset.get_mask_atoms(to_test)
   two_electrons.set_test_set(selected_ions=to_test)
 
   # load optimal checkpoint params
   final_states = two_electrons.get_final_test_states(
     optimal_ckpt_path='optimal_ckpt.pkl')
+
+  """Generate latex table."""
+  
+
 
   # test set converged total energies
   print('KSR-LDA total E =', final_states.total_energy)
@@ -59,4 +64,5 @@ if __name__ == '__main__':
 
   # xc energies
   print(final_states.xc_energy)
-  print(two_electrons.complete_dataset.xc_energies)
+  lda_xc_energies = two_electrons.complete_dataset.xc_energies[mask]
+  print(lda_xc_energies)
