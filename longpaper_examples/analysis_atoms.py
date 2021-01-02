@@ -1,19 +1,6 @@
 from test_atoms import Test_atoms
 import numpy as np
 
-""" TODO:
--LDA data (not LSD)
-
-Train on He, validate on Li+
-test on all else: Be++, Li, Be+, Be.
-
-- total energy, xc energy table 
-- xc density plots..
-- density plots..
-
-
-"""
-
 
 def round_to_print(to_print, round_to_dec=4):
   """Round a value to be printed in table."""

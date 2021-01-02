@@ -122,10 +122,11 @@ class Dataset(object):
     if array is not None:
       setattr(self, attribute, array)
     else:
+      if file is None:
+        file = attribute + '.npy'
       file_open = open
       with file_open(os.path.join(path, file), 'rb') as f:
         setattr(self, attribute, np.load(f))
-
     return self
 
   def _set_num_grids(self, num_grids):
@@ -195,9 +196,8 @@ class Dataset(object):
     """Gets mask for test set."""
     return self.get_mask(_TEST_DISTANCE_X100[self.name])
 
-  def get_subdataset(self, selected_distance_x100=None, downsample_step=None):
+  def get_subdataset(self, mask, downsample_step=None):
     """Gets subdataset."""
-    mask = self.get_mask(selected_distance_x100)
     if downsample_step is not None:
       sample_mask = np.zeros(self.total_num_samples, dtype=bool)
       sample_mask[::downsample_step] = True
