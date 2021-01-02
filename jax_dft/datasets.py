@@ -20,6 +20,7 @@ import os
 
 from absl import logging
 import numpy as np
+import glob
 
 from jax_dft import scf
 
@@ -87,10 +88,11 @@ class Dataset(object):
       data = self._load_from_path(path)
     for name, array in data.items():
       setattr(self, name, array)
+    self.data = data
     self._set_num_grids(num_grids)
     self.total_num_samples = self.total_energies.shape[0]
 
-  def _load_from_path(self, path):
+  def _load_from_path_old(self, path):
     """Loads npy files from path."""
     file_open = open
     data = {}
@@ -116,17 +118,31 @@ class Dataset(object):
         data['distances'] = np.load(f)
     return data
 
+  def _load_from_path(self, path):
+    """Loads npy files from path."""
+    file_open = open
+    data = {}
+    files = glob.glob(os.path.join(path, '*.npy'))
+    for file in files:
+      base = os.path.basename(file)
+      name = os.path.splitext(base)[0]
+      with file_open(file, 'rb') as f:
+        data[name] = np.load(f)
+    return data
+
   def load_misc(self, attribute, array=None, path=None, file=None):
     """Load miscellaneous quantities from file or array.
     E.g. exchange-correlation energies."""
     if array is not None:
       setattr(self, attribute, array)
+      self.data[attribute] = array
     else:
       if file is None:
         file = attribute + '.npy'
       file_open = open
       with file_open(os.path.join(path, file), 'rb') as f:
         setattr(self, attribute, np.load(f))
+        self.data[attribute] = np.load(f)
     return self
 
   def _set_num_grids(self, num_grids):
@@ -196,24 +212,21 @@ class Dataset(object):
     """Gets mask for test set."""
     return self.get_mask(_TEST_DISTANCE_X100[self.name])
 
-  def get_subdataset(self, mask, downsample_step=None):
+  def get_subdataset(self, mask, exceptions={'grids'}, downsample_step=None):
     """Gets subdataset."""
+    # downsample data, if specified.
     if downsample_step is not None:
       sample_mask = np.zeros(self.total_num_samples, dtype=bool)
       sample_mask[::downsample_step] = True
       mask = np.logical_and(mask, sample_mask)
-    return Dataset(
-        data={
-            'num_electrons': self.num_electrons,
-            'grids': self.grids,
-            'locations': self.locations[mask],
-            'nuclear_charges': self.nuclear_charges[mask],
-            'distances_x100': self.distances_x100[mask],
-            'distances': self.distances[mask],
-            'total_energies': self.total_energies[mask],
-            'densities': self.densities[mask],
-            'external_potentials': self.external_potentials[mask],
-        })
+
+    sub_data = {}
+    for name, array in self.data.items():
+      if name in exceptions:
+        sub_data[name] = array
+      else:
+        sub_data[name] = array[mask]
+    return Dataset(data=sub_data)
 
   def get_molecules(self, selected_distance_x100=None):
     """Selects molecules from list of integers."""
