@@ -46,7 +46,7 @@ class Train_atoms:
         'not centered at the center of the grids.')
 
     self.complete_dataset = dataset
-    return self
+    return dataset
 
   def set_training_set(self, selected_ions):
     self.training_set = self.complete_dataset.get_atoms(

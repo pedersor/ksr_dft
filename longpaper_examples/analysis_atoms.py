@@ -33,10 +33,7 @@ def table_print(to_print, round_to_dec=4, last_in_row=False):
 if __name__ == '__main__':
   path = '../data/ions/basic_all'
   two_electrons = Test_atoms(datasets_base_dir=path)
-  two_electrons.get_complete_dataset(num_grids=513)
-  two_electrons.complete_dataset.load_misc(attribute='xc_energies',
-                                           path=path,
-                                           file='xc_energies.npy')
+  dataset = two_electrons.get_complete_dataset(num_grids=513)
 
   # set ML model
   two_electrons.init_ksr_lda_model()
@@ -62,24 +59,26 @@ if __name__ == '__main__':
     stop_gradient_step=-1
   )
 
+  # generate latex table
+  latex_symbols = np.array(
+    ['H', 'He$^+$', 'Li$^{++}$', 'Be$^{3+}$', 'He', 'Li$^+$',
+     'Be$^{++}$', 'Li', 'Be$^+$', 'Be'])
+  dataset.load_misc(attribute='latex_symbols', array=latex_symbols)
+
   # set test set
   to_test = None  # tests all in dataset
-  mask = two_electrons.complete_dataset.get_mask_atoms(to_test)
-  two_electrons.set_test_set(selected_ions=to_test)
+  mask = dataset.get_mask_atoms(to_test)
+  test_dataset = dataset.get_subdataset(mask)
 
   # load optimal checkpoint params
+  two_electrons.set_test_set(selected_ions=to_test)
   final_states = two_electrons.get_final_test_states(
     optimal_ckpt_path='optimal_ckpt.pkl')
-
-  latex_symbols = ['H', 'He$^+$', 'Li$^{++}$', 'Be$^{3+}$', 'He', 'Li$^+$',
-                   'Be$^{++}$', 'Li', 'Be$^+$', 'Be']
-  two_electrons.complete_dataset.load_misc(attribute='latex_symbols',
-                                           array=latex_symbols)
 
   curr_num_electrons = -1
   total_energy_MAE = []
   xc_energy_MAE = []
-  for i in range(len(latex_symbols)):
+  for i in range(len(test_dataset.latex_symbols)):
     if two_electrons.test_set.num_electrons[i] != curr_num_electrons:
       table_print(str(two_electrons.test_set.num_electrons[i]))
       curr_num_electrons = two_electrons.test_set.num_electrons[i]
@@ -91,7 +90,7 @@ if __name__ == '__main__':
 
     # total energies
     ksr_lda_total_energy = final_states.total_energy[i]
-    unif_gas_lda_total_energy = two_electrons.test_set.total_energy[i]
+    unif_gas_lda_total_energy = test_dataset.total_energies[i]
     total_energy_error = unif_gas_lda_total_energy - ksr_lda_total_energy
     total_energy_MAE.append(np.abs(total_energy_error))
     # rounding to 4 decimal places
@@ -101,7 +100,7 @@ if __name__ == '__main__':
 
     # xc energies
     ksr_lda_xc_energy = final_states.xc_energy[i]
-    unif_gas_lda_xc_energy = two_electrons.complete_dataset.xc_energies[i]
+    unif_gas_lda_xc_energy = test_dataset.xc_energies[i]
     xc_energy_error = unif_gas_lda_xc_energy - ksr_lda_xc_energy
     xc_energy_MAE.append(np.abs(xc_energy_error))
     # rounding to 4 decimal places
