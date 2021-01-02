@@ -71,7 +71,7 @@ if __name__ == '__main__':
   test_dataset = dataset.get_subdataset(mask)
 
   # load optimal checkpoint params
-  two_electrons.set_test_set(selected_ions=to_test)
+  two_electrons.set_test_set(test_dataset)
   final_states = two_electrons.get_final_test_states(
     optimal_ckpt_path='optimal_ckpt.pkl')
 
@@ -79,14 +79,14 @@ if __name__ == '__main__':
   total_energy_MAE = []
   xc_energy_MAE = []
   for i in range(len(test_dataset.latex_symbols)):
-    if two_electrons.test_set.num_electrons[i] != curr_num_electrons:
-      table_print(str(two_electrons.test_set.num_electrons[i]))
-      curr_num_electrons = two_electrons.test_set.num_electrons[i]
+    if test_dataset.num_electrons[i] != curr_num_electrons:
+      table_print(str(test_dataset.num_electrons[i]))
+      curr_num_electrons = test_dataset.num_electrons[i]
     else:
       table_print(' ')
 
     # ion chemical symbols
-    table_print(two_electrons.complete_dataset.latex_symbols[i])
+    table_print(test_dataset.latex_symbols[i])
 
     # total energies
     ksr_lda_total_energy = final_states.total_energy[i]

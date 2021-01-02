@@ -48,13 +48,12 @@ class Train_atoms:
     self.complete_dataset = dataset
     return dataset
 
-  def set_training_set(self, selected_ions):
-    self.training_set = self.complete_dataset.get_atoms(
-      selected_ions=selected_ions)
+  def set_training_set(self, training_set):
+    training_set = training_set.get_atoms()
     # obtain initial densities
-    initial_densities = scf.get_initial_density(self.training_set,
+    initial_densities = scf.get_initial_density(training_set,
                                                 method='noninteracting')
-    self.training_set = self.training_set._replace(
+    self.training_set = training_set._replace(
       initial_densities=initial_densities)
 
     return self
@@ -179,11 +178,13 @@ class Train_atoms:
 
 if __name__ == '__main__':
   two_electrons = Train_atoms('../data/ions/basic_all')
-  two_electrons.get_complete_dataset(num_grids=513)
+  dataset = two_electrons.get_complete_dataset(num_grids=513)
 
   # set training set
   to_train = [(2, 2), (3, 3)]
-  two_electrons.set_training_set(selected_ions=to_train)
+  mask = dataset.get_mask_atoms(to_train)
+  training_set = dataset.get_subdataset(mask)
+  two_electrons.set_training_set(training_set)
 
   # get ML model for xc functional
   key = jax.random.PRNGKey(0)

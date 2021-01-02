@@ -29,25 +29,23 @@ class Test_atoms(Train_atoms):
   def __init__(self, datasets_base_dir):
     super(Test_atoms, self).__init__(datasets_base_dir)
 
-  def set_validation_set(self, selected_ions):
+  def set_validation_set(self, validation_set):
     """Sets the validation set from a list of ions."""
-    self.validation_set = self.complete_dataset.get_atoms(
-      selected_ions=selected_ions)
+    validation_set = validation_set.get_atoms()
     # obtain initial densities
-    initial_densities = scf.get_initial_density(self.validation_set,
+    initial_densities = scf.get_initial_density(validation_set,
                                                 method='noninteracting')
-    self.validation_set = self.validation_set._replace(
+    self.validation_set = validation_set._replace(
       initial_densities=initial_densities)
     return self
 
-  def set_test_set(self, selected_ions):
+  def set_test_set(self, test_set):
     """Sets the validation set from a list of ions."""
-    self.test_set = self.complete_dataset.get_atoms(
-      selected_ions=selected_ions)
+    test_set = test_set.get_atoms()
     # obtain initial densities
-    initial_densities = scf.get_initial_density(self.test_set,
+    initial_densities = scf.get_initial_density(test_set,
                                                 method='noninteracting')
-    self.test_set = self.test_set._replace(
+    self.test_set = test_set._replace(
       initial_densities=initial_densities)
     return self
 
@@ -83,7 +81,7 @@ class Test_atoms(Train_atoms):
     return params, states
 
   def get_optimal_ckpt(self, path_to_ckpts):
-    # TODO: non-jitted/vmapped option. Dynamic num_electrons.
+    # TODO: non-jitted/vmapped option.
     ckpt_list = sorted(
       glob.glob(os.path.join(path_to_ckpts, 'ckpt-?????')))
 
@@ -120,11 +118,13 @@ class Test_atoms(Train_atoms):
 if __name__ == '__main__':
   """Obtain optimal parameters from validation."""
   two_electrons = Test_atoms('../data/ions/basic_all')
-  two_electrons.get_complete_dataset(num_grids=513)
+  dataset = two_electrons.get_complete_dataset(num_grids=513)
 
   # set validation set
   to_validate = [(1, 1)]
-  two_electrons.set_validation_set(selected_ions=to_validate)
+  mask = dataset.get_mask_atoms(to_validate)
+  validation_set = dataset.get_subdataset(mask)
+  two_electrons.set_validation_set(validation_set)
 
   # set ML model
   two_electrons.init_ksr_lda_model()
