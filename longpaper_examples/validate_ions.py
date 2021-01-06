@@ -25,9 +25,9 @@ from train_ions import Train_ions
 config.update('jax_enable_x64', True)
 
 
-class Validate_atoms(Train_ions):
+class Validate_ions(Train_ions):
   def __init__(self, datasets_base_dir):
-    super(Validate_atoms, self).__init__(datasets_base_dir)
+    super(Validate_ions, self).__init__(datasets_base_dir)
 
   def set_validation_set(self, validation_set):
     """Sets the validation set from a list of ions."""
@@ -117,7 +117,7 @@ class Validate_atoms(Train_ions):
 
 if __name__ == '__main__':
   """Obtain optimal parameters from validation."""
-  ions = Validate_atoms('../data/ions/unpol_lda/basic_all')
+  ions = Validate_ions('../data/ions/unpol_lda/basic_all')
   dataset = ions.get_complete_dataset(num_grids=513)
 
   # set validation set

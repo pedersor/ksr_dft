@@ -1,4 +1,4 @@
-from validate_atoms import Test_atoms
+from validate_ions import Validate_ions
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -31,7 +31,7 @@ def table_print(to_print, round_to_dec=4, last_in_row=False):
     print(to_print, end=end)
 
 
-def get_atoms_table_MAE(test_dataset, final_states):
+def get_ions_table_MAE(test_dataset, final_states):
   """Generate table of atoms and errors"""
   curr_num_electrons = -1
   total_energy_MAE = []
@@ -100,15 +100,15 @@ def get_plots(test_dataset, final_states):
 
 
 if __name__ == '__main__':
-  path = '../data/ions/basic_all'
-  two_electrons = Test_atoms(datasets_base_dir=path)
-  dataset = two_electrons.get_complete_dataset(num_grids=513)
+  path = '../data/ions/unpol_lda/basic_all'
+  ions = Validate_ions(datasets_base_dir=path)
+  dataset = ions.get_complete_dataset(num_grids=513)
 
   # set ML model
-  two_electrons.init_ksr_lda_model()
+  ions.init_ksr_lda_model()
 
   # get KS parameters
-  two_electrons.set_ks_parameters(
+  ions.set_ks_parameters(
     # The number of Kohn-Sham iterations in training.
     num_iterations=15,
     # @The density linear mixing factor.
@@ -135,16 +135,16 @@ if __name__ == '__main__':
 
   # set test set
   to_test = None  # tests all in dataset
-  mask = dataset.get_mask_atoms(to_test)
+  mask = dataset.get_mask_ions(to_test)
   test_dataset = dataset.get_subdataset(mask)
 
   # load optimal checkpoint params
-  two_electrons.set_test_set(test_dataset)
-  final_states = two_electrons.get_final_test_states(
+  ions.set_test_set(test_dataset)
+  final_states = ions.get_final_test_states(
     optimal_ckpt_path='optimal_ckpt.pkl')
 
   # generate latex table with MAE
-  get_atoms_table_MAE(test_dataset, final_states)
+  get_ions_table_MAE(test_dataset, final_states)
 
   # generate density and xc energy density plots
   get_plots(test_dataset, final_states)
