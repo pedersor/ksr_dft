@@ -218,7 +218,7 @@ if __name__ == '__main__':
 
   # get ML model for xc functional
   key = jax.random.PRNGKey(3)
-  ions.init_ksr_global_model(key=key)
+  ions.init_ksr_lda_model(key=key)
   print(f'number of parameters: {ions.num_parameters}')
 
   # get KS parameters
