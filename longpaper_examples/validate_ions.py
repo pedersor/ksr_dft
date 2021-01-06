@@ -20,18 +20,18 @@ import scipy
 import sys
 from functools import partial
 import os
-from train_atoms import Train_atoms
+from train_ions import Train_ions
 
 config.update('jax_enable_x64', True)
 
 
-class Test_atoms(Train_atoms):
+class Validate_atoms(Train_ions):
   def __init__(self, datasets_base_dir):
-    super(Test_atoms, self).__init__(datasets_base_dir)
+    super(Validate_atoms, self).__init__(datasets_base_dir)
 
   def set_validation_set(self, validation_set):
     """Sets the validation set from a list of ions."""
-    validation_set = validation_set.get_atoms()
+    validation_set = validation_set.get_ions()
     # obtain initial densities
     initial_densities = scf.get_initial_density(validation_set,
                                                 method='noninteracting')
@@ -41,7 +41,7 @@ class Test_atoms(Train_atoms):
 
   def set_test_set(self, test_set):
     """Sets the validation set from a list of ions."""
-    test_set = test_set.get_atoms()
+    test_set = test_set.get_ions()
     # obtain initial densities
     initial_densities = scf.get_initial_density(test_set,
                                                 method='noninteracting')
@@ -117,21 +117,21 @@ class Test_atoms(Train_atoms):
 
 if __name__ == '__main__':
   """Obtain optimal parameters from validation."""
-  two_electrons = Test_atoms('../data/ions/basic_all')
-  dataset = two_electrons.get_complete_dataset(num_grids=513)
+  ions = Validate_atoms('../data/ions/unpol_lda/basic_all')
+  dataset = ions.get_complete_dataset(num_grids=513)
 
   # set validation set
   to_validate = [(1, 1)]
-  mask = dataset.get_mask_atoms(to_validate)
+  mask = dataset.get_mask_ions(to_validate)
   validation_set = dataset.get_subdataset(mask)
-  two_electrons.set_validation_set(validation_set)
+  ions.set_validation_set(validation_set)
 
   # set ML model
-  two_electrons.init_ksr_lda_model()
-  print(f'number of parameters: {two_electrons.num_parameters}')
+  ions.init_ksr_lda_model()
+  print(f'number of parameters: {ions.num_parameters}')
 
   # get KS parameters
-  two_electrons.set_ks_parameters(
+  ions.set_ks_parameters(
     # The number of Kohn-Sham iterations in training.
     num_iterations=15,
     # @The density linear mixing factor.
@@ -152,4 +152,4 @@ if __name__ == '__main__':
   )
 
   # get optimal checkpoint from validation
-  two_electrons.get_optimal_ckpt('')
+  ions.get_optimal_ckpt('')
