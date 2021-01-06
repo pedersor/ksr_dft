@@ -23,7 +23,7 @@ from functools import partial
 config.update('jax_enable_x64', True)
 
 
-class Train_atoms:
+class Train_ions:
 
   def __init__(self, datasets_base_dir):
     self.datasets_base_dir = datasets_base_dir
@@ -49,7 +49,7 @@ class Train_atoms:
     return dataset
 
   def set_training_set(self, training_set):
-    training_set = training_set.get_atoms()
+    training_set = training_set.get_ions()
     # obtain initial densities
     initial_densities = scf.get_initial_density(training_set,
                                                 method='noninteracting')
@@ -64,6 +64,36 @@ class Train_atoms:
       window_size=1,
       num_filters_list=[16, 16, 16],
       activation='swish')
+
+    init_fn, neural_xc_energy_density_fn = neural_xc.global_functional(
+      network, grids=self.grids)
+
+    self.neural_xc_energy_density_fn = neural_xc_energy_density_fn
+
+    init_params = init_fn(key)
+    spec, flatten_init_params = np_utils.flatten(init_params)
+
+    self.spec = spec
+    # taking all the init params to be negative seems to improve
+    # convergence of the loss.
+    self.flatten_init_params = -np.abs(flatten_init_params)
+    self.num_parameters = len(flatten_init_params)
+
+    return self
+
+  def init_ksr_global_model(self, key=jax.random.PRNGKey(0)):
+    # KSR-LDA model. Window size = 1 constrains model to only local information.
+    network = neural_xc.build_global_local_conv_net(
+      num_global_filters=16,
+      num_local_filters=16,
+      num_local_conv_layers=2,
+      activation='swish',
+      grids=self.grids,
+      minval=0.1,
+      maxval=2.385345,
+      downsample_factor=0)
+    network = neural_xc.wrap_network_with_self_interaction_layer(
+      network, grids=self.grids, interaction_fn=utils.exponential_coulomb)
 
     init_fn, neural_xc_energy_density_fn = neural_xc.global_functional(
       network, grids=self.grids)
@@ -177,22 +207,22 @@ class Train_atoms:
 
 
 if __name__ == '__main__':
-  two_electrons = Train_atoms('../data/ions/basic_all')
-  dataset = two_electrons.get_complete_dataset(num_grids=513)
+  ions = Train_ions('../data/ions/unpol_lda/basic_all')
+  dataset = ions.get_complete_dataset(num_grids=513)
 
   # set training set
   to_train = [(2, 2), (3, 3)]
-  mask = dataset.get_mask_atoms(to_train)
+  mask = dataset.get_mask_ions(to_train)
   training_set = dataset.get_subdataset(mask)
-  two_electrons.set_training_set(training_set)
+  ions.set_training_set(training_set)
 
   # get ML model for xc functional
-  key = jax.random.PRNGKey(0)
-  two_electrons.init_ksr_lda_model(key=key)
-  print(f'number of parameters: {two_electrons.num_parameters}')
+  key = jax.random.PRNGKey(3)
+  ions.init_ksr_global_model(key=key)
+  print(f'number of parameters: {ions.num_parameters}')
 
   # get KS parameters
-  two_electrons.set_ks_parameters(
+  ions.set_ks_parameters(
     # The number of Kohn-Sham iterations in training.
     num_iterations=15,
     # @The density linear mixing factor.
@@ -214,11 +244,11 @@ if __name__ == '__main__':
 
   # setup parameters associated with the optimization
   # TODO: add aditional params..
-  two_electrons.setup_optimization(
+  ions.setup_optimization(
     initial_checkpoint_index=0,
     save_every_n=10,
     max_train_steps=100
   )
 
   # perform training optimization
-  two_electrons.do_lbfgs_optimization()
+  ions.do_lbfgs_optimization()

@@ -191,9 +191,13 @@ class Dataset(object):
             'dataset.')
     return mask
 
-  def get_mask_atoms(self, selected_ions=None):
-    """Gets mask from selected_ions, a list of ints corresponding to
-    atomic numbers {Z}."""
+  def get_test_mask(self):
+    """Gets mask for test set."""
+    return self.get_mask(_TEST_DISTANCE_X100[self.name])
+
+  def get_mask_ions(self, selected_ions=None):
+    """Gets mask from selected_ions, a list of tuples corresponding to
+    (nuclear charge, total num of electrons)."""
     if selected_ions is None:
       mask = np.ones(self.total_num_samples, dtype=bool)
     else:
@@ -204,13 +208,9 @@ class Dataset(object):
                                                   self.num_electrons)])
       if len(selected_ions) != np.sum(mask):
         raise ValueError(
-          'selected_ions contains atomic number Z that is not in the '
-          'dataset.')
+          'selected_ions contains (nuclear_charge, num_electron) that is not in'
+          ' the dataset.')
     return mask
-
-  def get_test_mask(self):
-    """Gets mask for test set."""
-    return self.get_mask(_TEST_DISTANCE_X100[self.name])
 
   def get_subdataset(self, mask, exceptions={'grids'}, downsample_step=None):
     """Gets subdataset."""
@@ -245,10 +245,10 @@ class Dataset(object):
         converged=np.repeat(True, repeats=num_samples),
         )
 
-  def get_atoms(self, selected_ions=None):
-    """Gets atoms from selected_ions, a list of ints corresponding to
-    atomic numbers {Z}."""
-    mask = self.get_mask_atoms(selected_ions)
+  def get_ions(self, selected_ions=None):
+    """Gets atoms from selected_ions, a list of tuples corresponding to
+    (nuclear charge, total num of electrons)."""
+    mask = self.get_mask_ions(selected_ions)
     num_samples = np.sum(mask)
 
     return scf.KohnShamState(
