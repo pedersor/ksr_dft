@@ -76,7 +76,7 @@ class Train_ions:
     self.spec = spec
     # taking all the init params to be negative seems to improve
     # convergence of the loss.
-    self.flatten_init_params = -np.abs(flatten_init_params)
+    self.flatten_init_params = flatten_init_params
     self.num_parameters = len(flatten_init_params)
 
     return self
