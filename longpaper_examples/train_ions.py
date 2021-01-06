@@ -196,7 +196,7 @@ class Train_ions:
   def do_lbfgs_optimization(self):
     _, _, info = scipy.optimize.fmin_l_bfgs_b(
       self.np_loss_and_grad_fn,
-      x0=-np.abs(self.flatten_init_params),
+      x0=self.flatten_init_params,
       # Maximum number of function evaluations.
       maxfun=self.optimization_params['max_train_steps'],
       factr=1,
