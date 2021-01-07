@@ -172,7 +172,7 @@ class Train_ions:
     self.optimization_params = kwargs
     return self
 
-  def np_loss_and_grad_fn(self, flatten_params):
+  def np_loss_and_grad_fn(self, flatten_params, verbose):
     """Gets loss value and gradient of parameters as float and numpy array."""
     start_time = time.time()
     # Automatic differentiation.
@@ -181,28 +181,35 @@ class Train_ions:
     step_time = time.time() - start_time
     step = self.optimization_params['initial_checkpoint_index'] + len(
       self.loss_record)
-    print(f'step {step}, loss {train_set_loss} in {step_time} sec')
+    if verbose == 1:
+      print(f'step {step}, loss {train_set_loss} in {step_time} sec')
+    else:
+      pass
 
     # Save checkpoints.
     if len(self.loss_record) % self.optimization_params['save_every_n'] == 0:
       checkpoint_path = f'ckpt-{step:05d}'
-      print(f'Save checkpoint {checkpoint_path}')
+      if verbose == 1:
+        print(f'Save checkpoint {checkpoint_path}')
+      else:
+        pass
       with open(checkpoint_path, 'wb') as handle:
         pickle.dump(np_utils.unflatten(self.spec, flatten_params), handle)
 
     self.loss_record.append(train_set_loss)
     return train_set_loss, np.array(train_set_gradient)
 
-  def do_lbfgs_optimization(self):
-    _, _, info = scipy.optimize.fmin_l_bfgs_b(
+  def do_lbfgs_optimization(self, verbose=1):
+    _, loss, _ = scipy.optimize.fmin_l_bfgs_b(
       self.np_loss_and_grad_fn,
       x0=self.flatten_init_params,
+      args=(verbose,),
       # Maximum number of function evaluations.
       maxfun=self.optimization_params['max_train_steps'],
       factr=1,
       m=20,
       pgtol=1e-14)
-    print(info)
+    print(f'Final loss = {loss}')
     return self
 
 
@@ -251,4 +258,4 @@ if __name__ == '__main__':
   )
 
   # perform training optimization
-  ions.do_lbfgs_optimization()
+  ions.do_lbfgs_optimization(verbose=1)
