@@ -197,6 +197,19 @@ class Train_validate_ions(object):
   def setup_optimization(self, **kwargs):
     self.loss_record = []
     self.optimization_params = kwargs
+
+    initial_checkpoint_index = self.optimization_params[
+      'initial_checkpoint_index']
+    if initial_checkpoint_index != 0:
+      checkpoint_path = f'ckpt-{initial_checkpoint_index:05d}'
+      checkpoint_path = os.path.join(self.model_dir, checkpoint_path)
+      with open(checkpoint_path, 'rb') as handle:
+        init_params = pickle.load(handle)
+
+      # sets spec (for unflatting params) and flattened params
+      # for specified checkpoint
+      self.spec, self.flatten_init_params = np_utils.flatten(init_params)
+
     return self
 
   def np_loss_and_grad_fn(self, flatten_params, verbose):
@@ -228,6 +241,7 @@ class Train_validate_ions(object):
     return train_set_loss, np.array(train_set_gradient)
 
   def do_lbfgs_optimization(self, verbose=1):
+
     _, loss, _ = scipy.optimize.fmin_l_bfgs_b(
       self.np_loss_and_grad_fn,
       x0=self.flatten_init_params,
