@@ -102,6 +102,8 @@ def get_plots(test_dataset, final_states, model_dir):
 
 
 if __name__ == '__main__':
+  """Example analysis of KSR-LDA results on ions."""
+
   path = '../data/ions/unpol_lda/basic_all'
   ions = Train_validate_ions(datasets_base_dir=path)
   dataset = ions.get_complete_dataset(num_grids=513)
