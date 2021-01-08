@@ -1,5 +1,5 @@
 import os
-from validate_ions import Validate_ions
+from train_validate_ions import Train_validate_ions
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -103,7 +103,7 @@ def get_plots(test_dataset, final_states, model_dir):
 
 if __name__ == '__main__':
   path = '../data/ions/unpol_lda/basic_all'
-  ions = Validate_ions(datasets_base_dir=path)
+  ions = Train_validate_ions(datasets_base_dir=path)
   dataset = ions.get_complete_dataset(num_grids=513)
 
   # set ML model for xc functional
