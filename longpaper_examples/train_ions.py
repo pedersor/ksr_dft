@@ -1,3 +1,4 @@
+import os
 import glob
 import pickle
 import time
@@ -58,8 +59,10 @@ class Train_ions:
 
     return self
 
-  def init_ksr_lda_model(self, key=jax.random.PRNGKey(0)):
-    # KSR-LDA model. Window size = 1 constrains model to only local information.
+  def init_ksr_lda_model(self, model_dir):
+    """KSR-LDA model. Window size = 1 constrains model to only local
+    information."""
+
     network = neural_xc.build_sliding_net(
       window_size=1,
       num_filters_list=[16, 16, 16],
@@ -70,19 +73,25 @@ class Train_ions:
 
     self.neural_xc_energy_density_fn = neural_xc_energy_density_fn
 
-    init_params = init_fn(key)
-    spec, flatten_init_params = np_utils.flatten(init_params)
+    # update model directory
+    self.model_dir = model_dir
 
-    self.spec = spec
-    # taking all the init params to be negative seems to improve
-    # convergence of the loss.
-    self.flatten_init_params = flatten_init_params
-    self.num_parameters = len(flatten_init_params)
+    # write model specs to README file
+    if not os.path.exists(model_dir):
+      os.makedirs(model_dir)
+    readme_file = os.path.join(model_dir, 'README.txt')
+    with open(readme_file, "w") as fh:
+      fh.writelines("name: KSR-LDA\n")
+      fh.writelines('''network = neural_xc.build_sliding_net(
+        window_size=1,
+        num_filters_list=[16, 16, 16],
+        activation='swish')\n''')
 
-    return self
+    return init_fn
 
   def init_ksr_global_model(self, key=jax.random.PRNGKey(0)):
-    # KSR-LDA model. Window size = 1 constrains model to only local information.
+    """ KSR-global model."""
+
     network = neural_xc.build_global_local_conv_net(
       num_global_filters=16,
       num_local_filters=16,
@@ -104,14 +113,31 @@ class Train_ions:
     spec, flatten_init_params = np_utils.flatten(init_params)
 
     self.spec = spec
-    # taking all the init params to be negative seems to improve
-    # convergence of the loss.
     self.flatten_init_params = flatten_init_params
     self.num_parameters = len(flatten_init_params)
 
     return self
 
-  def set_ks_parameters(self, **kwargs):
+  def set_init_ksr_model_params(self, init_fn, key=jax.random.PRNGKey(0),
+                                verbose=1):
+    """Set initial model parameters from init_fn."""
+
+    init_params = init_fn(key)
+    spec, flatten_init_params = np_utils.flatten(init_params)
+
+    # sets spec (for unflatting params) and flattened params
+    self.spec = spec
+    self.flatten_init_params = flatten_init_params
+
+    if verbose == 1:
+      num_parameters = len(flatten_init_params)
+      print(f'number of parameters = {num_parameters}')
+    else:
+      pass
+
+    return self
+
+  def set_ks_params(self, **kwargs):
     self.ks_params = kwargs
     return self
 
@@ -189,6 +215,7 @@ class Train_ions:
     # Save checkpoints.
     if len(self.loss_record) % self.optimization_params['save_every_n'] == 0:
       checkpoint_path = f'ckpt-{step:05d}'
+      checkpoint_path = os.path.join(self.model_dir, checkpoint_path)
       if verbose == 1:
         print(f'Save checkpoint {checkpoint_path}')
       else:
@@ -218,18 +245,22 @@ if __name__ == '__main__':
   dataset = ions.get_complete_dataset(num_grids=513)
 
   # set training set
-  to_train = [(2, 2), (3, 3)]
+  to_train = [(2, 2)]
   mask = dataset.get_mask_ions(to_train)
   training_set = dataset.get_subdataset(mask)
   ions.set_training_set(training_set)
 
   # get ML model for xc functional
+  model_dir = '../models/ions/unpol_lda'
+  init_fn = ions.init_ksr_lda_model(model_dir=model_dir)
+
+  # set initial params from init_fn
   key = jax.random.PRNGKey(3)
-  ions.init_ksr_lda_model(key=key)
-  print(f'number of parameters: {ions.num_parameters}')
+  ions.set_init_ksr_model_params(init_fn, key)
+  ions.flatten_init_params
 
   # get KS parameters
-  ions.set_ks_parameters(
+  ions.set_ks_params(
     # The number of Kohn-Sham iterations in training.
     num_iterations=15,
     # @The density linear mixing factor.

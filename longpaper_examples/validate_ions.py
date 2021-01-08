@@ -131,7 +131,7 @@ if __name__ == '__main__':
   print(f'number of parameters: {ions.num_parameters}')
 
   # get KS parameters
-  ions.set_ks_parameters(
+  ions.set_ks_params(
     # The number of Kohn-Sham iterations in training.
     num_iterations=15,
     # @The density linear mixing factor.

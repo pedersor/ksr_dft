@@ -108,7 +108,7 @@ if __name__ == '__main__':
   ions.init_ksr_lda_model()
 
   # get KS parameters
-  ions.set_ks_parameters(
+  ions.set_ks_params(
     # The number of Kohn-Sham iterations in training.
     num_iterations=15,
     # @The density linear mixing factor.
