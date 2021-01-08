@@ -1,3 +1,4 @@
+import os
 from validate_ions import Validate_ions
 import numpy as np
 import matplotlib.pyplot as plt
@@ -76,7 +77,7 @@ def get_ions_table_MAE(test_dataset, final_states):
   table_print(np.mean(xc_energy_MAE), last_in_row=True)
 
 
-def get_plots(test_dataset, final_states):
+def get_plots(test_dataset, final_states, model_dir):
   """Generate density and xc energy density plots on a single plt figure."""
   num_columns = len(test_dataset.latex_symbols) // 2
   _, axs = plt.subplots(
@@ -96,7 +97,8 @@ def get_plots(test_dataset, final_states):
             label=r'$\epsilon^{\mathrm{LDA}}_{\mathrm{XC}}$')
     ax.set_xlim(-10, 10)
   axs[-1][-1].legend(bbox_to_anchor=(1.2, 0.8))
-  plt.savefig('xc_energy_densities_plots.pdf', bbox_inches='tight')
+  plt.savefig(os.path.join(model_dir, 'xc_energy_densities_plots.pdf'),
+              bbox_inches='tight')
 
 
 if __name__ == '__main__':
@@ -104,8 +106,9 @@ if __name__ == '__main__':
   ions = Validate_ions(datasets_base_dir=path)
   dataset = ions.get_complete_dataset(num_grids=513)
 
-  # set ML model
-  ions.init_ksr_lda_model()
+  # set ML model for xc functional
+  model_dir = '../models/ions/unpol_lda'
+  ions.init_ksr_lda_model(model_dir=model_dir)
 
   # get KS parameters
   ions.set_ks_params(
@@ -141,10 +144,10 @@ if __name__ == '__main__':
   # load optimal checkpoint params
   ions.set_test_set(test_dataset)
   final_states = ions.get_final_test_states(
-    optimal_ckpt_path='optimal_ckpt.pkl')
+    optimal_ckpt_path=os.path.join(model_dir, 'optimal_ckpt.pkl'))
 
   # generate latex table with MAE
   get_ions_table_MAE(test_dataset, final_states)
 
   # generate density and xc energy density plots
-  get_plots(test_dataset, final_states)
+  get_plots(test_dataset, final_states, model_dir)

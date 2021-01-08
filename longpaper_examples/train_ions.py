@@ -257,18 +257,21 @@ if __name__ == '__main__':
   dataset = ions.get_complete_dataset(num_grids=513)
 
   # set training set
-  to_train = [(2, 2)]
+  to_train = [(2, 2), (3, 3)]
   mask = dataset.get_mask_ions(to_train)
   training_set = dataset.get_subdataset(mask)
   ions.set_training_set(training_set)
 
-  # get ML model for xc functional
+  # set ML model for xc functional
   model_dir = '../models/ions/unpol_lda'
   init_fn = ions.init_ksr_lda_model(model_dir=model_dir)
 
   # set initial params from init_fn
-  key = jax.random.PRNGKey(3)
+  key = jax.random.PRNGKey(0)
   ions.set_init_ksr_model_params(init_fn, key)
+  # optional: setting all parameters to be negative can help prevent exploding
+  # loss in initial steps esp. for KSR-LDA.
+  ions.flatten_init_params = -np.abs(ions.flatten_init_params)
 
   # get KS parameters
   ions.set_ks_params(

@@ -126,9 +126,9 @@ if __name__ == '__main__':
   validation_set = dataset.get_subdataset(mask)
   ions.set_validation_set(validation_set)
 
-  # set ML model
-  ions.init_ksr_lda_model()
-  print(f'number of parameters: {ions.num_parameters}')
+  # set ML model for xc functional
+  model_dir = '../models/ions/unpol_lda'
+  ions.init_ksr_lda_model(model_dir=model_dir)
 
   # get KS parameters
   ions.set_ks_params(
@@ -152,4 +152,4 @@ if __name__ == '__main__':
   )
 
   # get optimal checkpoint from validation
-  ions.get_optimal_ckpt('')
+  ions.get_optimal_ckpt(model_dir)
