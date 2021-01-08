@@ -28,7 +28,6 @@ config.update('jax_enable_x64', True)
 class Train_validate_ions(object):
   def __init__(self, datasets_base_dir):
     self.datasets_base_dir = datasets_base_dir
-    self.loss_record = []
 
     # get jitted fns
     self.loss_value_and_grad_fn = jax.jit(jax.value_and_grad(self.loss_fn))
@@ -196,6 +195,7 @@ class Train_validate_ions(object):
     return loss_value
 
   def setup_optimization(self, **kwargs):
+    self.loss_record = []
     self.optimization_params = kwargs
     return self
 
