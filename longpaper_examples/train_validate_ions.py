@@ -98,24 +98,6 @@ class Train_validate_ions(object):
     # update model directory
     self.model_dir = model_dir
 
-    # write model specs to README file
-    if not os.path.exists(model_dir):
-      os.makedirs(model_dir)
-    readme_file = os.path.join(model_dir, 'README.txt')
-    with open(readme_file, "w") as fh:
-      fh.writelines("name: KSR-global\n")
-      fh.writelines('''network = neural_xc.build_global_local_conv_net(
-      num_global_filters=16,
-      num_local_filters=16,
-      num_local_conv_layers=2,
-      activation='swish',
-      grids=self.grids,
-      minval=0.1,
-      maxval=2.385345,
-      downsample_factor=0)
-    network = neural_xc.wrap_network_with_self_interaction_layer(
-      network, grids=self.grids, interaction_fn=utils.exponential_coulomb)\n''')
-
     return init_fn
 
   def set_init_ksr_model_params(self, init_fn, key=jax.random.PRNGKey(0),
