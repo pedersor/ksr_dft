@@ -70,7 +70,6 @@ class Train_ions:
 
     init_fn, neural_xc_energy_density_fn = neural_xc.global_functional(
       network, grids=self.grids)
-
     self.neural_xc_energy_density_fn = neural_xc_energy_density_fn
 
     # update model directory
@@ -106,17 +105,30 @@ class Train_ions:
 
     init_fn, neural_xc_energy_density_fn = neural_xc.global_functional(
       network, grids=self.grids)
-
     self.neural_xc_energy_density_fn = neural_xc_energy_density_fn
 
-    init_params = init_fn(key)
-    spec, flatten_init_params = np_utils.flatten(init_params)
+    # update model directory
+    self.model_dir = model_dir
 
-    self.spec = spec
-    self.flatten_init_params = flatten_init_params
-    self.num_parameters = len(flatten_init_params)
+    # write model specs to README file
+    if not os.path.exists(model_dir):
+      os.makedirs(model_dir)
+    readme_file = os.path.join(model_dir, 'README.txt')
+    with open(readme_file, "w") as fh:
+      fh.writelines("name: KSR-global\n")
+      fh.writelines('''network = neural_xc.build_global_local_conv_net(
+      num_global_filters=16,
+      num_local_filters=16,
+      num_local_conv_layers=2,
+      activation='swish',
+      grids=self.grids,
+      minval=0.1,
+      maxval=2.385345,
+      downsample_factor=0)
+    network = neural_xc.wrap_network_with_self_interaction_layer(
+      network, grids=self.grids, interaction_fn=utils.exponential_coulomb)\n''')
 
-    return self
+    return init_fn
 
   def set_init_ksr_model_params(self, init_fn, key=jax.random.PRNGKey(0),
                                 verbose=1):
@@ -257,7 +269,6 @@ if __name__ == '__main__':
   # set initial params from init_fn
   key = jax.random.PRNGKey(3)
   ions.set_init_ksr_model_params(init_fn, key)
-  ions.flatten_init_params
 
   # get KS parameters
   ions.set_ks_params(
