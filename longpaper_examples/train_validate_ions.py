@@ -76,7 +76,7 @@ class Train_validate_ions(object):
 
     return init_fn
 
-  def init_ksr_global_model(self, key=jax.random.PRNGKey(0)):
+  def init_ksr_global_model(self, model_dir):
     """ KSR-global model."""
 
     network = neural_xc.build_global_local_conv_net(
