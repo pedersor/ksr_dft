@@ -120,6 +120,9 @@ if __name__ == '__main__':
   ions = Validate_ions('../data/ions/unpol_lda/basic_all')
   dataset = ions.get_complete_dataset(num_grids=513)
 
+  # training set
+  to_train = [(2, 2), (3, 3)]
+
   # set validation set
   to_validate = [(1, 1)]
   mask = dataset.get_mask_ions(to_validate)
@@ -153,3 +156,10 @@ if __name__ == '__main__':
 
   # get optimal checkpoint from validation
   ions.get_optimal_ckpt(model_dir)
+
+  # append training set info to README
+  readme_file = os.path.join(model_dir, 'README.txt')
+  with open(readme_file, "a") as fh:
+    fh.writelines('\n')
+    fh.writelines(f"Trained on: {to_train} \n")
+    fh.writelines(f"Validated on: {to_validate} \n")
