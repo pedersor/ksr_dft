@@ -180,12 +180,25 @@ class Train_validate_ions(object):
     self.loss_record = []
     self.optimization_params = kwargs
 
-    initial_checkpoint_index = self.optimization_params[
-      'initial_checkpoint_index']
-    if initial_checkpoint_index != 0:
-      checkpoint_path = f'ckpt-{initial_checkpoint_index:05d}'
-      checkpoint_path = os.path.join(self.model_dir, checkpoint_path)
-      with open(checkpoint_path, 'rb') as handle:
+    if 'initial_checkpoint_index' in self.optimization_params:
+      initial_checkpoint_index = self.optimization_params[
+        'initial_checkpoint_index']
+      if initial_checkpoint_index != 0:
+        checkpoint_path = f'ckpt-{initial_checkpoint_index:05d}'
+        checkpoint_path = os.path.join(self.model_dir, checkpoint_path)
+        with open(checkpoint_path, 'rb') as handle:
+          init_params = pickle.load(handle)
+
+        # sets spec (for unflatting params) and flattened params
+        # for specified checkpoint
+        self.spec, self.flatten_init_params = np_utils.flatten(init_params)
+    else:
+      self.optimization_params['initial_checkpoint_index'] = 0
+
+    if 'initial_params_file' in self.optimization_params:
+      init_params_file = self.optimization_params['initial_params_file']
+      init_params_path = os.path.join(self.model_dir, init_params_file)
+      with open(init_params_path, 'rb') as handle:
         init_params = pickle.load(handle)
 
       # sets spec (for unflatting params) and flattened params
