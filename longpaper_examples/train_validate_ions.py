@@ -295,6 +295,7 @@ class Train_validate_ions(object):
       glob.glob(os.path.join(path_to_ckpts, 'ckpt-?????')))
 
     optimal_ckpt_params = None
+    optimal_ckpt_path = None
     min_loss = None
     for ckpt_path in ckpt_list:
       params, states = self._get_states(ckpt_path)
@@ -312,8 +313,10 @@ class Train_validate_ions(object):
 
       if optimal_ckpt_params is None or loss_value < min_loss:
         optimal_ckpt_params = params
+        optimal_ckpt_path = ckpt_path
         min_loss = loss_value
 
+    print(f'optimal checkpoint: {optimal_ckpt_path}')
     optimal_ckpt_path = os.path.join(path_to_ckpts, 'optimal_ckpt.pkl')
     print(f'optimal checkpoint loss: {min_loss}')
     print(f'Save {optimal_ckpt_path}')
