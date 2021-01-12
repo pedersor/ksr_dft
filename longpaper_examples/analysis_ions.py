@@ -80,7 +80,7 @@ def get_ions_table_MAE(test_dataset, final_states):
 def get_plots(test_dataset, final_states, model_dir):
   """Generate density and xc energy density plots on a single plt figure."""
   num_columns = len(test_dataset.latex_symbols) // 2
-  _, axs = plt.subplots(
+  fig, axs = plt.subplots(
     nrows=2,
     ncols=num_columns,
     figsize=(3 * num_columns, 6), sharex=True, sharey=True)
@@ -97,8 +97,8 @@ def get_plots(test_dataset, final_states, model_dir):
             label=r'$\epsilon^{\mathrm{LDA}}_{\mathrm{XC}}$')
     ax.set_xlim(-10, 10)
   axs[-1][-1].legend(bbox_to_anchor=(1.2, 0.8))
-  plt.savefig(os.path.join(model_dir, 'xc_energy_densities_plots.pdf'),
-              bbox_inches='tight')
+
+  return fig, axs
 
 
 if __name__ == '__main__':
@@ -152,4 +152,6 @@ if __name__ == '__main__':
   get_ions_table_MAE(test_dataset, final_states)
 
   # generate density and xc energy density plots
-  get_plots(test_dataset, final_states, model_dir)
+  fig, axs = get_plots(test_dataset, final_states, model_dir)
+  plt.savefig(os.path.join(model_dir, 'xc_energy_densities_plots.pdf'),
+              bbox_inches='tight')
