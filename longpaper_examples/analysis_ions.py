@@ -77,7 +77,7 @@ def get_ions_table_MAE(test_dataset, final_states):
   table_print(np.mean(xc_energy_MAE), last_in_row=True)
 
 
-def get_plots(test_dataset, final_states, model_dir):
+def get_plots(test_dataset, final_states):
   """Generate density and xc energy density plots on a single plt figure."""
   num_columns = len(test_dataset.latex_symbols) // 2
   fig, axs = plt.subplots(
@@ -152,6 +152,6 @@ if __name__ == '__main__':
   get_ions_table_MAE(test_dataset, final_states)
 
   # generate density and xc energy density plots
-  fig, axs = get_plots(test_dataset, final_states, model_dir)
+  fig, axs = get_plots(test_dataset, final_states)
   plt.savefig(os.path.join(model_dir, 'xc_energy_densities_plots.pdf'),
               bbox_inches='tight')
