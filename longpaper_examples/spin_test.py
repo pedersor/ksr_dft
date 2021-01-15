@@ -121,6 +121,8 @@ def global_functional(network, grids, num_spatial_shift=1):
     """
     # Expand batch dimension and channel dimension. We use batch_size=1 here.
     # (1, num_grids, 1)
+
+
     input_features = density[jnp.newaxis, :, jnp.newaxis]
 
     #TODO: num_spatial_shift...
@@ -147,6 +149,9 @@ def global_functional(network, grids, num_spatial_shift=1):
 
 
 if __name__ == '__main__':
+  import matplotlib.pyplot as plt
+  import sys
+
   h = 0.08
   grids = np.arange(-256, 257) * h
 
@@ -157,15 +162,43 @@ if __name__ == '__main__':
     activation='swish')
 
 
-  init_fn, neural_xc_energy_density_fn = neural_xc.global_functional(
+  init_fn, neural_xc_energy_density_fn = global_functional(
     network, grids=grids)
 
   key=jax.random.PRNGKey(0)
   init_params = init_fn(key)
   spec, flatten_init_params = np_utils.flatten(init_params)
   print(f'number of parameters = {len(flatten_init_params)}')
-  print(init_params)
+
+  example_density = np.load('../data/ions/dmrg/basic_all/densities.npy')[0]
+
+  '''
+  input_features = example_density[jnp.newaxis, :, jnp.newaxis]
+  print(input_features)
+
+  spin_density = grids
+  spin_density = spin_density[jnp.newaxis, :, jnp.newaxis]
+
+  input_features = np.append(input_features, spin_density, axis=2)
+  print(input_features.shape)
+  print(input_features)
+  '''
+
+
+  with open('../models/ions/ksr_lda/unpol_lda/optimal_ckpt.pkl', 'rb') as handle:
+    example_params = pickle.load(handle)
 
 
 
 
+  xc_energy_density = neural_xc_energy_density_fn(example_density, init_params)
+
+  xc_potential = scf.get_xc_potential(example_density,
+                                      tree_util.Partial(
+                                        neural_xc_energy_density_fn,
+                                        params=init_params), grids)
+
+  plt.plot(grids, example_density)
+  plt.plot(grids, xc_energy_density)
+  plt.plot(grids, xc_potential)
+  plt.savefig('test.pdf')
