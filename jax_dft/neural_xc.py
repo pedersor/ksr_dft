@@ -291,6 +291,7 @@ def GeneralConvWithoutBias(
     kernel_shape = [out_chan if c == 'O' else
                     input_shape[lhs_spec.index('C')] if c == 'I' else
                     next(filter_shape_iter) for c in rhs_spec]
+    print(kernel_shape)
     output_shape = lax.conv_general_shape_tuple(
         input_shape, kernel_shape, strides, padding, dimension_numbers)
     W = W_init(rng, kernel_shape)
