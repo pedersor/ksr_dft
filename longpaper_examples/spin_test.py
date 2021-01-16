@@ -22,7 +22,7 @@ from jax_dft import utils
 from jax_dft import xc
 
 from jax_dft.neural_xc import _check_network_output, _is_power_of_two
-
+from jax_dft import spin_scf
 
 # Set the default dtype as float64
 config.update('jax_enable_x64', True)
@@ -105,11 +105,12 @@ def global_functional(network, grids, num_spatial_shift=1):
         'but got %d' % num_grids)
 
   def init_fn(rng):
-    _, params = network_init_fn(rng=rng, input_shape=(-1, num_grids, 1))
+    _, params = network_init_fn(rng=rng, input_shape=(-1, num_grids, 2))
     return params
 
   #TODO: jit...
-  def xc_energy_density_fn(density, params):
+  #@jax.jit
+  def xc_energy_density_fn(density, spin_density, params):
     """Gets xc energy density.
 
     Args:
@@ -121,9 +122,10 @@ def global_functional(network, grids, num_spatial_shift=1):
     """
     # Expand batch dimension and channel dimension. We use batch_size=1 here.
     # (1, num_grids, 1)
+    density = density[jnp.newaxis, :, jnp.newaxis]
+    spin_density = spin_density[jnp.newaxis, :, jnp.newaxis]
 
-
-    input_features = density[jnp.newaxis, :, jnp.newaxis]
+    input_features = jnp.append(density, spin_density, axis=2)
 
     #TODO: num_spatial_shift...
 
@@ -170,35 +172,45 @@ if __name__ == '__main__':
   spec, flatten_init_params = np_utils.flatten(init_params)
   print(f'number of parameters = {len(flatten_init_params)}')
 
+
+  ''' H atom example 
   example_density = np.load('../data/ions/dmrg/basic_all/densities.npy')[0]
-
-  '''
-  input_features = example_density[jnp.newaxis, :, jnp.newaxis]
-  print(input_features)
-
-  spin_density = grids
-  spin_density = spin_density[jnp.newaxis, :, jnp.newaxis]
-
-  input_features = np.append(input_features, spin_density, axis=2)
-  print(input_features.shape)
-  print(input_features)
+  example_density_up = example_density
+  example_density_down = 0. * example_density
+  example_spin_density = example_density_up - example_density_down
   '''
 
+  ''' He atom example '''
+  example_density = np.load('../data/ions/lsda/basic_all/densities.npy')[4]
+  example_density_up = example_density / 2.
+  example_density_down = example_density / 2.
+  example_spin_density = example_density_up - example_density_down
 
   with open('../models/ions/ksr_lda/unpol_lda/optimal_ckpt.pkl', 'rb') as handle:
     example_params = pickle.load(handle)
 
 
 
+  xc_energy_density = neural_xc_energy_density_fn(example_density,
+                                                  example_spin_density,
+                                                  init_params)
 
-  xc_energy_density = neural_xc_energy_density_fn(example_density, init_params)
 
-  xc_potential = scf.get_xc_potential(example_density,
-                                      tree_util.Partial(
-                                        neural_xc_energy_density_fn,
-                                        params=init_params), grids)
 
   plt.plot(grids, example_density)
   plt.plot(grids, xc_energy_density)
-  plt.plot(grids, xc_potential)
-  plt.savefig('test.pdf')
+
+
+  xc_potential_up = spin_scf.get_xc_potential_up(
+    example_density_up, example_density_down,
+    tree_util.Partial(neural_xc_energy_density_fn,params=init_params), grids)
+
+  xc_potential_down = spin_scf.get_xc_potential_down(
+    example_density_up, example_density_down,
+    tree_util.Partial(neural_xc_energy_density_fn, params=init_params), grids)
+
+  plt.plot(grids, xc_potential_up)
+  plt.plot(grids, xc_potential_down + 0.001)
+
+
+  plt.savefig('spin_test2.pdf')
