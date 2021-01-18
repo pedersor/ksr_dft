@@ -8,7 +8,90 @@ import jax.numpy as jnp
 from jax_dft import utils
 from jax_dft import scf
 
+# testing: to delete
+import matplotlib.pyplot as plt
+import sys
+
 ArrayLike = Union[float, bool, jnp.ndarray]
+
+@functools.partial(jax.jit)
+def _wavefunctions_to_density(num_electrons, wavefunctions, grids):
+  """Converts wavefunctions to density."""
+  # create one hot-type vector to retrieve relevant lowest eigenvectors
+  counts = jnp.arange(len(grids))
+  one_hot = jnp.where(counts < num_electrons,
+                      1.0, 0.0)
+  one_hot = jnp.expand_dims(one_hot, axis=1)
+  # Normalize the wavefunctions.
+  wavefunctions = wavefunctions / jnp.sqrt(jnp.sum(
+    wavefunctions ** 2, axis=1, keepdims=True) * utils.get_dx(grids))
+  wavefunctions = wavefunctions * one_hot
+  # Each eigenstate has spin up and spin down.
+  return jnp.sum(wavefunctions ** 2, axis=0)
+
+
+def wavefunctions_to_density(num_electrons, wavefunctions, grids):
+  """Converts wavefunctions to density.
+
+  Note each eigenstate contains two states: spin up and spin down.
+
+  Args:
+    num_electrons: Integer, the number of electrons in the system. The first
+        num_electrons states are occupid.
+    wavefunctions: Float numpy array with shape (num_eigen_states, num_grids).
+    grids: Float numpy array with shape (num_grids,).
+
+  Returns:
+    Float numpy array with shape (num_grids,).
+  """
+  return _wavefunctions_to_density(num_electrons, wavefunctions, grids)
+
+
+def get_total_eigen_energies(num_electrons, eigen_energies):
+  """Gets the total eigen energies of the first num_electrons states.
+
+  Args:
+    num_electrons: Integer, the number of electrons in the system. The first
+        num_electrons states are occupid.
+    eigen_energies: Float numpy array with shape (num_eigen_states,).
+
+  Returns:
+    Float.
+  """
+  # create one hot-type vector to retrieve relevant lowest eigen_energies
+  counts = jnp.arange(len(eigen_energies))
+  one_hot = jnp.where(counts < num_electrons, 1.0, 0.0)
+  return jnp.sum(one_hot * eigen_energies)
+
+
+@functools.partial(jax.jit)
+def _solve_noninteracting_system(external_potential, num_electrons, grids):
+  """Solves noninteracting system."""
+  eigen_energies, wavefunctions_transpose = jnp.linalg.eigh(
+    # Hamiltonian matrix.
+    scf.get_kinetic_matrix(grids) + jnp.diag(external_potential))
+  density = wavefunctions_to_density(
+    num_electrons, jnp.transpose(wavefunctions_transpose), grids)
+  total_eigen_energies = get_total_eigen_energies(
+    num_electrons=num_electrons, eigen_energies=eigen_energies)
+  return density, total_eigen_energies
+
+
+def solve_noninteracting_system(external_potential, num_electrons, grids):
+  """Solves noninteracting system.
+
+  Args:
+    external_potential: Float numpy array with shape (num_grids,).
+    num_electrons: Integer, the number of electrons in the system. The first
+        num_electrons states are occupid.
+    grids: Float numpy array with shape (num_grids,).
+
+  Returns:
+    density: Float numpy array with shape (num_grids,).
+        The ground state density.
+    total_eigen_energies: Float, the total energy of the eigen states.
+  """
+  return _solve_noninteracting_system(external_potential, num_electrons, grids)
 
 
 def get_xc_energy(density_up, density_down, xc_energy_density_fn, grids):
@@ -86,10 +169,11 @@ class KohnShamState(typing.NamedTuple):
     grids: A float numpy array with shape (num_grids,).
     num_electrons: Integer, the number of electrons in the system. The first
         num_electrons states are occupied.
+    num_unpaired_electrons: Integer, the number of unpaired electrons in the
+        system. All unpaired electrons are defaulted to spin `up` by convention.
     hartree_potential: A float numpy array with shape (num_grids,).
     xc_potential: A float numpy array with shape (num_grids,).
     xc_energy_density: A float numpy array with shape (num_grids,).
-    gap: Float, the Kohn-Sham gap.
     converged: Boolean, whether the state is converged.
   """
 
@@ -103,11 +187,11 @@ class KohnShamState(typing.NamedTuple):
   num_electrons: ArrayLike
   num_unpaired_electrons: ArrayLike
   initial_densities: Optional[jnp.ndarray] = None
+  initial_spin_densities: Optional[jnp.ndarray] = None
   xc_energy: Optional[ArrayLike] = None
   kinetic_energy: Optional[ArrayLike] = None
   hartree_potential: Optional[jnp.ndarray] = None
   xc_energy_density: Optional[jnp.ndarray] = None
-  gap: Optional[ArrayLike] = None
   converged: Optional[ArrayLike] = False
 
 
@@ -164,7 +248,7 @@ def kohn_sham_iteration(
   xc_energy_density = xc_energy_density_fn(state.density)
 
   # Solve Kohn-Sham equation.
-  density, total_eigen_energies, gap = solve_noninteracting_system(
+  density, total_eigen_energies = solve_noninteracting_system(
     external_potential=ks_potential,
     num_electrons=num_electrons,
     grids=state.grids)
@@ -206,19 +290,20 @@ def kohn_sham_iteration(
     hartree_potential=hartree_potential,
     xc_energy=xc_energy,
     kinetic_energy=kinetic_energy,
-    xc_energy_density=xc_energy_density,
-    gap=gap)
+    xc_energy_density=xc_energy_density)
 
 
 def kohn_sham(
     locations,
     nuclear_charges,
     num_electrons,
+    num_unpaired_electrons,
     num_iterations,
     grids,
     xc_energy_density_fn,
     interaction_fn,
     initial_density=None,
+    initial_spin_density=None,
     alpha=0.5,
     alpha_decay=0.9,
     enforce_reflection_symmetry=False,
@@ -232,7 +317,9 @@ def kohn_sham(
     nuclear_charges: Float numpy array with shape (num_nuclei,), the nuclear
         charges.
     num_electrons: Integer, the number of electrons in the system. The first
-        num_electrons states are occupid.
+        num_electrons states are occupied.
+    num_unpaired_electrons: Integer, the number of unpaired electrons in the
+        system. All unpaired electrons are defaulted to spin `up` by convention.
     num_iterations: Integer, the number of Kohn-Sham iterations.
     grids: Float numpy array with shape (num_grids,).
     xc_energy_density_fn: function takes density (num_grids,) and returns
@@ -269,13 +356,27 @@ def kohn_sham(
     locations=locations,
     nuclear_charges=nuclear_charges,
     interaction_fn=interaction_fn)
-  if initial_density is None:
+
+  num_down_electrons = (num_electrons - num_unpaired_electrons) // 2
+  num_up_electrons = num_down_electrons + num_unpaired_electrons
+
+  if initial_density is None and initial_spin_density is None:
     # Use the non-interacting solution from the external_potential as initial
     # guess.
-    initial_density, _, _ = solve_noninteracting_system(
+    initial_density_up, _ = solve_noninteracting_system(
       external_potential=external_potential,
-      num_electrons=num_electrons,
+      num_electrons=num_up_electrons,
       grids=grids)
+    initial_density_down, _ = solve_noninteracting_system(
+      external_potential=external_potential,
+      num_electrons=num_down_electrons,
+      grids=grids)
+
+  plt.plot(grids, initial_density_up)
+  plt.plot(grids, initial_density_down)
+  plt.savefig('initial_density.pdf')
+  sys.exit()
+
   # Create initial state.
   state = KohnShamState(
     density=initial_density,
