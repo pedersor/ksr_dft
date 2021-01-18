@@ -95,6 +95,14 @@ def solve_noninteracting_system(external_potential, num_electrons, grids):
   return _solve_noninteracting_system(external_potential, num_electrons, grids)
 
 
+@functools.partial(jax.vmap, in_axes=(0, 0, None), out_axes=(0))
+def batch_solve_noninteracting_system(external_potential, num_electrons, grids):
+  density, total_eigen_energies = solve_noninteracting_system(
+    external_potential, num_electrons, grids)
+
+  return (density, total_eigen_energies)
+
+
 def get_xc_energy(density_up, density_down, xc_energy_density_fn, grids):
   r"""Gets xc energy.
 
@@ -117,14 +125,17 @@ def get_xc_energy(density_up, density_down, xc_energy_density_fn, grids):
     xc_energy_density_fn(density, spin_density), density) * utils.get_dx(grids)
 
 
-def get_xc_potential_up(density_up, density_down, xc_energy_density_fn, grids):
+def get_xc_potential_sigma(grad_argnum, density_up, density_down,
+                           xc_energy_density_fn, grids):
   """Gets xc potential.
 
   The xc potential is derived from xc_energy_density through automatic
   differentiation.
 
   Args:
-    density: Float numpy array with shape (num_grids,).
+    grad_argnum:
+    density_up: Float numpy array with shape (num_grids,).
+    density_down: Float numpy array with shape (num_grids,).
     xc_energy_density_fn: function takes density and returns float numpy array
         with shape (num_grids,).
     grids: Float numpy array with shape (num_grids,).
@@ -132,27 +143,7 @@ def get_xc_potential_up(density_up, density_down, xc_energy_density_fn, grids):
   Returns:
     Float numpy array with shape (num_grids,).
   """
-  return jax.grad(get_xc_energy, argnums=0)(
-    density_up, density_down, xc_energy_density_fn, grids) / utils.get_dx(grids)
-
-
-def get_xc_potential_down(density_up, density_down, xc_energy_density_fn,
-                          grids):
-  """Gets xc potential.
-
-  The xc potential is derived from xc_energy_density through automatic
-  differentiation.
-
-  Args:
-    density: Float numpy array with shape (num_grids,).
-    xc_energy_density_fn: function takes density and returns float numpy array
-        with shape (num_grids,).
-    grids: Float numpy array with shape (num_grids,).
-
-  Returns:
-    Float numpy array with shape (num_grids,).
-  """
-  return jax.grad(get_xc_energy, argnums=1)(
+  return jax.grad(get_xc_energy, argnums=grad_argnum)(
     density_up, density_down, xc_energy_density_fn, grids) / utils.get_dx(grids)
 
 
@@ -183,8 +174,8 @@ class KohnShamState(typing.NamedTuple):
   nuclear_charges: jnp.ndarray
   external_potential: jnp.ndarray
   grids: jnp.ndarray
-  num_electrons: ArrayLike
-  num_unpaired_electrons: ArrayLike
+  num_electrons: int
+  num_unpaired_electrons: int
   initial_densities: Optional[jnp.ndarray] = None
   initial_spin_densities: Optional[jnp.ndarray] = None
   xc_energy: Optional[ArrayLike] = None
@@ -192,6 +183,33 @@ class KohnShamState(typing.NamedTuple):
   hartree_potential: Optional[jnp.ndarray] = None
   xc_energy_density: Optional[jnp.ndarray] = None
   converged: Optional[ArrayLike] = False
+
+
+class KohnShamSpinState(typing.NamedTuple):
+  """A namedtuple containing the state of an Kohn-Sham iteration.
+
+  Attributes:
+    density_sigma: A spin density float numpy array with shape (num_grids,).
+    total_energy: Float, the total energy of Kohn-Sham calculation.
+    locations: A float numpy array with shape (num_nuclei,).
+    nuclear_charges: A float numpy array with shape (num_nuclei,).
+    external_potential: A float numpy array with shape (num_grids,).
+    grids: A float numpy array with shape (num_grids,).
+    num_electrons: Integer, the number of electrons in the system. The first
+        num_electrons states are occupied.
+    num_unpaired_electrons: Integer, the number of unpaired electrons in the
+        system. All unpaired electrons are defaulted to spin `up` by convention.
+    hartree_potential: A float numpy array with shape (num_grids,).
+    xc_potential: A float numpy array with shape (num_grids,).
+    xc_energy_density: A float numpy array with shape (num_grids,).
+    converged: Boolean, whether the state is converged.
+  """
+
+  num_electrons_sigma: int
+  grids: jnp.ndarray
+  ks_potential_sigma: jnp.ndarray
+  density_sigma: Optional[jnp.ndarray] = None
+  kinetic_energy_sigma: Optional[ArrayLike] = None
 
 
 def _flip_and_average_fn(fn, locations, grids):
@@ -242,67 +260,43 @@ def kohn_sham_iteration(
   density_up = (state.density + state.spin_density) / 2
   density_down = (state.density - state.spin_density) / 2
 
+  xc_potential_up, xc_potential_down = (
+    jnp.nan_to_num(get_xc_potential_sigma(0, density_up, density_down,
+                                          xc_energy_density_fn, state.grids)),
+    jnp.nan_to_num(get_xc_potential_sigma(1, density_up, density_down,
+                                          xc_energy_density_fn, state.grids))
+  )
 
-  # TODO: vmap up and down calculations..
-  # up -------------------
+  ks_potentials_sigma = jnp.array(
+    [hartree_potential + xc_potential_up + state.external_potential,
+     hartree_potential + xc_potential_down + state.external_potential])
+  num_electrons_sigma = jnp.array([num_up_electrons, num_down_electrons])
 
-  xc_potential_up = get_xc_potential_up(
-    density_up=density_up,
-    density_down=density_down,
-    xc_energy_density_fn=xc_energy_density_fn,
-    grids=state.grids)
-  # nan values may appear in regions where the density value is very small.
-  xc_potential_up = jnp.nan_to_num(xc_potential_up)
+  densities_sigma, total_eigen_energies_sigma = (
+    batch_solve_noninteracting_system(ks_potentials_sigma,
+                                      num_electrons_sigma, state.grids))
 
-  ks_potential_up = (hartree_potential + xc_potential_up +
-                     state.external_potential)
+  density = 0
+  spin_density = 0
+  kinetic_energy = 0
+  for i, (density_sigma, total_eigen_energy_sigma,
+          ks_potential_sigma) in enumerate(zip(densities_sigma,
+                                               total_eigen_energies_sigma,
+                                               ks_potentials_sigma)):
+    density += density_sigma
+    spin_density += (-1) ** (i) * density_sigma
+    kinetic_energy += (total_eigen_energy_sigma -
+                       scf.get_external_potential_energy(
+                         external_potential=ks_potential_sigma,
+                         density=density_sigma,
+                         grids=state.grids))
 
-  # Solve Kohn-Sham equation.
-  out_density_up, total_eigen_energies = solve_noninteracting_system(
-    external_potential=ks_potential_up,
-    num_electrons=num_up_electrons,
-    grids=state.grids)
-
-  # KS kinetic energy = total_eigen_energies - external_potential_energy
-  kinetic_energy_up = total_eigen_energies - scf.get_external_potential_energy(
-    external_potential=ks_potential_up,
-    density=out_density_up,
-    grids=state.grids)
-
-  # down -------------------
-
-  xc_potential_down = get_xc_potential_down(
-    density_up=density_up,
-    density_down=density_down,
-    xc_energy_density_fn=xc_energy_density_fn,
-    grids=state.grids)
-  # nan values may appear in regions where the density value is very small.
-  xc_potential_down = jnp.nan_to_num(xc_potential_down)
-
-  ks_potential_down = (hartree_potential + xc_potential_down +
-                     state.external_potential)
-
-  # Solve Kohn-Sham equation.
-  out_density_down, total_eigen_energies = solve_noninteracting_system(
-    external_potential=ks_potential_down,
-    num_electrons=num_down_electrons,
-    grids=state.grids)
-
-  # KS kinetic energy = total_eigen_energies - external_potential_energy
-  kinetic_energy_down = total_eigen_energies - scf.get_external_potential_energy(
-    external_potential=ks_potential_down,
-    density=density_down,
-    grids=state.grids)
-
-  density = out_density_up + out_density_down
-  spin_density = out_density_up - out_density_down
-  kinetic_energy = kinetic_energy_up + kinetic_energy_down
   xc_energy_density = xc_energy_density_fn(density, spin_density)
 
   # xc energy
   xc_energy = get_xc_energy(
-    density_up=out_density_up,
-    density_down=out_density_down,
+    density_up=densities_sigma[0],
+    density_down=densities_sigma[1],
     xc_energy_density_fn=xc_energy_density_fn,
     grids=state.grids)
 
