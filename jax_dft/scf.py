@@ -365,6 +365,9 @@ def kohn_sham_iteration(
     density=state.density,
     xc_energy_density_fn=xc_energy_density_fn,
     grids=state.grids)
+  # nan values may appear in regions where the density value is very small.
+  xc_potential = jnp.nan_to_num(xc_potential)
+
   ks_potential = hartree_potential + xc_potential + state.external_potential
   xc_energy_density = xc_energy_density_fn(state.density)
 
