@@ -106,7 +106,6 @@ class KohnShamState(typing.NamedTuple):
   xc_energy: Optional[ArrayLike] = None
   kinetic_energy: Optional[ArrayLike] = None
   hartree_potential: Optional[jnp.ndarray] = None
-  xc_potential: Optional[jnp.ndarray] = None
   xc_energy_density: Optional[jnp.ndarray] = None
   gap: Optional[ArrayLike] = None
   converged: Optional[ArrayLike] = False
@@ -205,7 +204,6 @@ def kohn_sham_iteration(
     density=density,
     total_energy=total_energy,
     hartree_potential=hartree_potential,
-    xc_potential=xc_potential,
     xc_energy=xc_energy,
     kinetic_energy=kinetic_energy,
     xc_energy_density=xc_energy_density,
