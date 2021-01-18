@@ -185,33 +185,6 @@ class KohnShamState(typing.NamedTuple):
   converged: Optional[ArrayLike] = False
 
 
-class KohnShamSpinState(typing.NamedTuple):
-  """A namedtuple containing the state of an Kohn-Sham iteration.
-
-  Attributes:
-    density_sigma: A spin density float numpy array with shape (num_grids,).
-    total_energy: Float, the total energy of Kohn-Sham calculation.
-    locations: A float numpy array with shape (num_nuclei,).
-    nuclear_charges: A float numpy array with shape (num_nuclei,).
-    external_potential: A float numpy array with shape (num_grids,).
-    grids: A float numpy array with shape (num_grids,).
-    num_electrons: Integer, the number of electrons in the system. The first
-        num_electrons states are occupied.
-    num_unpaired_electrons: Integer, the number of unpaired electrons in the
-        system. All unpaired electrons are defaulted to spin `up` by convention.
-    hartree_potential: A float numpy array with shape (num_grids,).
-    xc_potential: A float numpy array with shape (num_grids,).
-    xc_energy_density: A float numpy array with shape (num_grids,).
-    converged: Boolean, whether the state is converged.
-  """
-
-  num_electrons_sigma: int
-  grids: jnp.ndarray
-  ks_potential_sigma: jnp.ndarray
-  density_sigma: Optional[jnp.ndarray] = None
-  kinetic_energy_sigma: Optional[ArrayLike] = None
-
-
 def _flip_and_average_fn(fn, locations, grids):
   """Flips and averages a function at the center of the locations."""
 
