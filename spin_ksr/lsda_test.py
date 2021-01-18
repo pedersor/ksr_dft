@@ -6,6 +6,7 @@ from jax_dft import spin_scf
 from jax_dft import utils
 
 import matplotlib.pyplot as plt
+import time
 
 h = 0.08
 grids = np.arange(-256, 257) * h
@@ -17,6 +18,8 @@ num_unpaired_electrons = 1
 
 xc_energy_density_fn = tree_util.Partial(
         xc.get_lsda_xc_energy_density_fn(), params=None)
+
+start_time = time.time()
 
 lda_ksdft = spin_scf.kohn_sham(
   locations=locations,
@@ -35,7 +38,15 @@ lda_ksdft = spin_scf.kohn_sham(
   num_mixing_iterations=1,
   density_mse_converge_tolerance=-1)
 
+total_time = time.time() - start_time
+print(f'total time = {total_time}')
+
+print('total energies:')
 print(lda_ksdft.total_energy)
+print('kinetic energies:')
+print(lda_ksdft.kinetic_energy)
+print('xc energies:')
+print(lda_ksdft.xc_energy)
 
 plt.plot(grids, lda_ksdft.density[-1])
 
