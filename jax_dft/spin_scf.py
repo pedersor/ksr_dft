@@ -372,10 +372,6 @@ def kohn_sham(
       num_electrons=num_down_electrons,
       grids=grids)
 
-  plt.plot(grids, initial_density_up)
-  plt.plot(grids, initial_density_down)
-  plt.savefig('initial_density.pdf')
-  sys.exit()
 
   # Create initial state.
   state = KohnShamState(
