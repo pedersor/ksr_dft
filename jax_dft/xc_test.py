@@ -125,7 +125,7 @@ class XcTest(parameterized.TestCase):
   def test_get_lda_xc_energy_density_fn(self, params):
     # Different values of params shouldn't change the output of
     # lda_xc_energy_density_fn since params is a dummy argument.
-    lda_xc_energy_density_fn = xc.unpolarized_get_lda_xc_energy_density_fn()
+    lda_xc_energy_density_fn = xc.get_unpolarized_lda_xc_energy_density_fn()
     np.testing.assert_allclose(
         lda_xc_energy_density_fn(density=jnp.array([0., 1.]), params=params),
         [0., -0.406069], atol=1e-5)

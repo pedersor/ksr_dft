@@ -14,6 +14,7 @@ import sys
 
 ArrayLike = Union[float, bool, jnp.ndarray]
 
+
 @functools.partial(jax.jit)
 def _wavefunctions_to_density(num_electrons, wavefunctions, grids):
   """Converts wavefunctions to density."""
@@ -110,9 +111,10 @@ def get_xc_energy(density_up, density_down, xc_energy_density_fn, grids):
   """
   density = density_up + density_down
   spin_density = density_up - density_down
-  #spin_density = jnp.zeros(len(density))
+  # spin_density = jnp.zeros(len(density))
 
-  return jnp.dot(xc_energy_density_fn(density, spin_density), density) * utils.get_dx(grids)
+  return jnp.dot(
+    xc_energy_density_fn(density, spin_density), density) * utils.get_dx(grids)
 
 
 def get_xc_potential_up(density_up, density_down, xc_energy_density_fn, grids):
@@ -134,7 +136,8 @@ def get_xc_potential_up(density_up, density_down, xc_energy_density_fn, grids):
     density_up, density_down, xc_energy_density_fn, grids) / utils.get_dx(grids)
 
 
-def get_xc_potential_down(density_up, density_down, xc_energy_density_fn, grids):
+def get_xc_potential_down(density_up, density_down, xc_energy_density_fn,
+                          grids):
   """Gets xc potential.
 
   The xc potential is derived from xc_energy_density through automatic
@@ -235,37 +238,71 @@ def kohn_sham_iteration(
     interaction_fn=interaction_fn)
 
   num_down_electrons = (state.num_electrons - state.num_unpaired_electrons) // 2
-  num_up_electrons = state.num_down_electrons + state.num_unpaired_electrons
+  num_up_electrons = num_down_electrons + state.num_unpaired_electrons
   density_up = (state.density + state.spin_density) / 2
   density_down = (state.density - state.spin_density) / 2
 
 
+  # TODO: vmap up and down calculations..
+  # up -------------------
 
   xc_potential_up = get_xc_potential_up(
     density_up=density_up,
     density_down=density_down,
     xc_energy_density_fn=xc_energy_density_fn,
     grids=state.grids)
-  ks_potential = hartree_potential + xc_potential_up + state.external_potential
-  xc_energy_density = xc_energy_density_fn(state.density)
+  # nan values may appear in regions where the density value is very small.
+  xc_potential_up = jnp.nan_to_num(xc_potential_up)
+
+  ks_potential_up = (hartree_potential + xc_potential_up +
+                     state.external_potential)
 
   # Solve Kohn-Sham equation.
-  density, total_eigen_energies = solve_noninteracting_system(
-    external_potential=ks_potential,
-    num_electrons=num_electrons,
+  out_density_up, total_eigen_energies = solve_noninteracting_system(
+    external_potential=ks_potential_up,
+    num_electrons=num_up_electrons,
     grids=state.grids)
 
   # KS kinetic energy = total_eigen_energies - external_potential_energy
-  kinetic_energy = total_eigen_energies - scf.get_external_potential_energy(
-    external_potential=ks_potential,
-    density=density,
+  kinetic_energy_up = total_eigen_energies - scf.get_external_potential_energy(
+    external_potential=ks_potential_up,
+    density=out_density_up,
     grids=state.grids)
 
+  # down -------------------
 
+  xc_potential_down = get_xc_potential_down(
+    density_up=density_up,
+    density_down=density_down,
+    xc_energy_density_fn=xc_energy_density_fn,
+    grids=state.grids)
+  # nan values may appear in regions where the density value is very small.
+  xc_potential_down = jnp.nan_to_num(xc_potential_down)
+
+  ks_potential_down = (hartree_potential + xc_potential_down +
+                     state.external_potential)
+
+  # Solve Kohn-Sham equation.
+  out_density_down, total_eigen_energies = solve_noninteracting_system(
+    external_potential=ks_potential_down,
+    num_electrons=num_down_electrons,
+    grids=state.grids)
+
+  # KS kinetic energy = total_eigen_energies - external_potential_energy
+  kinetic_energy_down = total_eigen_energies - scf.get_external_potential_energy(
+    external_potential=ks_potential_down,
+    density=density_down,
+    grids=state.grids)
+
+  density = out_density_up + out_density_down
+  spin_density = out_density_up - out_density_down
+  kinetic_energy = kinetic_energy_up + kinetic_energy_down
+  xc_energy_density = xc_energy_density_fn(density, spin_density)
 
   # xc energy
   xc_energy = get_xc_energy(
-    density=density,
+    density_up=out_density_up,
+    density_down=out_density_down,
     xc_energy_density_fn=xc_energy_density_fn,
     grids=state.grids)
 
@@ -290,6 +327,7 @@ def kohn_sham_iteration(
 
   return state._replace(
     density=density,
+    spin_density=spin_density,
     total_energy=total_energy,
     hartree_potential=hartree_potential,
     xc_energy=xc_energy,
