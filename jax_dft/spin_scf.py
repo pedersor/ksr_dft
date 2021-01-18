@@ -109,12 +109,8 @@ def get_xc_energy(density_up, density_down, xc_energy_density_fn, grids):
     Float.
   """
   density = density_up + density_down
-  #spin_density = jnp.where(density == 0., 0.0,
-  #  jnp.absolute(density_up - density_down)/ density)
-
-  #spin_density = density_up - density_down
-  spin_density = jnp.zeros(len(density))
-
+  spin_density = density_up - density_down
+  #spin_density = jnp.zeros(len(density))
 
   return jnp.dot(xc_energy_density_fn(density, spin_density), density) * utils.get_dx(grids)
 
@@ -209,7 +205,6 @@ def _flip_and_average_fn(fn, locations, grids):
 
 def kohn_sham_iteration(
     state,
-    num_electrons,
     xc_energy_density_fn,
     interaction_fn,
     enforce_reflection_symmetry):
@@ -222,8 +217,6 @@ def kohn_sham_iteration(
 
   Args:
     state: KohnShamState.
-    num_electrons: Integer, the number of electrons in the system. The first
-        num_electrons states are occupid.
     xc_energy_density_fn: function takes density (num_grids,) and returns
         the energy density (num_grids,).
     interaction_fn: function takes displacements and returns
@@ -240,11 +233,20 @@ def kohn_sham_iteration(
     density=state.density,
     grids=state.grids,
     interaction_fn=interaction_fn)
-  xc_potential = get_xc_potential(
-    density=state.density,
+
+  num_down_electrons = (state.num_electrons - state.num_unpaired_electrons) // 2
+  num_up_electrons = state.num_down_electrons + state.num_unpaired_electrons
+  density_up = (state.density + state.spin_density) / 2
+  density_down = (state.density - state.spin_density) / 2
+
+
+
+  xc_potential_up = get_xc_potential_up(
+    density_up=density_up,
+    density_down=density_down,
     xc_energy_density_fn=xc_energy_density_fn,
     grids=state.grids)
-  ks_potential = hartree_potential + xc_potential + state.external_potential
+  ks_potential = hartree_potential + xc_potential_up + state.external_potential
   xc_energy_density = xc_energy_density_fn(state.density)
 
   # Solve Kohn-Sham equation.
@@ -258,6 +260,8 @@ def kohn_sham_iteration(
     external_potential=ks_potential,
     density=density,
     grids=state.grids)
+
+
 
   # xc energy
   xc_energy = get_xc_energy(
@@ -371,17 +375,21 @@ def kohn_sham(
       external_potential=external_potential,
       num_electrons=num_down_electrons,
       grids=grids)
-
+    initial_density = initial_density_up + initial_density_down
+    initial_spin_density = initial_density_up - initial_density_down
 
   # Create initial state.
   state = KohnShamState(
     density=initial_density,
+    spin_density=initial_spin_density,
     total_energy=jnp.inf,
     locations=locations,
     nuclear_charges=nuclear_charges,
     external_potential=external_potential,
     grids=grids,
-    num_electrons=num_electrons)
+    num_electrons=num_electrons,
+    num_unpaired_electrons=num_unpaired_electrons)
+
   states = []
   differences = None
   converged = False
@@ -393,7 +401,6 @@ def kohn_sham(
     old_state = state
     state = kohn_sham_iteration(
       state=old_state,
-      num_electrons=num_electrons,
       xc_energy_density_fn=xc_energy_density_fn,
       interaction_fn=interaction_fn,
       enforce_reflection_symmetry=enforce_reflection_symmetry)

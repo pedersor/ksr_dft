@@ -16,7 +16,7 @@ num_unpaired_electrons = 1
 
 
 xc_energy_density_fn = tree_util.Partial(
-        xc.get_lda_xc_energy_density_fn(), params=None)
+        xc.unpolarized_get_lda_xc_energy_density_fn(), params=None)
 
 lda_ksdft = spin_scf.kohn_sham(
   locations=locations,
