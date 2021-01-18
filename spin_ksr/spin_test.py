@@ -201,11 +201,11 @@ if __name__ == '__main__':
   plt.plot(grids, xc_energy_density)
 
 
-  xc_potential_up = spin_scf.get_xc_potential_up(
+  xc_potential_up = spin_scf.get_xc_potential_sigma(0,
     example_density_up, example_density_down,
     tree_util.Partial(neural_xc_energy_density_fn,params=init_params), grids)
 
-  xc_potential_down = spin_scf.get_xc_potential_down(
+  xc_potential_down = spin_scf.get_xc_potential_sigma(1,
     example_density_up, example_density_down,
     tree_util.Partial(neural_xc_energy_density_fn, params=init_params), grids)
 
@@ -213,4 +213,4 @@ if __name__ == '__main__':
   plt.plot(grids, xc_potential_down + 0.001)
 
 
-  plt.savefig('spin_test2.pdf')
+  plt.savefig('spin_test.pdf')
