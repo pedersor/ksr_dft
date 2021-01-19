@@ -1,5 +1,7 @@
 import os
 import numpy as np
+import sys
+sys.path.append('../')
 
 from jax import tree_util
 from jax_dft import xc
