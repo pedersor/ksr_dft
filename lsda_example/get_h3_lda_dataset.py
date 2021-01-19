@@ -3,7 +3,7 @@ import numpy as np
 
 from jax import tree_util
 from jax_dft import xc
-from jax_dft import spin_scf
+from jax_dft import scf
 from jax_dft import utils
 
 import matplotlib.pyplot as plt
@@ -18,11 +18,10 @@ num_samples = len(locations)
 distances = utils.compute_distances_between_nuclei(locations, (0,1))
 nuclear_charges = np.array([[1, 1, 1]]*num_samples)
 num_electrons = [3]*num_samples
-num_unpaired_electrons = [1]*num_samples
 
 # setup LSDA functional
 xc_energy_density_fn = tree_util.Partial(
-        xc.get_lsda_xc_energy_density_fn(), params=None)
+        xc.get_unpolarized_lda_xc_energy_density_fn(), params=None)
 
 total_energies = []
 densities = []
@@ -30,11 +29,10 @@ time_per_molecule = []
 for i in range(num_samples):
   start_time = time.time()
 
-  lsda_ksdft = spin_scf.kohn_sham(
+  lsda_ksdft = scf.kohn_sham(
     locations=locations[i],
     nuclear_charges=nuclear_charges[i],
     num_electrons=num_electrons[i],
-    num_unpaired_electrons=num_unpaired_electrons[i],
     num_iterations=30,
     grids=grids,
     xc_energy_density_fn=xc_energy_density_fn,
@@ -70,9 +68,9 @@ nuclear_energy = utils.get_nuclear_interaction_energy_batch(
 plt.plot(distances, total_energies + nuclear_energy)
 plt.xlabel(r'$R\,\,\mathrm{(Bohr)}$')
 plt.ylabel(r'$E+E_\mathrm{nn}\,\,\mathsf{(Hartree)}$')
-plt.savefig("lsda_h3_dissociation.pdf", bbox_inches='tight')
+plt.savefig("lda_h3_dissociation.pdf", bbox_inches='tight')
 
-out_dir = 'molecule_dissociation/h3/lsda/'
+out_dir = 'molecule_dissociation/h3/unpol_lda/'
 if not os.path.exists(out_dir):
   os.makedirs(out_dir)
 
@@ -82,5 +80,4 @@ np.save(os.path.join(out_dir, 'total_energies.npy'), total_energies)
 np.save(os.path.join(out_dir, 'densities.npy'), densities)
 np.save(os.path.join(out_dir, 'nuclear_charges.npy'), nuclear_charges)
 np.save(os.path.join(out_dir, 'num_electrons.npy'), num_electrons)
-np.save(os.path.join(out_dir, 'num_unpaired_electrons.npy'),
-        num_unpaired_electrons)
+

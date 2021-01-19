@@ -21,7 +21,7 @@ xc_energy_density_fn = tree_util.Partial(
 
 start_time = time.time()
 
-lda_ksdft = spin_scf.kohn_sham(
+lsda_ksdft = spin_scf.kohn_sham(
   locations=locations,
   nuclear_charges=nuclear_charges,
   num_electrons=num_electrons,
@@ -42,12 +42,12 @@ total_time = time.time() - start_time
 print(f'total time = {total_time}')
 
 print('total energies:')
-print(lda_ksdft.total_energy)
+print(lsda_ksdft.total_energy)
 print('kinetic energies:')
-print(lda_ksdft.kinetic_energy)
+print(lsda_ksdft.kinetic_energy)
 print('xc energies:')
-print(lda_ksdft.xc_energy)
+print(lsda_ksdft.xc_energy)
 
-plt.plot(grids, lda_ksdft.density[-1])
+plt.plot(grids, lsda_ksdft.density[-1])
 
 plt.savefig('lsda_ksdft.pdf')
