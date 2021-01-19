@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import sys
+
 sys.path.append('../')
 
 from jax import tree_util
@@ -17,13 +18,13 @@ grids = np.arange(-256, 257) * h
 locations = np.load('h3_locations.npy')
 num_samples = len(locations)
 
-distances = utils.compute_distances_between_nuclei(locations, (0,1))
-nuclear_charges = np.array([[1, 1, 1]]*num_samples)
-num_electrons = [3]*num_samples
+distances = utils.compute_distances_between_nuclei(locations, (0, 1))
+nuclear_charges = np.array([[1, 1, 1]] * num_samples)
+num_electrons = [3] * num_samples
 
 # setup LSDA functional
 xc_energy_density_fn = tree_util.Partial(
-        xc.get_unpolarized_lda_xc_energy_density_fn(), params=None)
+  xc.get_unpolarized_lda_xc_energy_density_fn(), params=None)
 
 total_energies = []
 densities = []
@@ -64,9 +65,9 @@ total_energies = np.asarray(total_energies)
 densities = np.asarray(densities)
 # dissociation plot results
 nuclear_energy = utils.get_nuclear_interaction_energy_batch(
-    locations,
-    nuclear_charges,
-    interaction_fn=utils.exponential_coulomb)
+  locations,
+  nuclear_charges,
+  interaction_fn=utils.exponential_coulomb)
 plt.plot(distances, total_energies + nuclear_energy)
 plt.xlabel(r'$R\,\,\mathrm{(Bohr)}$')
 plt.ylabel(r'$E+E_\mathrm{nn}\,\,\mathsf{(Hartree)}$')
@@ -82,4 +83,3 @@ np.save(os.path.join(out_dir, 'total_energies.npy'), total_energies)
 np.save(os.path.join(out_dir, 'densities.npy'), densities)
 np.save(os.path.join(out_dir, 'nuclear_charges.npy'), nuclear_charges)
 np.save(os.path.join(out_dir, 'num_electrons.npy'), num_electrons)
-
