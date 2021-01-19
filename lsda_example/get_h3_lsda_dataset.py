@@ -52,9 +52,8 @@ for i in range(num_samples):
     density_mse_converge_tolerance=-1)
 
   time_elapsed = time.time() - start_time
-  print(time_elapsed)
   time_per_molecule.append(time_elapsed)
-  if i == 0:
+  if i == 1:
     est_time_remain = time_elapsed * num_samples
     hours, rem = divmod(est_time_remain, 3600)
     minutes, seconds = divmod(rem, 60)
@@ -80,7 +79,7 @@ out_dir = 'molecule_dissociation/h3/lsda/'
 if not os.path.exists(out_dir):
   os.makedirs(out_dir)
 
-np.save(os.path.join(out_dir, 'time_per_molecule.npy'), time_per_molecule)
+np.save(os.path.join(out_dir, 'time_per_molecule_gpu.npy'), time_per_molecule)
 np.save(os.path.join(out_dir, 'locations.npy'), locations)
 np.save(os.path.join(out_dir, 'total_energies.npy'), total_energies)
 np.save(os.path.join(out_dir, 'densities.npy'), densities)
