@@ -32,7 +32,7 @@ time_per_molecule = []
 for i in range(num_samples):
   start_time = time.time()
 
-  lsda_ksdft = scf.kohn_sham(
+  lda_ksdft = scf.kohn_sham(
     locations=locations[i],
     nuclear_charges=nuclear_charges[i],
     num_electrons=num_electrons[i],
@@ -50,6 +50,7 @@ for i in range(num_samples):
     density_mse_converge_tolerance=-1)
 
   time_elapsed = time.time() - start_time
+  print(time_elapsed)
   time_per_molecule.append(time_elapsed)
   if i == 0:
     est_time_remain = time_elapsed * num_samples
@@ -58,8 +59,8 @@ for i in range(num_samples):
     print("Estimated time to complete: ")
     print("{:0>2}:{:0>2}:{:05.2f}".format(int(hours), int(minutes), seconds))
 
-  total_energies.append(lsda_ksdft.total_energy[-1])
-  densities.append(lsda_ksdft.density[-1])
+  total_energies.append(lda_ksdft.total_energy[-1])
+  densities.append(lda_ksdft.density[-1])
 
 total_energies = np.asarray(total_energies)
 densities = np.asarray(densities)

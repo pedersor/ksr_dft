@@ -52,6 +52,7 @@ for i in range(num_samples):
     density_mse_converge_tolerance=-1)
 
   time_elapsed = time.time() - start_time
+  print(time_elapsed)
   time_per_molecule.append(time_elapsed)
   if i == 0:
     est_time_remain = time_elapsed * num_samples
