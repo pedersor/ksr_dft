@@ -371,16 +371,12 @@ def kohn_sham(
   if initial_density is None and initial_spin_density is None:
     # Use the non-interacting solution from the external_potential as initial
     # guess.
-    initial_density_up, _ = solve_noninteracting_system(
-      external_potential=external_potential,
-      num_electrons=num_up_electrons,
-      grids=grids)
-    initial_density_down, _ = solve_noninteracting_system(
-      external_potential=external_potential,
-      num_electrons=num_down_electrons,
-      grids=grids)
-    initial_density = initial_density_up + initial_density_down
-    initial_spin_density = initial_density_up - initial_density_down
+    densities, _ = batch_solve_noninteracting_system(
+      jnp.array([external_potential, external_potential]),
+      jnp.array([num_up_electrons, num_down_electrons]), grids)
+
+    initial_density = jnp.sum(densities, axis=0)
+    initial_spin_density = jnp.subtract(*densities)
 
   # Create initial state.
   state = KohnShamState(
@@ -425,3 +421,32 @@ def kohn_sham(
     alpha *= alpha_decay
 
   return tree_util.tree_multimap(lambda *x: jnp.stack(x), *states)
+
+
+def get_initial_density(states, method):
+  """Gets initial density for Kohn-Sham calculation.
+
+  Args:
+    states: KohnShamState contains a batch of states.
+    method: String, the density initialization method.
+
+  Returns:
+    Float numpy array with shape (batch_size, num_grids).
+
+  Raises:
+    ValueError: If the initialization method is not exact or noninteracting.
+  """
+  #TODO: redo using batch_solve_noninteracting_system
+  # need to add dataset num_unpaired_electrons..
+  return NotImplementedError()
+
+  if method == 'exact':
+    return states.density
+  elif method == 'noninteracting':
+    solve = jax.vmap(solve_noninteracting_system, in_axes=(0, 0, None))
+    return solve(
+      states.external_potential,
+      states.num_electrons,
+      states.grids[0])[0]
+  else:
+    raise ValueError(f'Unknown initialization method {method}')

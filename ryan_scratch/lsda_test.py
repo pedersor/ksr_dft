@@ -1,5 +1,6 @@
 import numpy as np
 
+import jax.numpy as jnp
 from jax import tree_util
 from jax_dft import xc
 from jax_dft import spin_scf
@@ -16,8 +17,26 @@ num_electrons = 3
 num_unpaired_electrons = 1
 
 
+num_down_electrons = (num_electrons - num_unpaired_electrons) // 2
+num_up_electrons = num_down_electrons + num_unpaired_electrons
+
 xc_energy_density_fn = tree_util.Partial(
         xc.get_lsda_xc_energy_density_fn(), params=None)
+
+
+external_potential = utils.get_atomic_chain_potential(
+          grids=grids,
+          locations=locations,
+          nuclear_charges=nuclear_charges,
+          interaction_fn=utils.exponential_coulomb)
+
+densities, _ = spin_scf.batch_solve_noninteracting_system(
+jnp.array([external_potential, external_potential]),
+jnp.array([num_up_electrons, num_down_electrons]), grids)
+
+initial_density = jnp.sum(densities, axis=0)
+initial_spin_density = jnp.subtract(*densities)
+
 
 start_time = time.time()
 
@@ -31,7 +50,8 @@ lsda_ksdft = spin_scf.kohn_sham(
   xc_energy_density_fn=xc_energy_density_fn,
   interaction_fn=utils.exponential_coulomb,
   # The initial density of KS self-consistent calculations.
-  initial_density=None,
+  initial_density=initial_density,
+  initial_spin_density=initial_spin_density,
   alpha=0.7,
   alpha_decay=1.,
   enforce_reflection_symmetry=False,
