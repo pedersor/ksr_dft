@@ -78,7 +78,7 @@ out_dir = 'molecule_dissociation/h3/lsda/'
 if not os.path.exists(out_dir):
   os.makedirs(out_dir)
 
-np.save(os.path.join(out_dir, 'time_per_molecule.npy'), time_per_molecule)
+np.save(os.path.join(out_dir, 'time_per_molecule_gpu.npy'), time_per_molecule)
 np.save(os.path.join(out_dir, 'locations.npy'), locations)
 np.save(os.path.join(out_dir, 'total_energies.npy'), total_energies)
 np.save(os.path.join(out_dir, 'densities.npy'), densities)
