@@ -65,10 +65,10 @@ def _kohn_sham_iteration(
       density=density,
       grids=grids,
       interaction_fn=interaction_fn)
-  xc_potential = scf.get_xc_potential(
+  xc_potential = jnp.nan_to_num(scf.get_xc_potential(
       density=density,
       xc_energy_density_fn=xc_energy_density_fn,
-      grids=grids)
+      grids=grids))
   ks_potential = hartree_potential + xc_potential + external_potential
   xc_energy_density = xc_energy_density_fn(density)
 

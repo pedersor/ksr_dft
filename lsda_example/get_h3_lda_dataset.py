@@ -8,6 +8,7 @@ from jax import tree_util
 from jax_dft import xc
 from jax_dft import scf
 from jax_dft import utils
+from jax_dft import jit_scf
 
 import matplotlib.pyplot as plt
 import time
@@ -32,7 +33,18 @@ time_per_molecule = []
 for i in range(num_samples):
   start_time = time.time()
 
-  lda_ksdft = scf.kohn_sham(
+  external_potential = utils.get_atomic_chain_potential(
+    grids=grids,
+    locations=locations[i],
+    nuclear_charges=nuclear_charges[i],
+    interaction_fn=utils.exponential_coulomb)
+
+  initial_density, _, _ = scf.solve_noninteracting_system(external_potential,
+                                                          num_electrons[i],
+                                                          grids)
+
+
+  lda_ksdft = jit_scf.kohn_sham(
     locations=locations[i],
     nuclear_charges=nuclear_charges[i],
     num_electrons=num_electrons[i],
@@ -41,7 +53,7 @@ for i in range(num_samples):
     xc_energy_density_fn=xc_energy_density_fn,
     interaction_fn=utils.exponential_coulomb,
     # The initial density of KS self-consistent calculations.
-    initial_density=None,
+    initial_density=initial_density,
     alpha=0.5,
     alpha_decay=0.9,
     # reflection symmetry not supported yet in `spin_scf`

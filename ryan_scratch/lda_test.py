@@ -4,6 +4,7 @@ from jax import tree_util
 from jax_dft import xc
 from jax_dft import scf
 from jax_dft import utils
+from jax_dft import jit_scf
 
 import matplotlib.pyplot as plt
 
@@ -18,7 +19,16 @@ num_electrons = 3
 xc_energy_density_fn = tree_util.Partial(
         xc.get_unpolarized_lda_xc_energy_density_fn(), params=None)
 
-lda_ksdft = scf.kohn_sham(
+external_potential = utils.get_atomic_chain_potential(
+          grids=grids,
+          locations=locations,
+          nuclear_charges=nuclear_charges,
+          interaction_fn=utils.exponential_coulomb)
+
+initial_density, _, _ = scf.solve_noninteracting_system(external_potential, num_electrons,
+                                                  grids)
+
+lda_ksdft = jit_scf.kohn_sham(
   locations=locations,
   nuclear_charges=nuclear_charges,
   num_electrons=num_electrons,
@@ -27,7 +37,7 @@ lda_ksdft = scf.kohn_sham(
   xc_energy_density_fn=xc_energy_density_fn,
   interaction_fn=utils.exponential_coulomb,
   # The initial density of KS self-consistent calculations.
-  initial_density=None,
+  initial_density=initial_density,
   alpha=0.7,
   alpha_decay=1.,
   enforce_reflection_symmetry=False,
