@@ -24,6 +24,11 @@ from jax_dft import scf
 from jax_dft import utils
 from jax_dft import spin_scf
 
+# testing: to delete
+import matplotlib.pyplot as plt
+import sys
+import time
+
 def _flip_and_average_on_center(array):
   """Flips and averages array on the center."""
   return (array + jnp.flip(array)) / 2
@@ -179,7 +184,7 @@ def kohn_sham_iteration(
       gap=gap)
 
 
-@functools.partial(jax.jit, static_argnums=(3, 6, 8, 9, 10, 11, 12, 13))
+@functools.partial(jax.jit, static_argnums=(4, 7, 10, 11, 12, 13, 14, 15))
 def _kohn_sham(
     locations,
     nuclear_charges,
@@ -239,8 +244,9 @@ def _kohn_sham(
     return (idx + 1, state, alpha * alpha_decay, converged, differences), state
 
   # Create initial state.
-  state = scf.KohnShamState(
+  state = spin_scf.KohnShamState(
       density=initial_density,
+      spin_density=initial_spin_density,
       total_energy=jnp.inf,
       locations=locations,
       nuclear_charges=nuclear_charges,
@@ -251,14 +257,13 @@ def _kohn_sham(
           interaction_fn=interaction_fn),
       grids=grids,
       num_electrons=num_electrons,
+      num_unpaired_electrons=num_unpaired_electrons,
       # Add dummy fields so the input and output of lax.scan have the same type
       # structure.
       xc_energy=0.,
       kinetic_energy=0.,
       hartree_potential=jnp.zeros_like(grids),
-      xc_potential=jnp.zeros_like(grids),
       xc_energy_density=jnp.zeros_like(grids),
-      gap=0.,
       converged=False)
   # Initialize the density differences with all zeros since the carry in
   # lax.scan must keep the same shape.
