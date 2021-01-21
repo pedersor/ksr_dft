@@ -241,7 +241,7 @@ def get_external_potential_energy(external_potential, density, grids):
   """
   return jnp.dot(density, external_potential) * utils.get_dx(grids)
 
-
+@jax.jit
 def get_xc_energy(density, xc_energy_density_fn, grids):
   r"""Gets xc energy.
 
@@ -258,7 +258,7 @@ def get_xc_energy(density, xc_energy_density_fn, grids):
   """
   return jnp.dot(xc_energy_density_fn(density), density) * utils.get_dx(grids)
 
-
+@jax.jit
 def get_xc_potential(density, xc_energy_density_fn, grids):
   """Gets xc potential.
 
