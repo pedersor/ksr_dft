@@ -60,15 +60,19 @@ def _kohn_sham_iteration(
   # are used as input arguments for this helper function.
   if enforce_reflection_symmetry:
     xc_energy_density_fn = _flip_and_average_on_center_fn(xc_energy_density_fn)
+    xc_potential = jnp.nan_to_num(scf.get_xc_potential(density,
+                                                       xc_energy_density_fn,
+                                                       grids))
+  else:
+    # NOTE(Ryan): jitting `get_xc_potential` can be much faster but requires
+    # static xc_energy_density_fn which is violated if symmetry is turned on.
+    xc_potential = jnp.nan_to_num(jax.jit(scf.get_xc_potential,
+        static_argnums=1)(density, xc_energy_density_fn, grids))
 
   hartree_potential = scf.get_hartree_potential(
       density=density,
       grids=grids,
       interaction_fn=interaction_fn)
-  xc_potential = jnp.nan_to_num(scf.get_xc_potential(
-      density=density,
-      xc_energy_density_fn=xc_energy_density_fn,
-      grids=grids))
   ks_potential = hartree_potential + xc_potential + external_potential
   xc_energy_density = xc_energy_density_fn(density)
 

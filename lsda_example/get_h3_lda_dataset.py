@@ -44,7 +44,7 @@ for i in range(num_samples):
                                                           grids)
 
 
-  lda_ksdft = jit_scf.kohn_sham(
+  lda_ksdft = scf.kohn_sham(
     locations=locations[i],
     nuclear_charges=nuclear_charges[i],
     num_electrons=num_electrons[i],

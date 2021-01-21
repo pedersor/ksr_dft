@@ -28,7 +28,7 @@ external_potential = utils.get_atomic_chain_potential(
 initial_density, _, _ = scf.solve_noninteracting_system(external_potential, num_electrons,
                                                   grids)
 
-lda_ksdft = jit_scf.kohn_sham(
+lda_ksdft = scf.kohn_sham(
   locations=locations,
   nuclear_charges=nuclear_charges,
   num_electrons=num_electrons,

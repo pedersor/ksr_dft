@@ -98,9 +98,9 @@ def solve_noninteracting_system(external_potential, num_electrons, grids):
 
 def batch_solve_noninteracting_system(external_potential, num_electrons, grids):
 
-  return jax.vmap(solve_noninteracting_system, in_axes=(0, 0, None), out_axes=(0))(external_potential, num_electrons, grids)
+  return jax.vmap(solve_noninteracting_system, in_axes=(0, 0, None),
+                  out_axes=(0))(external_potential, num_electrons, grids)
 
-@jax.jit
 def get_xc_energy(densities, xc_energy_density_fn, grids):
   r"""Gets xc energy.
 
@@ -123,7 +123,7 @@ def get_xc_energy(densities, xc_energy_density_fn, grids):
   return jnp.dot(
     xc_energy_density_fn(density, spin_density), density) * utils.get_dx(grids)
 
-@jax.jit
+@functools.partial(jax.jit, static_argnums=1)
 def get_xc_potential_sigma(densities, xc_energy_density_fn, grids):
   """Gets xc potential.
 
@@ -220,7 +220,7 @@ def kohn_sham_iteration(
   Returns:
     KohnShamState, the next state of Kohn-Sham iteration.
   """
-  # TODO: enforce_reflection_symmetry for spin
+  # TODO: enforce_reflection_symmetry for spin?
 
   hartree_potential = scf.get_hartree_potential(
     density=state.density,

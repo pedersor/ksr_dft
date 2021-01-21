@@ -241,7 +241,7 @@ def get_external_potential_energy(external_potential, density, grids):
   """
   return jnp.dot(density, external_potential) * utils.get_dx(grids)
 
-@jax.jit
+
 def get_xc_energy(density, xc_energy_density_fn, grids):
   r"""Gets xc energy.
 
@@ -258,7 +258,7 @@ def get_xc_energy(density, xc_energy_density_fn, grids):
   """
   return jnp.dot(xc_energy_density_fn(density), density) * utils.get_dx(grids)
 
-@jax.jit
+
 def get_xc_potential(density, xc_energy_density_fn, grids):
   """Gets xc potential.
 
@@ -356,17 +356,22 @@ def kohn_sham_iteration(
   if enforce_reflection_symmetry:
     xc_energy_density_fn = _flip_and_average_fn(
       xc_energy_density_fn, locations=state.locations, grids=state.grids)
+    xc_potential = get_xc_potential(state.density,xc_energy_density_fn,
+                                                               state.grids)
+    # nan values may appear in regions where the density value is very small.
+    xc_potential = jnp.nan_to_num(xc_potential)
+  else:
+    # NOTE(Ryan): jitting `get_xc_potential` can be much faster but requires
+    # static xc_energy_density_fn which is violated if symmetry is turned on.
+    xc_potential = jax.jit(get_xc_potential, static_argnums=1)(state.density,
+                                             xc_energy_density_fn,state.grids)
+    # nan values may appear in regions where the density value is very small.
+    xc_potential = jnp.nan_to_num(xc_potential)
 
   hartree_potential = get_hartree_potential(
     density=state.density,
     grids=state.grids,
     interaction_fn=interaction_fn)
-  xc_potential = get_xc_potential(
-    density=state.density,
-    xc_energy_density_fn=xc_energy_density_fn,
-    grids=state.grids)
-  # nan values may appear in regions where the density value is very small.
-  xc_potential = jnp.nan_to_num(xc_potential)
 
   ks_potential = hartree_potential + xc_potential + state.external_potential
   xc_energy_density = xc_energy_density_fn(state.density)
@@ -572,10 +577,10 @@ def get_initial_density(states, method):
   if method == 'exact':
     return states.density
   elif method == 'noninteracting':
-    solve = jax.vmap(solve_noninteracting_system, in_axes=(0, None, None))
+    solve = jax.vmap(solve_noninteracting_system, in_axes=(0, 0, None))
     return solve(
       states.external_potential,
-      states.num_electrons[0],
+      states.num_electrons,
       states.grids[0])[0]
   else:
     raise ValueError(f'Unknown initialization method {method}')
