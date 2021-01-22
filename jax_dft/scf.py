@@ -439,22 +439,22 @@ def kohn_sham_iteration(
     density=density,
     total_energy=total_energy,
     hartree_potential=hartree_potential,
-    xc_potential=xc_potential,
     xc_energy=xc_energy,
     kinetic_energy=kinetic_energy,
-    xc_energy_density=xc_energy_density,
-    gap=gap)
+    xc_energy_density=xc_energy_density)
 
 
 def kohn_sham(
     locations,
     nuclear_charges,
     num_electrons,
+    num_unpaired_electrons,
     num_iterations,
     grids,
     xc_energy_density_fn,
     interaction_fn,
     initial_density=None,
+    initial_spin_density=None,
     alpha=0.5,
     alpha_decay=0.9,
     enforce_reflection_symmetry=False,
@@ -512,15 +512,19 @@ def kohn_sham(
       external_potential=external_potential,
       num_electrons=num_electrons,
       grids=grids)
+    initial_spin_density = 0.*initial_density
+
   # Create initial state.
   state = KohnShamState(
     density=initial_density,
+    spin_density=initial_spin_density,
     total_energy=jnp.inf,
     locations=locations,
     nuclear_charges=nuclear_charges,
     external_potential=external_potential,
     grids=grids,
-    num_electrons=num_electrons)
+    num_electrons=num_electrons,
+    num_unpaired_electrons=num_unpaired_electrons)
   states = []
   differences = None
   converged = False

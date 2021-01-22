@@ -7,6 +7,7 @@ from jax_dft import scf
 from jax_dft import spin_scf
 from jax_dft import utils
 from jax_dft import jit_spin_scf
+from jax_dft import jit_scf
 
 
 from jax.config import config
@@ -47,7 +48,7 @@ initial_spin_density = jnp.subtract(*densities)
 
 start_time = time.time()
 
-lsda_ksdft = jit_spin_scf.kohn_sham(
+lsda_ksdft = jit_scf.kohn_sham(
   locations=locations,
   nuclear_charges=nuclear_charges,
   num_electrons=num_electrons,
@@ -74,7 +75,3 @@ print('kinetic energies:')
 print(lsda_ksdft.kinetic_energy)
 print('xc energies:')
 print(lsda_ksdft.xc_energy)
-
-plt.plot(grids, lsda_ksdft.density[-1])
-
-plt.savefig('lsda_ksdft.pdf')
