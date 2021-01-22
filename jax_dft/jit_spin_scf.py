@@ -49,12 +49,14 @@ def _connection_weights(num_iterations, num_mixing_iterations):
   return mask / jnp.sum(mask, axis=1, keepdims=True)
 
 
-@functools.partial(jax.jit, static_argnums=(5, 6))
+@functools.partial(jax.jit, static_argnums=(7, 8))
 def _kohn_sham_iteration(
     density,
+    spin_density,
     external_potential,
     grids,
     num_electrons,
+    num_unpaired_electrons,
     xc_energy_density_fn,
     interaction_fn,
     enforce_reflection_symmetry):
@@ -63,41 +65,62 @@ def _kohn_sham_iteration(
   # static argument in jit function, this function can not directly take
   # KohnShamState as input arguments. The related attributes in KohnShamState
   # are used as input arguments for this helper function.
-  if enforce_reflection_symmetry:
-    xc_energy_density_fn = _flip_and_average_on_center_fn(xc_energy_density_fn)
-    xc_potential = jnp.nan_to_num(scf.get_xc_potential(density,
-                                                       xc_energy_density_fn,
-                                                       grids))
-  else:
-    # NOTE(Ryan): jitting `get_xc_potential` can be much faster but requires
-    # static xc_energy_density_fn which is violated if symmetry is turned on.
-    xc_potential = jnp.nan_to_num(jax.jit(scf.get_xc_potential,
-        static_argnums=1)(density, xc_energy_density_fn, grids))
+
+  #TODO: enforce_reflection_symmetry?
 
   hartree_potential = scf.get_hartree_potential(
       density=density,
       grids=grids,
       interaction_fn=interaction_fn)
-  ks_potential = hartree_potential + xc_potential + external_potential
-  xc_energy_density = xc_energy_density_fn(density)
 
-  # Solve Kohn-Sham equation.
-  density, total_eigen_energies, gap = scf.solve_noninteracting_system(
-      external_potential=ks_potential,
-      num_electrons=num_electrons,
-      grids=grids)
+  num_down_electrons = (num_electrons - num_unpaired_electrons) // 2
+  num_up_electrons = num_down_electrons + num_unpaired_electrons
+  density_up = (density + spin_density) / 2
+  density_down = (density - spin_density) / 2
+  densities = (density_up, density_down)
+
+  xc_potential_up, xc_potential_down = spin_scf.get_xc_potential_sigma(
+    densities, xc_energy_density_fn, grids)
+  xc_potential_up = jnp.nan_to_num(xc_potential_up) / utils.get_dx(grids)
+  xc_potential_down = jnp.nan_to_num(
+    xc_potential_down) / utils.get_dx(grids)
+
+  ks_potentials_sigma = jnp.array(
+    [hartree_potential + xc_potential_up + external_potential,
+     hartree_potential + xc_potential_down + external_potential])
+  num_electrons_sigma = jnp.array([num_up_electrons, num_down_electrons])
+
+  densities, total_eigen_energies_sigma = (
+    spin_scf.batch_solve_noninteracting_system(ks_potentials_sigma,
+      num_electrons_sigma, grids))
+
+
+  # new density and spin density
+  density = jnp.sum(densities, axis=0)
+  spin_density = jnp.subtract(*densities)
+
 
   # KS kinetic energy = total_eigen_energies - external_potential_energy
-  kinetic_energy = total_eigen_energies - scf.get_external_potential_energy(
-      external_potential=ks_potential,
-      density=density,
-      grids=grids)
+  kinetic_energy_up = (total_eigen_energies_sigma[0] -
+                     scf.get_external_potential_energy(
+                       external_potential=ks_potentials_sigma[0],
+                       density=densities[0],
+                       grids=grids))
+  kinetic_energy_down = (total_eigen_energies_sigma[1] -
+                       scf.get_external_potential_energy(
+                         external_potential=ks_potentials_sigma[1],
+                         density=densities[1],
+                         grids=grids))
+  kinetic_energy = kinetic_energy_up + kinetic_energy_down
+
+
+  xc_energy_density = xc_energy_density_fn(density, spin_density)
 
   # xc energy
-  xc_energy = scf.get_xc_energy(
-      density=density,
-      xc_energy_density_fn=xc_energy_density_fn,
-      grids=grids)
+  xc_energy = spin_scf.get_xc_energy_sigma(
+    tuple(densities),
+    xc_energy_density_fn=xc_energy_density_fn,
+    grids=grids)
 
   total_energy = (
       # kinetic energy
@@ -121,18 +144,16 @@ def _kohn_sham_iteration(
 
   return (
       density,
+      spin_density,
       total_energy,
       kinetic_energy,
       xc_energy,
       hartree_potential,
-      xc_potential,
-      xc_energy_density,
-      gap)
+      xc_energy_density)
 
 
 def kohn_sham_iteration(
     state,
-    num_electrons,
     xc_energy_density_fn,
     interaction_fn,
     enforce_reflection_symmetry):
@@ -159,29 +180,29 @@ def kohn_sham_iteration(
   """
   (
       density,
+      spin_density,
       total_energy,
       kinetic_energy,
       xc_energy,
       hartree_potential,
-      xc_potential,
-      xc_energy_density,
-      gap) = _kohn_sham_iteration(
+      xc_energy_density) = _kohn_sham_iteration(
           state.density,
+          state.spin_density,
           state.external_potential,
           state.grids,
-          num_electrons,
+          state.num_electrons,
+          state.num_unpaired_electrons,
           xc_energy_density_fn,
           interaction_fn,
           enforce_reflection_symmetry)
   return state._replace(
       density=density,
+      spin_density=spin_density,
       total_energy=total_energy,
       hartree_potential=hartree_potential,
       xc_energy=xc_energy,
       kinetic_energy=kinetic_energy,
-      xc_potential=xc_potential,
-      xc_energy_density=xc_energy_density,
-      gap=gap)
+      xc_energy_density=xc_energy_density)
 
 
 @functools.partial(jax.jit, static_argnums=(4, 7, 10, 11, 12, 13, 14, 15))
@@ -214,7 +235,6 @@ def _kohn_sham(
     idx, old_state, alpha, differences = idx_old_state_alpha_differences
     state = kohn_sham_iteration(
         state=old_state,
-        num_electrons=num_electrons,
         xc_energy_density_fn=xc_energy_density_fn,
         interaction_fn=interaction_fn,
         enforce_reflection_symmetry=enforce_reflection_symmetry)

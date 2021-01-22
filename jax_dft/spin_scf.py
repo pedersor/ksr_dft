@@ -97,7 +97,6 @@ def solve_noninteracting_system(external_potential, num_electrons, grids):
 
 
 def batch_solve_noninteracting_system(external_potential, num_electrons, grids):
-
   return jax.vmap(solve_noninteracting_system, in_axes=(0, 0, None),
                   out_axes=(0))(external_potential, num_electrons, grids)
 
@@ -237,7 +236,8 @@ def kohn_sham_iteration(
   densities = (density_up, density_down)
 
   xc_potential_up, xc_potential_down = get_xc_potential_sigma(densities,
-                        xc_energy_density_fn, state.grids)
+                                                              xc_energy_density_fn,
+                                                              state.grids)
   xc_potential_up = jnp.nan_to_num(xc_potential_up) / utils.get_dx(state.grids)
   xc_potential_down = jnp.nan_to_num(
     xc_potential_down) / utils.get_dx(state.grids)
@@ -439,7 +439,7 @@ def get_initial_density(states, method):
   Raises:
     ValueError: If the initialization method is not exact or noninteracting.
   """
-  #TODO: redo using batch_solve_noninteracting_system
+  # TODO: redo using batch_solve_noninteracting_system
   # need to add dataset num_unpaired_electrons..
   return NotImplementedError()
 
