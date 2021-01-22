@@ -3,12 +3,14 @@ import numpy as np
 import jax.numpy as jnp
 from jax import tree_util
 from jax_dft import xc
+from jax_dft import scf
 from jax_dft import spin_scf
 from jax_dft import utils
 from jax_dft import jit_spin_scf
 
 import matplotlib.pyplot as plt
 import time
+import sys
 
 h = 0.08
 grids = np.arange(-256, 257) * h

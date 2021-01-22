@@ -165,9 +165,7 @@ def get_unpolarized_lda_xc_energy_density_fn():
     return unpolarized_lda_xc_energy_density(density)
   return lda_xc_energy_density_fn
 
-
-
-
+@tree_util.Partial
 def exponential_coulomb_uniform_exchange_density(
     density,
     spin_density,
@@ -185,7 +183,7 @@ def exponential_coulomb_uniform_exchange_density(
 
   return e_x / density
 
-
+@tree_util.Partial
 def exponential_coulomb_uniform_correlation_density(
     density,
     spin_density,
@@ -217,10 +215,11 @@ def exponential_coulomb_uniform_correlation_density(
   e_c = unpol + (zeta ** 2) * (pol - unpol)
   return e_c / density
 
-
+@tree_util.Partial
 def lsda_xc_energy_density(density, spin_density):
   return (exponential_coulomb_uniform_exchange_density(density, spin_density)
     + exponential_coulomb_uniform_correlation_density(density, spin_density))
+
 
 def get_lsda_xc_energy_density_fn():
   """Gets lda_xc_energy_density() that takes a dummy params.
@@ -230,7 +229,8 @@ def get_lsda_xc_energy_density_fn():
       * density: Float numpy array with shape (num_grids,).
       * params: A dummy argument, not used.
   """
-  def lsda_xc_energy_density_fn(density, spin_density, params):
+  def lsda_xc_energy_density_fn(density, spin_density=0., params=None):
     del params
-    return lsda_xc_energy_density(density, spin_density)
+    return lsda_xc_energy_density(density, spin_density*jnp.ones(len(density)))
+
   return lsda_xc_energy_density_fn

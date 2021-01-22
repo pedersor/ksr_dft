@@ -101,7 +101,8 @@ def batch_solve_noninteracting_system(external_potential, num_electrons, grids):
   return jax.vmap(solve_noninteracting_system, in_axes=(0, 0, None),
                   out_axes=(0))(external_potential, num_electrons, grids)
 
-def get_xc_energy(densities, xc_energy_density_fn, grids):
+
+def get_xc_energy_sigma(densities, xc_energy_density_fn, grids):
   r"""Gets xc energy.
 
   E_xc = \int density * xc_energy_density_fn(density) dx.
@@ -121,7 +122,9 @@ def get_xc_energy(densities, xc_energy_density_fn, grids):
   # spin_density = jnp.zeros(len(density))
 
   return jnp.dot(
-    xc_energy_density_fn(density, spin_density), density) * utils.get_dx(grids)
+    xc_energy_density_fn(density, spin_density=spin_density), density
+  ) * utils.get_dx(grids)
+
 
 @functools.partial(jax.jit, static_argnums=1)
 def get_xc_potential_sigma(densities, xc_energy_density_fn, grids):
@@ -142,7 +145,7 @@ def get_xc_potential_sigma(densities, xc_energy_density_fn, grids):
     Float numpy array with shape (num_grids,).
   """
 
-  return jax.grad(get_xc_energy)(
+  return jax.grad(get_xc_energy_sigma)(
     densities, xc_energy_density_fn, grids)
 
 
@@ -267,7 +270,7 @@ def kohn_sham_iteration(
   xc_energy_density = xc_energy_density_fn(density, spin_density)
 
   # xc energy
-  xc_energy = get_xc_energy(
+  xc_energy = get_xc_energy_sigma(
     densities,
     xc_energy_density_fn=xc_energy_density_fn,
     grids=state.grids)
