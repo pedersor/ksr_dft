@@ -97,7 +97,7 @@ def _kohn_sham_iteration(
 
   # new density and spin density
   density = jnp.sum(densities, axis=0)
-  spin_density = jnp.subtract(*densities)
+  spin_density = jnp.squeeze(-1*jnp.diff(densities, axis=0))
 
 
   # KS kinetic energy = total_eigen_energies - external_potential_energy

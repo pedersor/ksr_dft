@@ -298,6 +298,24 @@ class KohnShamState(typing.NamedTuple):
   """
 
   density: jnp.ndarray
+  spin_density: jnp.ndarray
+  total_energy: ArrayLike
+  locations: jnp.ndarray
+  nuclear_charges: jnp.ndarray
+  external_potential: jnp.ndarray
+  grids: jnp.ndarray
+  num_electrons: int
+  num_unpaired_electrons: int
+  initial_densities: Optional[jnp.ndarray] = None
+  initial_spin_densities: Optional[jnp.ndarray] = None
+  xc_energy: Optional[ArrayLike] = None
+  kinetic_energy: Optional[ArrayLike] = None
+  hartree_potential: Optional[jnp.ndarray] = None
+  xc_energy_density: Optional[jnp.ndarray] = None
+  converged: Optional[ArrayLike] = False
+
+  '''
+  density: jnp.ndarray
   total_energy: ArrayLike
   locations: jnp.ndarray
   nuclear_charges: jnp.ndarray
@@ -305,6 +323,7 @@ class KohnShamState(typing.NamedTuple):
   grids: jnp.ndarray
   num_electrons: ArrayLike
   initial_densities: Optional[jnp.ndarray] = None
+  initial_spin_densities: Optional[jnp.ndarray] = None
   xc_energy: Optional[ArrayLike] = None
   kinetic_energy: Optional[ArrayLike] = None
   hartree_potential: Optional[jnp.ndarray] = None
@@ -312,6 +331,7 @@ class KohnShamState(typing.NamedTuple):
   xc_energy_density: Optional[jnp.ndarray] = None
   gap: Optional[ArrayLike] = None
   converged: Optional[ArrayLike] = False
+  '''
 
 
 def _flip_and_average_fn(fn, locations, grids):

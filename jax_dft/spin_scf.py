@@ -379,7 +379,7 @@ def kohn_sham(
       jnp.array([num_up_electrons, num_down_electrons]), grids)
 
     initial_density = jnp.sum(densities, axis=0)
-    initial_spin_density = jnp.subtract(*densities)
+    initial_spin_density = jnp.squeeze(-1*jnp.diff(densities, axis=0))
 
   # Create initial state.
   state = KohnShamState(
@@ -426,7 +426,7 @@ def kohn_sham(
   return tree_util.tree_multimap(lambda *x: jnp.stack(x), *states)
 
 
-def get_initial_density(states, method):
+def get_initial_density_sigma(states, method):
   """Gets initial density for Kohn-Sham calculation.
 
   Args:
@@ -439,16 +439,15 @@ def get_initial_density(states, method):
   Raises:
     ValueError: If the initialization method is not exact or noninteracting.
   """
-  # TODO: redo using batch_solve_noninteracting_system
-  # need to add dataset num_unpaired_electrons..
-  return NotImplementedError()
 
   if method == 'exact':
-    return states.density
+    # TODO: implement
+    raise NotImplementedError()
   elif method == 'noninteracting':
-    solve = jax.vmap(solve_noninteracting_system, in_axes=(0, 0, None))
+    solve = jax.vmap(batch_solve_noninteracting_system, in_axes=(0, 0, None))
     return solve(
       states.external_potential,
+      # TODO: dataset..
       states.num_electrons,
       states.grids[0])[0]
   else:

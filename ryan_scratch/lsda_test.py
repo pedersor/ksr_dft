@@ -8,6 +8,10 @@ from jax_dft import spin_scf
 from jax_dft import utils
 from jax_dft import jit_spin_scf
 
+
+from jax.config import config
+config.update('jax_disable_jit', False)
+
 import matplotlib.pyplot as plt
 import time
 import sys
