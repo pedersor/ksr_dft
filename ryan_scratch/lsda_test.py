@@ -48,7 +48,7 @@ initial_spin_density = jnp.subtract(*densities)
 
 start_time = time.time()
 
-lsda_ksdft = jit_scf.kohn_sham(
+lsda_ksdft = jit_spin_scf.kohn_sham(
   locations=locations,
   nuclear_charges=nuclear_charges,
   num_electrons=num_electrons,

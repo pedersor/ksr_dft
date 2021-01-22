@@ -148,44 +148,6 @@ def get_xc_potential_sigma(densities, xc_energy_density_fn, grids):
     densities, xc_energy_density_fn, grids)
 
 
-class KohnShamState(typing.NamedTuple):
-  """A namedtuple containing the state of an Kohn-Sham iteration.
-
-  Attributes:
-    density: A float numpy array with shape (num_grids,).
-    total_energy: Float, the total energy of Kohn-Sham calculation.
-    locations: A float numpy array with shape (num_nuclei,).
-    nuclear_charges: A float numpy array with shape (num_nuclei,).
-    external_potential: A float numpy array with shape (num_grids,).
-    grids: A float numpy array with shape (num_grids,).
-    num_electrons: Integer, the number of electrons in the system. The first
-        num_electrons states are occupied.
-    num_unpaired_electrons: Integer, the number of unpaired electrons in the
-        system. All unpaired electrons are defaulted to spin `up` by convention.
-    hartree_potential: A float numpy array with shape (num_grids,).
-    xc_potential: A float numpy array with shape (num_grids,).
-    xc_energy_density: A float numpy array with shape (num_grids,).
-    converged: Boolean, whether the state is converged.
-  """
-
-  density: jnp.ndarray
-  spin_density: jnp.ndarray
-  total_energy: ArrayLike
-  locations: jnp.ndarray
-  nuclear_charges: jnp.ndarray
-  external_potential: jnp.ndarray
-  grids: jnp.ndarray
-  num_electrons: int
-  num_unpaired_electrons: int
-  initial_densities: Optional[jnp.ndarray] = None
-  initial_spin_densities: Optional[jnp.ndarray] = None
-  xc_energy: Optional[ArrayLike] = None
-  kinetic_energy: Optional[ArrayLike] = None
-  hartree_potential: Optional[jnp.ndarray] = None
-  xc_energy_density: Optional[jnp.ndarray] = None
-  converged: Optional[ArrayLike] = False
-
-
 def _flip_and_average_fn(fn, locations, grids):
   """Flips and averages a function at the center of the locations."""
 
@@ -382,7 +344,7 @@ def kohn_sham(
     initial_spin_density = jnp.squeeze(-1*jnp.diff(densities, axis=0))
 
   # Create initial state.
-  state = KohnShamState(
+  state = scf.KohnShamState(
     density=initial_density,
     spin_density=initial_spin_density,
     total_energy=jnp.inf,

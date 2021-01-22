@@ -264,7 +264,7 @@ def _kohn_sham(
     return (idx + 1, state, alpha * alpha_decay, converged, differences), state
 
   # Create initial state.
-  state = spin_scf.KohnShamState(
+  state = scf.KohnShamState(
       density=initial_density,
       spin_density=initial_spin_density,
       total_energy=jnp.inf,

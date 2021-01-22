@@ -69,6 +69,7 @@ def kohn_sham(locations, nuclear_charges,
 def _kohn_sham(locations, nuclear_charges, initial_densities,
                initial_spin_densities, num_electrons, num_unpaired_electrons):
 
+
   return jax.lax.cond(num_unpaired_electrons == 0,
     lambda _: jit_scf.kohn_sham(
       locations=locations,
@@ -108,7 +109,11 @@ def _kohn_sham(locations, nuclear_charges, initial_densities,
       stop_gradient_step=-1),
      operand=None)
 
+
+start_time = time.time()
 res = kohn_sham(locations, nuclear_charges, initial_densities,
                 initial_spin_densities, num_electrons, num_unpaired_electrons)
-
+print(f'total time: {time.time() - start_time}')
 print(res.total_energy)
+
+
