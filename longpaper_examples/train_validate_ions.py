@@ -130,6 +130,7 @@ class Train_validate_ions(object):
       locations=locations,
       nuclear_charges=nuclear_charges,
       num_electrons=num_electrons,
+      num_unpaired_electrons=None,
       grids=self.grids,
       xc_energy_density_fn=tree_util.Partial(
         self.neural_xc_energy_density_fn,
@@ -137,6 +138,7 @@ class Train_validate_ions(object):
       interaction_fn=utils.exponential_coulomb,
       # The initial density of KS self-consistent calculations.
       initial_density=initial_densities,
+      initial_spin_density=None,
       num_iterations=self.ks_params['num_iterations'],
       alpha=self.ks_params['alpha'],
       alpha_decay=self.ks_params['alpha_decay'],

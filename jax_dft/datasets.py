@@ -175,8 +175,17 @@ class Dataset(object):
     mask = self.get_mask(selected_distance_x100)
     num_samples = np.sum(mask)
 
+    if hasattr(self, 'spin_densities') and hasattr(
+        self, 'num_unpaired_electrons'):
+        spin_densities = self.spin_densities[mask]
+        num_unpaired_electrons = self.num_unpaired_electrons[mask]
+    else:
+        spin_densities = np.repeat(None, repeats=num_samples)
+        num_unpaired_electrons = np.repeat(None, repeats=num_samples)
+
     return scf.KohnShamState(
         density=self.densities[mask],
+        spin_density=spin_densities,
         total_energy=self.total_energies[mask],
         locations=self.locations[mask],
         nuclear_charges=self.nuclear_charges[mask],
@@ -184,6 +193,7 @@ class Dataset(object):
         grids=np.tile(
             np.expand_dims(self.grids, axis=0), reps=(num_samples, 1)),
         num_electrons=np.repeat(self.num_electrons, repeats=num_samples),
+        num_unpaired_electrons=num_unpaired_electrons,
         converged=np.repeat(True, repeats=num_samples),
         )
 
@@ -226,8 +236,17 @@ class Dataset(object):
     mask = self.get_mask_ions(selected_ions)
     num_samples = np.sum(mask)
 
+    if hasattr(self, 'spin_densities') and hasattr(
+        self, 'num_unpaired_electrons'):
+        spin_densities = self.spin_densities[mask]
+        num_unpaired_electrons = self.num_unpaired_electrons[mask]
+    else:
+        spin_densities = np.repeat(None, repeats=num_samples)
+        num_unpaired_electrons = np.repeat(None, repeats=num_samples)
+
     return scf.KohnShamState(
         density=self.densities[mask],
+        spin_density= spin_densities,
         total_energy=self.total_energies[mask],
         locations=self.locations[mask],
         nuclear_charges=self.nuclear_charges[mask],
@@ -235,5 +254,6 @@ class Dataset(object):
         grids=np.tile(
             np.expand_dims(self.grids, axis=0), reps=(num_samples, 1)),
         num_electrons=self.num_electrons[mask],
+        num_unpaired_electrons=num_unpaired_electrons,
         converged=np.repeat(True, repeats=num_samples),
         )
