@@ -298,14 +298,14 @@ class KohnShamState(typing.NamedTuple):
   """
 
   density: jnp.ndarray
-  spin_density: jnp.ndarray
   total_energy: ArrayLike
   locations: jnp.ndarray
   nuclear_charges: jnp.ndarray
   external_potential: jnp.ndarray
   grids: jnp.ndarray
   num_electrons: int
-  num_unpaired_electrons: int
+  num_unpaired_electrons: Optional[int] = None
+  spin_density: Optional[jnp.ndarray] = None
   initial_densities: Optional[jnp.ndarray] = None
   initial_spin_densities: Optional[jnp.ndarray] = None
   xc_energy: Optional[ArrayLike] = None
@@ -313,25 +313,6 @@ class KohnShamState(typing.NamedTuple):
   hartree_potential: Optional[jnp.ndarray] = None
   xc_energy_density: Optional[jnp.ndarray] = None
   converged: Optional[ArrayLike] = False
-
-  '''
-  density: jnp.ndarray
-  total_energy: ArrayLike
-  locations: jnp.ndarray
-  nuclear_charges: jnp.ndarray
-  external_potential: jnp.ndarray
-  grids: jnp.ndarray
-  num_electrons: ArrayLike
-  initial_densities: Optional[jnp.ndarray] = None
-  initial_spin_densities: Optional[jnp.ndarray] = None
-  xc_energy: Optional[ArrayLike] = None
-  kinetic_energy: Optional[ArrayLike] = None
-  hartree_potential: Optional[jnp.ndarray] = None
-  xc_potential: Optional[jnp.ndarray] = None
-  xc_energy_density: Optional[jnp.ndarray] = None
-  gap: Optional[ArrayLike] = None
-  converged: Optional[ArrayLike] = False
-  '''
 
 
 def _flip_and_average_fn(fn, locations, grids):
@@ -448,13 +429,11 @@ def kohn_sham(
     locations,
     nuclear_charges,
     num_electrons,
-    num_unpaired_electrons,
     num_iterations,
     grids,
     xc_energy_density_fn,
     interaction_fn,
     initial_density=None,
-    initial_spin_density=None,
     alpha=0.5,
     alpha_decay=0.9,
     enforce_reflection_symmetry=False,
@@ -512,19 +491,16 @@ def kohn_sham(
       external_potential=external_potential,
       num_electrons=num_electrons,
       grids=grids)
-    initial_spin_density = 0.*initial_density
 
   # Create initial state.
   state = KohnShamState(
     density=initial_density,
-    spin_density=initial_spin_density,
     total_energy=jnp.inf,
     locations=locations,
     nuclear_charges=nuclear_charges,
     external_potential=external_potential,
     grids=grids,
-    num_electrons=num_electrons,
-    num_unpaired_electrons=num_unpaired_electrons)
+    num_electrons=num_electrons)
   states = []
   differences = None
   converged = False

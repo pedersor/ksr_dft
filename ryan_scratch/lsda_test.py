@@ -48,18 +48,18 @@ initial_spin_density = jnp.subtract(*densities)
 
 start_time = time.time()
 
-lsda_ksdft = jit_spin_scf.kohn_sham(
+lsda_ksdft = scf.kohn_sham(
   locations=locations,
   nuclear_charges=nuclear_charges,
   num_electrons=num_electrons,
-  num_unpaired_electrons=num_unpaired_electrons,
+  #num_unpaired_electrons=num_unpaired_electrons,
   num_iterations=15,
   grids=grids,
   xc_energy_density_fn=xc_energy_density_fn,
   interaction_fn=utils.exponential_coulomb,
   # The initial density of KS self-consistent calculations.
   initial_density=initial_density,
-  initial_spin_density=initial_spin_density,
+  #initial_spin_density=initial_spin_density,
   alpha=0.7,
   alpha_decay=1.,
   enforce_reflection_symmetry=False,
