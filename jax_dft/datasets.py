@@ -175,13 +175,15 @@ class Dataset(object):
     mask = self.get_mask(selected_distance_x100)
     num_samples = np.sum(mask)
 
-    if hasattr(self, 'spin_densities') and hasattr(
-        self, 'num_unpaired_electrons'):
-        spin_densities = self.spin_densities[mask]
+    if hasattr(self, 'num_unpaired_electrons'):
         num_unpaired_electrons = self.num_unpaired_electrons[mask]
     else:
-        spin_densities = np.repeat(None, repeats=num_samples)
         num_unpaired_electrons = np.repeat(None, repeats=num_samples)
+
+    if hasattr(self, 'spin_densities'):
+        spin_densities = self.spin_densities[mask]
+    else:
+        spin_densities = np.repeat(None, repeats=num_samples)
 
     return scf.KohnShamState(
         density=self.densities[mask],
@@ -236,13 +238,15 @@ class Dataset(object):
     mask = self.get_mask_ions(selected_ions)
     num_samples = np.sum(mask)
 
-    if hasattr(self, 'spin_densities') and hasattr(
-        self, 'num_unpaired_electrons'):
-        spin_densities = self.spin_densities[mask]
-        num_unpaired_electrons = self.num_unpaired_electrons[mask]
+    if hasattr(self, 'num_unpaired_electrons'):
+      num_unpaired_electrons = self.num_unpaired_electrons[mask]
     else:
-        spin_densities = np.repeat(None, repeats=num_samples)
-        num_unpaired_electrons = np.repeat(None, repeats=num_samples)
+      num_unpaired_electrons = np.repeat(None, repeats=num_samples)
+
+    if hasattr(self, 'spin_densities'):
+      spin_densities = self.spin_densities[mask]
+    else:
+      spin_densities = np.repeat(None, repeats=num_samples)
 
     return scf.KohnShamState(
         density=self.densities[mask],
