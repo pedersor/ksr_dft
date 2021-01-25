@@ -20,6 +20,7 @@ from jax_dft import np_utils
 from jax_dft import spin_scf
 from jax_dft import utils
 from jax_dft import xc
+from jax_dft import jit_spin_scf
 
 # Set the default dtype as float64
 config.update('jax_enable_x64', True)
@@ -50,7 +51,7 @@ class Train_ions(object):
     # obtain initial densities and spin densities
     initial_densities, initial_spin_densities = (
       spin_scf.get_initial_density_sigma(
-      training_set, method='noninteracting'))
+        training_set, method='noninteracting'))
     self.training_set = training_set._replace(
       initial_densities=initial_densities,
       initial_spin_densities=initial_spin_densities)
@@ -122,36 +123,57 @@ class Train_ions(object):
     self.ks_params = kwargs
     return self
 
-  @partial(jax.vmap, in_axes=(None, None, 0, 0, 0, 0))
-  def _kohn_sham(self, params, locations, nuclear_charges,
-                 initial_densities, num_electrons):
-    return jit_scf.kohn_sham(
-      locations=locations,
-      nuclear_charges=nuclear_charges,
-      num_electrons=num_electrons,
-      num_unpaired_electrons=None,
-      grids=self.grids,
-      xc_energy_density_fn=tree_util.Partial(
-        self.neural_xc_energy_density_fn,
-        params=params),
-      interaction_fn=utils.exponential_coulomb,
-      # The initial density of KS self-consistent calculations.
-      initial_density=initial_densities,
-      initial_spin_density=None,
-      num_iterations=self.ks_params['num_iterations'],
-      alpha=self.ks_params['alpha'],
-      alpha_decay=self.ks_params['alpha_decay'],
-      enforce_reflection_symmetry=self.ks_params['enforce_reflection_symmetry'],
-      num_mixing_iterations=self.ks_params['num_mixing_iterations'],
-      density_mse_converge_tolerance=self.ks_params[
-        'density_mse_converge_tolerance'],
-      stop_gradient_step=self.ks_params['stop_gradient_step'])
+  #@partial(jax.jit, static_argnums=0)
+  def kohn_sham(self, params, locations, nuclear_charges, initial_densities,
+                initial_spin_densities, num_electrons,
+                num_unpaired_electrons):
+    return self._kohn_sham(params, locations, nuclear_charges,
+                           initial_densities, initial_spin_densities,
+                           num_electrons, num_unpaired_electrons)
 
-  def kohn_sham(self, params, locations, nuclear_charges,
-                initial_densities, num_electrons):
-    return self._kohn_sham(params, locations,
-                           nuclear_charges,
-                           initial_densities, num_electrons)
+  @partial(jax.vmap, in_axes=(None, None, 0, 0, 0, 0, 0, 0))
+  def _kohn_sham(self, params, locations, nuclear_charges, initial_densities,
+                 initial_spin_densities, num_electrons, num_unpaired_electrons):
+    return jax.lax.cond(
+      num_unpaired_electrons == 0,
+      true_fun=lambda _: jit_scf.kohn_sham(
+        locations=locations,
+        nuclear_charges=nuclear_charges,
+        num_electrons=num_electrons,
+        num_unpaired_electrons=num_unpaired_electrons,
+        grids=self.grids,
+        xc_energy_density_fn=tree_util.Partial(
+          xc.get_lsda_xc_energy_density_fn(), params=params),
+        interaction_fn=utils.exponential_coulomb,
+        initial_density=initial_densities,
+        initial_spin_density=initial_spin_densities,
+        num_iterations=15,
+        alpha=0.5,
+        alpha_decay=0.9,
+        enforce_reflection_symmetry=False,
+        num_mixing_iterations=1,
+        density_mse_converge_tolerance=-1,
+        stop_gradient_step=-1),
+      false_fun=lambda _: jit_spin_scf.kohn_sham(
+        locations=locations,
+        nuclear_charges=nuclear_charges,
+        num_electrons=num_electrons,
+        num_unpaired_electrons=num_unpaired_electrons,
+        grids=self.grids,
+        xc_energy_density_fn=tree_util.Partial(
+          xc.get_lsda_xc_energy_density_fn(), params=None),
+        interaction_fn=utils.exponential_coulomb,
+        initial_density=initial_densities,
+        initial_spin_density=initial_spin_densities,
+        num_iterations=15,
+        alpha=0.5,
+        alpha_decay=0.9,
+        enforce_reflection_symmetry=False,
+        num_mixing_iterations=1,
+        density_mse_converge_tolerance=-1,
+        stop_gradient_step=-1),
+      operand=None
+    )
 
   def loss_fn(self, flatten_params):
     """Get losses."""
@@ -159,7 +181,9 @@ class Train_ions(object):
     states = self.kohn_sham(params, self.training_set.locations,
                             self.training_set.nuclear_charges,
                             self.training_set.initial_densities,
-                            self.training_set.num_electrons)
+                            self.training_set.initial_spin_densities,
+                            self.training_set.num_electrons,
+                            self.training_set.num_unpaired_electrons)
     # Energy loss
     loss_value = losses.trajectory_mse(
       target=self.training_set.total_energy,
@@ -286,7 +310,9 @@ class Train_ions(object):
       locations=self.test_set.locations,
       nuclear_charges=self.test_set.nuclear_charges,
       initial_densities=self.test_set.initial_densities,
-      num_electrons=self.test_set.num_electrons)
+      initial_spin_densities=self.test_set.initial_spin_densities,
+      num_electrons=self.test_set.num_electrons,
+      num_unpaired_electrons=self.test_set.num_unpaired_electrons)
     return states
 
   def get_final_test_states(self, optimal_ckpt_path=None):
@@ -304,7 +330,9 @@ class Train_ions(object):
       locations=self.validation_set.locations,
       nuclear_charges=self.validation_set.nuclear_charges,
       initial_densities=self.validation_set.initial_densities,
-      num_electrons=self.validation_set.num_electrons)
+      initial_spin_densities=self.test_set.initial_spin_densities,
+      num_electrons=self.test_set.num_electrons,
+      num_unpaired_electrons=self.test_set.num_unpaired_electrons)
     return params, states
 
   def get_optimal_ckpt(self, path_to_ckpts):
@@ -416,7 +444,6 @@ if __name__ == '__main__':
   trainer.do_lbfgs_optimization(verbose=1)
 
   sys.exit()
-
 
   ## Validate Ions
 
