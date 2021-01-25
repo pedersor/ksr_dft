@@ -67,7 +67,7 @@ class Train_ions(object):
       num_filters_list=[16, 16, 16],
       activation='swish')
 
-    init_fn, neural_xc_energy_density_fn = neural_xc.global_functional(
+    init_fn, neural_xc_energy_density_fn = neural_xc.global_functional_sigma(
       network, grids=self.grids)
     self.neural_xc_energy_density_fn = neural_xc_energy_density_fn
 
@@ -123,7 +123,7 @@ class Train_ions(object):
     self.ks_params = kwargs
     return self
 
-  #@partial(jax.jit, static_argnums=0)
+  @partial(jax.jit, static_argnums=0)
   def kohn_sham(self, params, locations, nuclear_charges, initial_densities,
                 initial_spin_densities, num_electrons,
                 num_unpaired_electrons):
@@ -143,7 +143,7 @@ class Train_ions(object):
         num_unpaired_electrons=num_unpaired_electrons,
         grids=self.grids,
         xc_energy_density_fn=tree_util.Partial(
-          xc.get_lsda_xc_energy_density_fn(), params=params),
+          self.neural_xc_energy_density_fn, params=params),
         interaction_fn=utils.exponential_coulomb,
         initial_density=initial_densities,
         initial_spin_density=initial_spin_densities,
@@ -161,7 +161,7 @@ class Train_ions(object):
         num_unpaired_electrons=num_unpaired_electrons,
         grids=self.grids,
         xc_energy_density_fn=tree_util.Partial(
-          xc.get_lsda_xc_energy_density_fn(), params=None),
+          self.neural_xc_energy_density_fn, params=params),
         interaction_fn=utils.exponential_coulomb,
         initial_density=initial_densities,
         initial_spin_density=initial_spin_densities,

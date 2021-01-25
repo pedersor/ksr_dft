@@ -114,7 +114,7 @@ def _kohn_sham_iteration(
   kinetic_energy = kinetic_energy_up + kinetic_energy_down
 
 
-  xc_energy_density = xc_energy_density_fn(density, spin_density)
+  xc_energy_density = xc_energy_density_fn(density, spin_density=spin_density)
 
   # xc energy
   xc_energy = spin_scf.get_xc_energy_sigma(

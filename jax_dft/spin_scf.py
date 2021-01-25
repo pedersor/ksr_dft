@@ -125,7 +125,7 @@ def get_xc_energy_sigma(densities, xc_energy_density_fn, grids):
   ) * utils.get_dx(grids)
 
 
-@functools.partial(jax.jit, static_argnums=1)
+@jax.jit
 def get_xc_potential_sigma(densities, xc_energy_density_fn, grids):
   """Gets xc potential.
 

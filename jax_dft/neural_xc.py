@@ -905,9 +905,8 @@ def global_functional_sigma(network, grids, num_spatial_shift=1):
     _, params = network_init_fn(rng=rng, input_shape=(-1, num_grids, 2))
     return params
 
-  #TODO: jit...
-  #@jax.jit
-  def xc_energy_density_fn(density, spin_density, params):
+  @jax.jit
+  def xc_energy_density_fn(density, params, spin_density=0.):
     """Gets xc energy density.
 
     Args:
@@ -919,6 +918,7 @@ def global_functional_sigma(network, grids, num_spatial_shift=1):
     """
     # Expand batch dimension and channel dimension. We use batch_size=1 here.
     # (1, num_grids, 1)
+    spin_density = spin_density * jnp.ones(len(density))
     density = density[jnp.newaxis, :, jnp.newaxis]
     spin_density = spin_density[jnp.newaxis, :, jnp.newaxis]
 
@@ -930,7 +930,6 @@ def global_functional_sigma(network, grids, num_spatial_shift=1):
     # conv_general_dilated requires float32.
     input_features = input_features.astype(jnp.float32)
     params = tree_util.tree_map(lambda x: x.astype(jnp.float32), params)
-
     output = network_apply_fn(params, input_features)
 
     # Remove the channel dimension.
