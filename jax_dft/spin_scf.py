@@ -426,6 +426,9 @@ def get_initial_density_sigma(state, method):
     initial_densities = jnp.sum(initial_up_down_densities, axis=1)
     initial_spin_densities = jnp.squeeze(
       -1 * jnp.diff(initial_up_down_densities, axis=1))
+    if initial_spin_densities.shape[0] != 1:
+      # expand back dimension (special case if num_states = 1)
+      initial_spin_densities = initial_spin_densities[jnp.newaxis, :]
 
     return initial_densities, initial_spin_densities
 

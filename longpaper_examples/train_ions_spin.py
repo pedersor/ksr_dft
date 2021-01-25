@@ -327,12 +327,13 @@ class Train_ions(object):
 
     states = self.kohn_sham(
       params,
-      locations=self.validation_set.locations,
-      nuclear_charges=self.validation_set.nuclear_charges,
-      initial_densities=self.validation_set.initial_densities,
-      initial_spin_densities=self.validation_set.initial_spin_densities,
-      num_electrons=self.validation_set.num_electrons,
-      num_unpaired_electrons=self.validation_set.num_unpaired_electrons)
+      self.validation_set.locations,
+      self.validation_set.nuclear_charges,
+      self.validation_set.initial_densities,
+      self.validation_set.initial_spin_densities,
+      self.validation_set.num_electrons,
+      self.validation_set.num_unpaired_electrons)
+
     return params, states
 
   def get_optimal_ckpt(self, path_to_ckpts):
