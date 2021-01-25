@@ -330,9 +330,9 @@ class Train_ions(object):
       locations=self.validation_set.locations,
       nuclear_charges=self.validation_set.nuclear_charges,
       initial_densities=self.validation_set.initial_densities,
-      initial_spin_densities=self.test_set.initial_spin_densities,
-      num_electrons=self.test_set.num_electrons,
-      num_unpaired_electrons=self.test_set.num_unpaired_electrons)
+      initial_spin_densities=self.validation_set.initial_spin_densities,
+      num_electrons=self.validation_set.num_electrons,
+      num_unpaired_electrons=self.validation_set.num_unpaired_electrons)
     return params, states
 
   def get_optimal_ckpt(self, path_to_ckpts):
@@ -413,7 +413,7 @@ if __name__ == '__main__':
     # Decay factor of density linear mixing factor.
     alpha_decay=0.9,
     # Enforce reflection symmetry across the origin.
-    enforce_reflection_symmetry=True,
+    enforce_reflection_symmetry=False,
     # The number of density differences in the previous iterations to mix the
     # density. Linear mixing is num_mixing_iterations = 1.
     num_mixing_iterations=1,
@@ -443,18 +443,14 @@ if __name__ == '__main__':
   # perform training optimization
   trainer.do_lbfgs_optimization(verbose=1)
 
-  sys.exit()
-
   ## Validate Ions
 
   # set validation set
-  to_validate = [(1, 1)]
-  mask = dataset.get_mask_ions(to_validate)
-  validation_set = dataset.get_subdataset(mask)
-  ions.set_validation_set(validation_set)
-
+  to_validate = [(3, 3)]
+  validation_set = complete_dataset.get_ions(to_validate)
+  trainer.set_validation_set(validation_set)
   # get optimal checkpoint from validation
-  ions.get_optimal_ckpt(model_dir)
+  trainer.get_optimal_ckpt(model_dir)
 
   # append training set and validation set info to README
   readme_file = os.path.join(model_dir, 'README.txt')
