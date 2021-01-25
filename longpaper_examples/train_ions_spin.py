@@ -384,14 +384,14 @@ if __name__ == '__main__':
   trainer = Train_ions(complete_dataset)
 
   # set ML model for xc functional
-  model_dir = '../models/ions/unpol_lda'
+  model_dir = '../models/ions/ksr_lsda/lsda'
   init_fn = trainer.init_ksr_lsda_model(model_dir=model_dir)
   # write model specs to README file
   if not os.path.exists(model_dir):
     os.makedirs(model_dir)
   readme_file = os.path.join(model_dir, 'README.txt')
   with open(readme_file, "w") as fh:
-    fh.writelines("name: KSR-LDA\n")
+    fh.writelines("name: KSR-LSDA\n")
     fh.writelines('''network = neural_xc.build_sliding_net(
       window_size=1,
       num_filters_list=[16, 16, 16],
