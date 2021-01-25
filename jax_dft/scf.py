@@ -258,7 +258,7 @@ def get_xc_energy(density, xc_energy_density_fn, grids):
   """
   return jnp.dot(xc_energy_density_fn(density), density) * utils.get_dx(grids)
 
-@jax.jit
+@functools.partial(jax.jit, static_argnums=1)
 def get_xc_potential(density, xc_energy_density_fn, grids):
   """Gets xc potential.
 
