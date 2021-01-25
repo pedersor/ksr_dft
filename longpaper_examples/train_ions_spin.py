@@ -17,7 +17,7 @@ from jax_dft import jit_scf
 from jax_dft import losses
 from jax_dft import neural_xc
 from jax_dft import np_utils
-from jax_dft import scf
+from jax_dft import spin_scf
 from jax_dft import utils
 from jax_dft import xc
 
@@ -25,40 +25,39 @@ from jax_dft import xc
 config.update('jax_enable_x64', True)
 
 
-class Train_validate_ions(object):
-  def __init__(self, datasets_base_dir):
-    self.datasets_base_dir = datasets_base_dir
+class Train_ions(object):
+  def __init__(self, complete_dataset):
+    self.set_dataset(complete_dataset)
 
     # get jitted fns
     self.loss_value_and_grad_fn = jax.jit(jax.value_and_grad(self.loss_fn))
 
-  def get_complete_dataset(self, num_grids=None):
-    dataset = datasets.Dataset(path=self.datasets_base_dir, num_grids=num_grids)
-    self.grids = dataset.grids
+  def set_dataset(self, complete_dataset):
+    self.grids = complete_dataset.grids
     self.grids_integration_factor = utils.get_dx(self.grids) * len(self.grids)
-    self.num_electrons = dataset.num_electrons
 
     # Check distances are symmetric
     if not np.all(utils.location_center_at_grids_center_point(
-        dataset.locations, self.grids)):
+        complete_dataset.locations, self.grids)):
       raise ValueError(
         'Training set contains examples '
         'not centered at the center of the grids.')
 
-    self.complete_dataset = dataset
-    return dataset
+    self.complete_dataset = complete_dataset
+    return self
 
   def set_training_set(self, training_set):
-    training_set = training_set.get_ions()
-    # obtain initial densities
-    initial_densities = scf.get_initial_density(training_set,
-                                                method='noninteracting')
+    # obtain initial densities and spin densities
+    initial_densities, initial_spin_densities = (
+      spin_scf.get_initial_density_sigma(
+      training_set, method='noninteracting'))
     self.training_set = training_set._replace(
-      initial_densities=initial_densities)
+      initial_densities=initial_densities,
+      initial_spin_densities=initial_spin_densities)
 
     return self
 
-  def init_ksr_lda_model(self, model_dir):
+  def init_ksr_lsda_model(self, model_dir):
     """KSR-LDA model. Window size = 1 constrains model to only local
     information."""
 
@@ -255,22 +254,26 @@ class Train_validate_ions(object):
 
   def set_validation_set(self, validation_set):
     """Sets the validation set from a list of ions."""
-    validation_set = validation_set.get_ions()
-    # obtain initial densities
-    initial_densities = scf.get_initial_density(validation_set,
-                                                method='noninteracting')
+    # obtain initial densities and spin densities
+    initial_densities, initial_spin_densities = (
+      spin_scf.get_initial_density_sigma(
+        validation_set, method='noninteracting'))
+
     self.validation_set = validation_set._replace(
-      initial_densities=initial_densities)
+      initial_densities=initial_densities,
+      initial_spin_densities=initial_spin_densities)
     return self
 
   def set_test_set(self, test_set):
-    """Sets the validation set from a list of ions."""
-    test_set = test_set.get_ions()
-    # obtain initial densities
-    initial_densities = scf.get_initial_density(test_set,
-                                                method='noninteracting')
+    """Sets the test set from a list of ions."""
+    # obtain initial densities and spin densities
+    initial_densities, initial_spin_densities = (
+      spin_scf.get_initial_density_sigma(
+        test_set, method='noninteracting'))
+
     self.test_set = test_set._replace(
-      initial_densities=initial_densities)
+      initial_densities=initial_densities,
+      initial_spin_densities=initial_spin_densities)
     return self
 
   def get_test_states(self, optimal_ckpt_path=None):
@@ -348,12 +351,13 @@ if __name__ == '__main__':
   ## Load data and setup model
 
   # load complete dataset
-  ions = Train_validate_ions('../data/ions/unpol_lda/basic_all')
-  dataset = ions.get_complete_dataset(num_grids=513)
+  complete_dataset = datasets.Dataset(
+    '../data/ions/lsda/basic_all', num_grids=513)
+  trainer = Train_ions(complete_dataset)
 
   # set ML model for xc functional
   model_dir = '../models/ions/unpol_lda'
-  init_fn = ions.init_ksr_lda_model(model_dir=model_dir)
+  init_fn = trainer.init_ksr_lsda_model(model_dir=model_dir)
   # write model specs to README file
   if not os.path.exists(model_dir):
     os.makedirs(model_dir)
@@ -367,13 +371,13 @@ if __name__ == '__main__':
 
   # set initial params from init_fn
   key = jax.random.PRNGKey(0)
-  ions.set_init_ksr_model_params(init_fn, key)
+  trainer.set_init_ksr_model_params(init_fn, key)
   # optional: setting all parameters to be negative can help prevent exploding
   # loss in initial steps esp. for KSR-LDA.
-  ions.flatten_init_params = -np.abs(ions.flatten_init_params)
+  trainer.flatten_init_params = -np.abs(trainer.flatten_init_params)
 
   # set KS parameters
-  ions.set_ks_params(
+  trainer.set_ks_params(
     # The number of Kohn-Sham iterations in training.
     num_iterations=15,
     # @The density linear mixing factor.
@@ -396,21 +400,23 @@ if __name__ == '__main__':
   ## Train Ions
 
   # set training set
-  to_train = [(2, 2), (3, 3)]
-  mask = dataset.get_mask_ions(to_train)
-  training_set = dataset.get_subdataset(mask)
-  ions.set_training_set(training_set)
+  to_train = [(1, 1), (2, 2)]
+  training_set = complete_dataset.get_ions(to_train)
+  trainer.set_training_set(training_set)
 
   # setup parameters associated with the optimization
   # TODO: add aditional params..
-  ions.setup_optimization(
+  trainer.setup_optimization(
     initial_checkpoint_index=0,
     save_every_n=10,
     max_train_steps=100
   )
 
   # perform training optimization
-  ions.do_lbfgs_optimization(verbose=1)
+  trainer.do_lbfgs_optimization(verbose=1)
+
+  sys.exit()
+
 
   ## Validate Ions
 

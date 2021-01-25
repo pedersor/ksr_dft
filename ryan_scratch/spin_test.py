@@ -28,7 +28,7 @@ from jax_dft import spin_scf
 config.update('jax_enable_x64', True)
 
 
-def global_functional(network, grids, num_spatial_shift=1):
+def global_functional_sigma(network, grids, num_spatial_shift=1):
   """Functional with global density information parameterized by neural network.
 
   This function takes the entire density as input and outputs the entire xc
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     activation='swish')
 
 
-  init_fn, neural_xc_energy_density_fn = global_functional(
+  init_fn, neural_xc_energy_density_fn = global_functional_sigma(
     network, grids=grids)
 
   key=jax.random.PRNGKey(0)
