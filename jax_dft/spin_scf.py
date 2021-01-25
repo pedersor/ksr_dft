@@ -388,11 +388,11 @@ def kohn_sham(
   return tree_util.tree_multimap(lambda *x: jnp.stack(x), *states)
 
 
-def get_initial_density_sigma(states, method):
+def get_initial_density_sigma(state, method):
   """Gets initial density for Kohn-Sham calculation.
 
   Args:
-    states: KohnShamState contains a batch of states.
+    state: KohnShamState contains a batch of states.
     method: String, the density initialization method.
 
   Returns:
@@ -406,11 +406,28 @@ def get_initial_density_sigma(states, method):
     # TODO: implement
     raise NotImplementedError()
   elif method == 'noninteracting':
-    solve = jax.vmap(batch_solve_noninteracting_system, in_axes=(0, 0, None))
-    return solve(
-      states.external_potential,
-      # TODO: dataset..
-      states.num_electrons,
-      states.grids[0])[0]
+    num_down_electrons = (state.num_electrons -
+                          state.num_unpaired_electrons) // 2
+    num_up_electrons = num_down_electrons + state.num_unpaired_electrons
+
+    # array contain pairs [num_up, num_down]
+    num_up_down = jnp.transpose(
+      jnp.array([num_up_electrons, num_down_electrons]))
+
+    # external_potential pairs [external_potential, external_potential]
+    external_potentials = jnp.expand_dims(state.external_potential, axis=1)
+    external_potentials = jnp.repeat(external_potentials, repeats=2, axis=1)
+
+    # get initial density and spin_density
+    solve = jax.vmap(batch_solve_noninteracting_system,
+                     in_axes=(0, 0, None))
+    initial_up_down_densities, _ = solve(external_potentials, num_up_down,
+                                         state.grids[0])
+    initial_densities = jnp.sum(initial_up_down_densities, axis=1)
+    initial_spin_densities = jnp.squeeze(
+      -1 * jnp.diff(initial_up_down_densities, axis=1))
+
+    return initial_densities, initial_spin_densities
+
   else:
     raise ValueError(f'Unknown initialization method {method}')
