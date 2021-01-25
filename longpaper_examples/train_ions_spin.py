@@ -348,9 +348,21 @@ class Train_ions(object):
       params, states = self._get_states(ckpt_path)
 
       # Energy loss
+      """
       loss_value = losses.mean_square_error(
         target=self.validation_set.total_energy,
         predict=states.total_energy[:, -1],
+        num_electrons=self.validation_set.num_electrons)
+      """
+
+      loss_value = losses.trajectory_mse(
+        target=self.validation_set.total_energy,
+        predict=states.total_energy[
+                # The starting states have larger errors. Ignore the number of
+                # starting states (here 10) in loss.
+                :, 10:],
+        # The discount factor in the trajectory loss.
+        discount=0.9,
         num_electrons=self.validation_set.num_electrons)
 
       # Density loss (however, KSR paper does not use this for validation)
