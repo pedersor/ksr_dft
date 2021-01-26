@@ -56,10 +56,11 @@ for i in range(num_samples):
     initial_density=initial_density,
     alpha=0.5,
     alpha_decay=0.9,
-    # reflection symmetry not supported yet in `spin_scf`
     enforce_reflection_symmetry=False,
     num_mixing_iterations=1,
     density_mse_converge_tolerance=-1)
+
+  total_energy = lda_ksdft.total_energy[-1].block_until_ready()
 
   time_elapsed = time.time() - start_time
   time_per_molecule.append(time_elapsed)
@@ -70,7 +71,7 @@ for i in range(num_samples):
     print("Estimated time to complete: ")
     print("{:0>2}:{:0>2}:{:05.2f}".format(int(hours), int(minutes), seconds))
 
-  total_energies.append(lda_ksdft.total_energy[-1])
+  total_energies.append(total_energy)
   densities.append(lda_ksdft.density[-1])
 
 total_energies = np.asarray(total_energies)

@@ -258,7 +258,7 @@ def get_xc_energy(density, xc_energy_density_fn, grids):
   """
   return jnp.dot(xc_energy_density_fn(density), density) * utils.get_dx(grids)
 
-@functools.partial(jax.jit, static_argnums=1)
+
 def get_xc_potential(density, xc_energy_density_fn, grids):
   """Gets xc potential.
 
@@ -362,10 +362,9 @@ def kohn_sham_iteration(
     # nan values may appear in regions where the density value is very small.
     xc_potential = jnp.nan_to_num(xc_potential)
   else:
-    # NOTE(Ryan): jitting `get_xc_potential` can be much faster but requires
-    # static xc_energy_density_fn which is violated if symmetry is turned on.
+    # NOTE(Ryan): jitting `get_xc_potential` can be quite faster.
     xc_potential = jax.jit(get_xc_potential, static_argnums=1)(state.density,
-                                             xc_energy_density_fn,state.grids)
+      xc_energy_density_fn, state.grids)
     # nan values may appear in regions where the density value is very small.
     xc_potential = jnp.nan_to_num(xc_potential)
 
