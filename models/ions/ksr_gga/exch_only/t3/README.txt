@@ -9,3 +9,9 @@ Validated on: [(1, 1)]
 
 Trained on: [(2, 2), (3, 3)] 
 Validated on: [(4, 4)] 
+
+Trained on: [(2, 2), (3, 3)] 
+Validated on: [(4, 3)] 
+
+Trained on: [(2, 2), (3, 3)] 
+Validated on: [(4, 4)] 
