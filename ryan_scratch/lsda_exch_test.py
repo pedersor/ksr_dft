@@ -20,17 +20,17 @@ import sys
 h = 0.08
 grids = np.arange(-256, 257) * h
 locations = np.asarray([0])
-nuclear_charges = np.asarray([3])
-num_electrons = 3
-num_unpaired_electrons = 1
+nuclear_charges = np.asarray([4])
+num_electrons = 4
+num_unpaired_electrons = 0
 
 
 num_down_electrons = (num_electrons - num_unpaired_electrons) // 2
 num_up_electrons = num_down_electrons + num_unpaired_electrons
 
 
-@tree_util.partial
-def exch_energy_density_fn(density, spin_density):
+@tree_util.Partial
+def exch_energy_density_fn(density, spin_density=0.):
   density_up = (density + spin_density) / 2
   density_down = (density - spin_density) / 2
   zeta = spin_density/density
@@ -61,7 +61,7 @@ initial_spin_density = jnp.subtract(*densities)
 
 start_time = time.time()
 
-lsda_ksdft = spin_scf.kohn_sham(
+lsda_ksdft = jit_spin_scf.kohn_sham(
   locations=locations,
   nuclear_charges=nuclear_charges,
   num_electrons=num_electrons,
