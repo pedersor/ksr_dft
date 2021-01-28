@@ -76,16 +76,14 @@ class Train_ions(object):
 
     return init_fn
 
-  def set_neural_xc_functional(self, model_dir, neural_xc_functional):
+  def set_neural_xc_functional(self, model_dir, neural_xc_energy_density_fn):
     """ Sets the neural XC functional and model directory."""
 
     # update model directory
     self.model_dir = model_dir
-
-    init_fn, neural_xc_energy_density_fn = neural_xc_functional
     self.neural_xc_energy_density_fn = neural_xc_energy_density_fn
 
-    return init_fn
+    return self
 
   def init_ksr_global_model(self, model_dir):
     """ KSR-global model."""
@@ -111,7 +109,7 @@ class Train_ions(object):
 
     return init_fn
 
-  def set_init_ksr_model_params(self, init_fn, key=jax.random.PRNGKey(0),
+  def set_init_model_params(self, init_fn, key=jax.random.PRNGKey(0),
                                 verbose=1):
     """Set initial model parameters from init_fn."""
 
