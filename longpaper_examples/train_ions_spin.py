@@ -199,7 +199,7 @@ class Train_ions(object):
       predict=states.total_energy[
               # The starting states have larger errors. Ignore the number of
               # starting states (here 10) in loss.
-              :, 10:],
+              :, 1:],
       # The discount factor in the trajectory loss.
       discount=0.9,
       num_electrons=self.training_set.num_electrons)
