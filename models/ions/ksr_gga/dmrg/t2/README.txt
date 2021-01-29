@@ -6,3 +6,4 @@ network = neural_xc.build_sliding_net(
 
 Trained on: [(1, 1), (2, 2), (3, 3)] 
 Validated on: [(4, 4)] 
+
