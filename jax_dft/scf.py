@@ -303,14 +303,15 @@ class KohnShamState(typing.NamedTuple):
   nuclear_charges: jnp.ndarray
   external_potential: jnp.ndarray
   grids: jnp.ndarray
-  num_electrons: ArrayLike
+  num_electrons: int
+  num_unpaired_electrons: Optional[int] = None
+  spin_density: Optional[jnp.ndarray] = None
   initial_densities: Optional[jnp.ndarray] = None
+  initial_spin_densities: Optional[jnp.ndarray] = None
   xc_energy: Optional[ArrayLike] = None
   kinetic_energy: Optional[ArrayLike] = None
   hartree_potential: Optional[jnp.ndarray] = None
-  xc_potential: Optional[jnp.ndarray] = None
   xc_energy_density: Optional[jnp.ndarray] = None
-  gap: Optional[ArrayLike] = None
   converged: Optional[ArrayLike] = False
 
 
@@ -356,17 +357,21 @@ def kohn_sham_iteration(
   if enforce_reflection_symmetry:
     xc_energy_density_fn = _flip_and_average_fn(
       xc_energy_density_fn, locations=state.locations, grids=state.grids)
+    xc_potential = get_xc_potential(state.density,xc_energy_density_fn,
+                                                               state.grids)
+    # nan values may appear in regions where the density value is very small.
+    xc_potential = jnp.nan_to_num(xc_potential)
+  else:
+    # NOTE(Ryan): jitting `get_xc_potential` can be quite faster.
+    xc_potential = jax.jit(get_xc_potential, static_argnums=1)(state.density,
+      xc_energy_density_fn, state.grids)
+    # nan values may appear in regions where the density value is very small.
+    xc_potential = jnp.nan_to_num(xc_potential)
 
   hartree_potential = get_hartree_potential(
     density=state.density,
     grids=state.grids,
     interaction_fn=interaction_fn)
-  xc_potential = get_xc_potential(
-    density=state.density,
-    xc_energy_density_fn=xc_energy_density_fn,
-    grids=state.grids)
-  # nan values may appear in regions where the density value is very small.
-  xc_potential = jnp.nan_to_num(xc_potential)
 
   ks_potential = hartree_potential + xc_potential + state.external_potential
   xc_energy_density = xc_energy_density_fn(state.density)
@@ -414,11 +419,9 @@ def kohn_sham_iteration(
     density=density,
     total_energy=total_energy,
     hartree_potential=hartree_potential,
-    xc_potential=xc_potential,
     xc_energy=xc_energy,
     kinetic_energy=kinetic_energy,
-    xc_energy_density=xc_energy_density,
-    gap=gap)
+    xc_energy_density=xc_energy_density)
 
 
 def kohn_sham(
@@ -487,6 +490,7 @@ def kohn_sham(
       external_potential=external_potential,
       num_electrons=num_electrons,
       grids=grids)
+
   # Create initial state.
   state = KohnShamState(
     density=initial_density,
@@ -572,10 +576,10 @@ def get_initial_density(states, method):
   if method == 'exact':
     return states.density
   elif method == 'noninteracting':
-    solve = jax.vmap(solve_noninteracting_system, in_axes=(0, None, None))
+    solve = jax.vmap(solve_noninteracting_system, in_axes=(0, 0, None))
     return solve(
       states.external_potential,
-      states.num_electrons[0],
+      states.num_electrons,
       states.grids[0])[0]
   else:
     raise ValueError(f'Unknown initialization method {method}')

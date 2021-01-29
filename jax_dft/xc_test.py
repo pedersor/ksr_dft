@@ -39,7 +39,7 @@ class XcTest(parameterized.TestCase):
 
   def test_exponential_coulomb_uniform_exchange_density(self):
     np.testing.assert_allclose(
-        xc.exponential_coulomb_uniform_exchange_density(
+        xc.unpolarized_exponential_coulomb_uniform_exchange_density(
             density=jnp.array([1e-15, 1e-10, 1e-5, 1., 2., 3., 20.])),
         [0., 0., -0.000013, -0.3983580525,
          -0.4512822906, -0.4732600516, -0.521973703], atol=1e-6)
@@ -48,14 +48,14 @@ class XcTest(parameterized.TestCase):
     density = jnp.linspace(0, 0.01, 5)
     y = jnp.pi * density / self.kappa
     np.testing.assert_allclose(
-        xc.exponential_coulomb_uniform_exchange_density(density=density),
+        xc.unpolarized_exponential_coulomb_uniform_exchange_density(density=density),
         self.amplitude / (2 * jnp.pi) * (-y + y ** 3 / 6), atol=1e-6)
 
   def test_exponential_coulomb_uniform_exchange_density_high_density_limit(
       self):
     limit_value = -self.amplitude / 2
     np.testing.assert_allclose(
-        xc.exponential_coulomb_uniform_exchange_density(
+        xc.unpolarized_exponential_coulomb_uniform_exchange_density(
             density=jnp.array([1000., 10000.])),
         [limit_value, limit_value], atol=1e-3)
 
@@ -65,7 +65,7 @@ class XcTest(parameterized.TestCase):
     # = amplitude / (2 * kappa) * d(ln(1 + y ** 2) / y - 2 * arctan(y))/dy
     # = -amplitude / (2 * kappa) * ln(1 + y ** 2) / y ** 2
     grad_fn = jax.vmap(
-        jax.grad(xc.exponential_coulomb_uniform_exchange_density), in_axes=(0,))
+        jax.grad(xc.unpolarized_exponential_coulomb_uniform_exchange_density), in_axes=(0,))
     density = jnp.linspace(0, 3, 11)
     y = jnp.pi * density / self.kappa
     np.testing.assert_allclose(
@@ -79,7 +79,7 @@ class XcTest(parameterized.TestCase):
     alpha = 2.
     beta = -1.00077
     np.testing.assert_allclose(
-        xc.exponential_coulomb_uniform_correlation_density(density=density),
+        xc.unpolarized_exponential_coulomb_uniform_correlation_density(density=density),
         -self.amplitude / (jnp.pi * alpha) * y * (
             1 - beta / alpha * jnp.sqrt(y)),
         atol=1e-3)
@@ -87,13 +87,13 @@ class XcTest(parameterized.TestCase):
   def test_exponential_coulomb_uniform_correlation_density_high_density_limit(
       self):
     np.testing.assert_allclose(
-        xc.exponential_coulomb_uniform_correlation_density(
+        xc.unpolarized_exponential_coulomb_uniform_correlation_density(
             density=jnp.array([1000., 10000.])),
         [0., 0.], atol=1e-3)
 
   def test_exponential_coulomb_uniform_correlation_density_gradient(self):
     grad_fn = jax.vmap(
-        jax.grad(xc.exponential_coulomb_uniform_correlation_density),
+        jax.grad(xc.unpolarized_exponential_coulomb_uniform_correlation_density),
         in_axes=(0,))
     density = jnp.linspace(0, 3, 11)
     y = jnp.pi * density / self.kappa
@@ -118,14 +118,14 @@ class XcTest(parameterized.TestCase):
     np.testing.assert_allclose(grad_fn(density), analytical_gradient)
     # Check gradient value at zero is -amplitude / kappa / alpha.
     self.assertAlmostEqual(
-        jax.grad(xc.exponential_coulomb_uniform_correlation_density)(0.),
+        jax.grad(xc.unpolarized_exponential_coulomb_uniform_correlation_density)(0.),
         -self.amplitude / self.kappa / alpha)
 
   @parameterized.parameters(1., 2, None, np.array([[1., 2., 3.]]))
   def test_get_lda_xc_energy_density_fn(self, params):
     # Different values of params shouldn't change the output of
     # lda_xc_energy_density_fn since params is a dummy argument.
-    lda_xc_energy_density_fn = xc.get_lda_xc_energy_density_fn()
+    lda_xc_energy_density_fn = xc.get_unpolarized_lda_xc_energy_density_fn()
     np.testing.assert_allclose(
         lda_xc_energy_density_fn(density=jnp.array([0., 1.]), params=params),
         [0., -0.406069], atol=1e-5)

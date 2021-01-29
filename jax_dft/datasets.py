@@ -92,31 +92,6 @@ class Dataset(object):
     self._set_num_grids(num_grids)
     self.total_num_samples = self.total_energies.shape[0]
 
-  def _load_from_path_old(self, path):
-    """Loads npy files from path."""
-    file_open = open
-    data = {}
-    with file_open(os.path.join(path, 'num_electrons.npy'), 'rb') as f:
-      data['num_electrons'] = np.load(f)
-    with file_open(os.path.join(path, 'grids.npy'), 'rb') as f:
-      data['grids'] = np.load(f)
-    with file_open(os.path.join(path, 'locations.npy'), 'rb') as f:
-      data['locations'] = np.load(f)
-    with file_open(os.path.join(path, 'nuclear_charges.npy'), 'rb') as f:
-      data['nuclear_charges'] = np.load(f)
-    with file_open(os.path.join(path, 'total_energies.npy'), 'rb') as f:
-      data['total_energies'] = np.load(f)
-    with file_open(os.path.join(path, 'densities.npy'), 'rb') as f:
-      data['densities'] = np.load(f)
-    with file_open(os.path.join(path, 'external_potentials.npy'), 'rb') as f:
-      data['external_potentials'] = np.load(f)
-    if os.path.isfile(os.path.join(path, 'distances_x100.npy')):
-      with file_open(os.path.join(path, 'distances_x100.npy'), 'rb') as f:
-        data['distances_x100'] = np.load(f).astype(int)
-    if os.path.isfile(os.path.join(path, 'distances.npy')):
-      with file_open(os.path.join(path, 'distances.npy'), 'rb') as f:
-        data['distances'] = np.load(f)
-    return data
 
   def _load_from_path(self, path):
     """Loads npy files from path."""
@@ -195,22 +170,34 @@ class Dataset(object):
     """Gets mask for test set."""
     return self.get_mask(_TEST_DISTANCE_X100[self.name])
 
-  def get_mask_ions(self, selected_ions=None):
-    """Gets mask from selected_ions, a list of tuples corresponding to
-    (nuclear charge, total num of electrons)."""
-    if selected_ions is None:
-      mask = np.ones(self.total_num_samples, dtype=bool)
+  def get_molecules(self, selected_distance_x100=None):
+    """Selects molecules from list of integers."""
+    mask = self.get_mask(selected_distance_x100)
+    num_samples = np.sum(mask)
+
+    if hasattr(self, 'num_unpaired_electrons'):
+        num_unpaired_electrons = self.num_unpaired_electrons[mask]
     else:
-      selected_ions = set(selected_ions)
-      mask = np.array([
-        (nuclear_charge[0], num_electron) in selected_ions
-        for (nuclear_charge, num_electron) in zip(self.nuclear_charges,
-                                                  self.num_electrons)])
-      if len(selected_ions) != np.sum(mask):
-        raise ValueError(
-          'selected_ions contains (nuclear_charge, num_electron) that is not in'
-          ' the dataset.')
-    return mask
+        num_unpaired_electrons = np.repeat(None, repeats=num_samples)
+
+    if hasattr(self, 'spin_densities'):
+        spin_densities = self.spin_densities[mask]
+    else:
+        spin_densities = np.repeat(None, repeats=num_samples)
+
+    return scf.KohnShamState(
+        density=self.densities[mask],
+        spin_density=spin_densities,
+        total_energy=self.total_energies[mask],
+        locations=self.locations[mask],
+        nuclear_charges=self.nuclear_charges[mask],
+        external_potential=self.external_potentials[mask],
+        grids=np.tile(
+            np.expand_dims(self.grids, axis=0), reps=(num_samples, 1)),
+        num_electrons=np.repeat(self.num_electrons, repeats=num_samples),
+        num_unpaired_electrons=num_unpaired_electrons,
+        converged=np.repeat(True, repeats=num_samples),
+        )
 
   def get_subdataset(self, mask, exceptions={'grids'}, downsample_step=None):
     """Gets subdataset."""
@@ -228,22 +215,22 @@ class Dataset(object):
         sub_data[name] = array[mask]
     return Dataset(data=sub_data)
 
-  def get_molecules(self, selected_distance_x100=None):
-    """Selects molecules from list of integers."""
-    mask = self.get_mask(selected_distance_x100)
-    num_samples = np.sum(mask)
-
-    return scf.KohnShamState(
-        density=self.densities[mask],
-        total_energy=self.total_energies[mask],
-        locations=self.locations[mask],
-        nuclear_charges=self.nuclear_charges[mask],
-        external_potential=self.external_potentials[mask],
-        grids=np.tile(
-            np.expand_dims(self.grids, axis=0), reps=(num_samples, 1)),
-        num_electrons=np.repeat(self.num_electrons, repeats=num_samples),
-        converged=np.repeat(True, repeats=num_samples),
-        )
+  def get_mask_ions(self, selected_ions=None):
+    """Gets mask from selected_ions, a list of tuples corresponding to
+    (nuclear charge, total num of electrons)."""
+    if selected_ions is None:
+      mask = np.ones(self.total_num_samples, dtype=bool)
+    else:
+      selected_ions = set(selected_ions)
+      mask = np.array([
+        (nuclear_charge[0], num_electron) in selected_ions
+        for (nuclear_charge, num_electron) in zip(self.nuclear_charges,
+                                                  self.num_electrons)])
+      if len(selected_ions) != np.sum(mask):
+        raise ValueError(
+          'selected_ions contains (nuclear_charge, num_electron) that is not in'
+          ' the dataset.')
+    return mask
 
   def get_ions(self, selected_ions=None):
     """Gets atoms from selected_ions, a list of tuples corresponding to
@@ -251,8 +238,19 @@ class Dataset(object):
     mask = self.get_mask_ions(selected_ions)
     num_samples = np.sum(mask)
 
+    if hasattr(self, 'num_unpaired_electrons'):
+      num_unpaired_electrons = self.num_unpaired_electrons[mask]
+    else:
+      num_unpaired_electrons = np.repeat(None, repeats=num_samples)
+
+    if hasattr(self, 'spin_densities'):
+      spin_densities = self.spin_densities[mask]
+    else:
+      spin_densities = np.repeat(None, repeats=num_samples)
+
     return scf.KohnShamState(
         density=self.densities[mask],
+        spin_density= spin_densities,
         total_energy=self.total_energies[mask],
         locations=self.locations[mask],
         nuclear_charges=self.nuclear_charges[mask],
@@ -260,5 +258,6 @@ class Dataset(object):
         grids=np.tile(
             np.expand_dims(self.grids, axis=0), reps=(num_samples, 1)),
         num_electrons=self.num_electrons[mask],
+        num_unpaired_electrons=num_unpaired_electrons,
         converged=np.repeat(True, repeats=num_samples),
         )

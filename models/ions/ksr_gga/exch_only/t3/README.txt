@@ -1,0 +1,17 @@
+name: KSR-GGA
+network = neural_xc.build_sliding_net(
+    window_size=2,
+    num_filters_list=[16, 16, 16],
+    activation='swish')
+
+Trained on: [(2, 2), (3, 3)] 
+Validated on: [(1, 1)] 
+
+Trained on: [(2, 2), (3, 3)] 
+Validated on: [(4, 4)] 
+
+Trained on: [(2, 2), (3, 3)] 
+Validated on: [(4, 3)] 
+
+Trained on: [(2, 2), (3, 3)] 
+Validated on: [(4, 4)] 
