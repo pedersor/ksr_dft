@@ -916,13 +916,17 @@ def global_functional_sigma(network, grids, num_spatial_shift=1):
     Returns:
       Float numpy array with shape (num_grids,).
     """
+
+    spin_density = spin_density * jnp.ones(len(density))
+    density_up = (density + spin_density) / 2
+    density_down = (density - spin_density) / 2
+
     # Expand batch dimension and channel dimension. We use batch_size=1 here.
     # (1, num_grids, 1)
-    spin_density = spin_density * jnp.ones(len(density))
-    density = density[jnp.newaxis, :, jnp.newaxis]
-    spin_density = spin_density[jnp.newaxis, :, jnp.newaxis]
+    density_up = density_up[jnp.newaxis, :, jnp.newaxis]
+    density_down = density_down[jnp.newaxis, :, jnp.newaxis]
 
-    input_features = jnp.append(density, spin_density, axis=2)
+    input_features = jnp.append(density_up, density_down, axis=2)
 
     #TODO: num_spatial_shift...
 
