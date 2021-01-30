@@ -121,8 +121,9 @@ def get_xc_energy_sigma(densities, xc_energy_density_fn, grids):
   # spin_density = jnp.zeros(len(density))
 
   return jnp.dot(
-    xc_energy_density_fn(density, spin_density=spin_density), density
-  ) * utils.get_dx(grids)
+    0.5*(xc_energy_density_fn(density, spin_density=spin_density)
+        + xc_energy_density_fn(density, spin_density=-1.*spin_density))
+         , density) * utils.get_dx(grids)
 
 
 @functools.partial(jax.jit, static_argnums=1)
