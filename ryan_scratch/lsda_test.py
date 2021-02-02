@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+sys.path.append('../')
 
 import jax.numpy as jnp
 from jax import tree_util
@@ -13,9 +15,7 @@ from jax_dft import jit_scf
 from jax.config import config
 config.update('jax_disable_jit', False)
 
-import matplotlib.pyplot as plt
 import time
-import sys
 
 h = 0.08
 grids = np.arange(-256, 257) * h
