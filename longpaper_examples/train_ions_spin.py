@@ -362,13 +362,6 @@ class Train_ions(object):
         predict=states.total_energy[:, -1],
         num_electrons=self.validation_set.num_electrons)
 
-
-      # Density loss (however, KSR paper does not use this for validation)
-      loss_value += losses.mean_square_error(
-        target=self.validation_set.density, predict=states.density[:, -1, :],
-        num_electrons= self.validation_set.num_electrons
-      ) * self.grids_integration_factor
-
       if optimal_ckpt_params is None or loss_value < min_loss:
         optimal_ckpt_params = params
         optimal_ckpt_path = ckpt_path
@@ -382,7 +375,7 @@ class Train_ions(object):
       pickle.dump(optimal_ckpt_params, handle)
 
     self.optimal_ckpt_params = optimal_ckpt_params
-    return self
+    return optimal_ckpt_path
 
 
 if __name__ == '__main__':
