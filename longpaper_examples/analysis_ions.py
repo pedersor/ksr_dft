@@ -76,6 +76,8 @@ def get_ions_table_MAE(test_dataset, final_states):
   table_print(np.mean(total_energy_MAE))
   table_print(np.mean(xc_energy_MAE), last_in_row=True)
 
+  return np.mean(total_energy_MAE), np.mean(xc_energy_MAE)
+
 
 def get_plots(test_dataset, final_states):
   """Generate density and xc energy density plots on a single plt figure."""
