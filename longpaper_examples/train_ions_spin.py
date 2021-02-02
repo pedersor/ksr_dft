@@ -368,10 +368,8 @@ class Train_ions(object):
         min_loss = loss_value
 
     print(f'optimal checkpoint: {optimal_ckpt_path}')
-    optimal_ckpt_path = os.path.join(path_to_ckpts, 'optimal_ckpt.pkl')
     print(f'optimal checkpoint loss: {min_loss}')
-    print(f'Save {optimal_ckpt_path}')
-    with open(optimal_ckpt_path, 'wb') as handle:
+    with open(os.path.join(path_to_ckpts, 'optimal_ckpt.pkl'), 'wb') as handle:
       pickle.dump(optimal_ckpt_params, handle)
 
     self.optimal_ckpt_params = optimal_ckpt_params
