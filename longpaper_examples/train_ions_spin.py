@@ -324,9 +324,9 @@ class Train_ions(object):
       num_unpaired_electrons=self.test_set.num_unpaired_electrons)
     return states
 
-  def get_final_test_states(self, optimal_ckpt_path=None):
-    states = self.get_test_states(optimal_ckpt_path=optimal_ckpt_path)
-    # get only converged results
+  def get_final_states(self, states):
+    """ Get only converged results. """
+
     return tree_util.tree_map(lambda x: x[:, -1], states)
 
   def _get_states(self, ckpt_path):
