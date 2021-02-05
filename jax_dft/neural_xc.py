@@ -1017,7 +1017,7 @@ def gga_functional(network, grids, num_spatial_shift=1):
 
     input_features = jnp.stack([density_up, density_down, density_grad], axis=2)
     input_features = jnp.squeeze(input_features, axis=3)
-    print(input_features.shape)
+
     #TODO?: num_spatial_shift...
 
     # If the network use convolution layer, the backend function
