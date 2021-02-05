@@ -1015,7 +1015,7 @@ def gga_functional(network, grids, num_spatial_shift=1):
     density_down = density_down[jnp.newaxis, :, jnp.newaxis]
     density_grad = density_grad[jnp.newaxis, :, jnp.newaxis]
 
-    input_features = jnp.stack([density, density_up, density_grad], axis=2)
+    input_features = jnp.stack([density_up, density_down, density_grad], axis=2)
     input_features = jnp.squeeze(input_features_stack, axis=3)
     print(input_features.shape)
     #TODO?: num_spatial_shift...
