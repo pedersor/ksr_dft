@@ -260,7 +260,7 @@ class Train_ions(object):
       checkpoint_path = f'ckpt-{step:05d}'
       checkpoint_path = os.path.join(self.model_dir, checkpoint_path)
       if verbose == 1:
-        print(f'Save checkpoint {checkpoint_path}')
+        print(f'Save checkpoint {checkpoint_path}', flush=True)
       else:
         pass
       with open(checkpoint_path, 'wb') as handle:
