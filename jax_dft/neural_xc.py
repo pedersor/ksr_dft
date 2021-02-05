@@ -1006,7 +1006,7 @@ def gga_functional(network, grids, num_spatial_shift=1):
     density_up = (density + spin_density) / 2
     density_down = (density - spin_density) / 2
 
-    density_grad = jnp.abs(jnp.gradient(n, utils.get_dx(grids)))
+    density_grad = jnp.abs(jnp.gradient(density, utils.get_dx(grids)))
 
 
     # Expand batch dimension and channel dimension. We use batch_size=1 here.
