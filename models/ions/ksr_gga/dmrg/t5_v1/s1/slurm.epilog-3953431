@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    3953431
+User:      pedersor
+Group:     burke
+Job Name:  t5_v1_s1
+Partition: brd2.4
+QOS:       normal 
+Account:   burke
+Reason:    None,c-19-412
+Nodelist:  c-19-412
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/ions/ksr_gga/dmrg/t5_v1/s1/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/ions/ksr_gga/dmrg/t5_v1/s1
+BatchHost: c-19-412
