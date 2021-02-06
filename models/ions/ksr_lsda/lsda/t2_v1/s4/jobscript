@@ -11,4 +11,4 @@
 ml purge
 ml gnu/9.1.0
 ml miniconda/3/own
-srun python /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/ions/ksr_lsda/lsda/train_validate.py t2 v1 s4 > output.txt 
+srun python /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/ions/ksr_lsda/lsda_symm/train_validate.py t2 v1 s4 > output.txt 
