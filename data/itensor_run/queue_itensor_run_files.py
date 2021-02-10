@@ -57,8 +57,8 @@ for sep in separations:
   hoppingvmaker.get_vuncomp(grids)
 
   # compress vuncomp to MPO
-  # os.system('''julia compressMPO.jl Vuncomp''')
-  # os.remove('Vuncomp') # remove the large uncompressed file
+  os.system('''julia compressMPO.jl Vuncomp''')
+  os.remove('Vuncomp') # remove the large uncompressed file
 
   copyfile('input', os.path.join(curr_dir, 'input'))
   copyfile('electronBO.cc', os.path.join(curr_dir, 'electronBO.cc'))
@@ -94,5 +94,5 @@ for sep in separations:
     fh.writelines('rm sites\n')
 
   # queue runfile and cd out of dir
-  # os.system('''sbatch jobscript ''')
+  os.system('''sbatch jobscript ''')
   os.chdir(cwd)
