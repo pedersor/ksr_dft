@@ -294,3 +294,53 @@ def compute_distances_between_nuclei(locations, nuclei_indices):
         'The size of nuclei_indices is expected to be 2 but got %d' % size)
   return jnp.abs(
       locations[:, nuclei_indices[0]] - locations[:, nuclei_indices[1]])
+
+
+def get_unif_separated_nuclei_positions(grids, num_locations, separation):
+  """Gets nuclei positions (locations.npy) for a given uniform separation. """
+
+  num_grids = grids.shape[0]
+  grids_center_idx = num_grids // 2
+  #sep_steps = int(round(separation / get_dx(grids)))
+  sep_steps = int(round(float(separation / get_dx(grids))))
+
+  # positions of nuclei
+  nuclear_locations = []
+  if num_locations % 2 == 0:
+    if sep_steps % 2 == 0:
+      init_left_nuclei = grids_center_idx - int(sep_steps / 2)
+      init_right_nuclei = grids_center_idx + int(sep_steps / 2)
+      nuclear_locations.append(grids[init_left_nuclei])
+      nuclear_locations.append(grids[init_right_nuclei])
+
+      for i in range(int(num_locations / 2) - 1):
+        nuclear_locations.append(grids[init_right_nuclei + (i + 1) * sep_steps])
+        nuclear_locations.append(grids[init_left_nuclei - (i + 1) * sep_steps])
+    else:
+      init_left_nuclei = grids_center_idx - int((sep_steps - 1) / 2)
+      init_right_nuclei = grids_center_idx + int((sep_steps + 1) / 2)
+      nuclear_locations.append(grids[init_left_nuclei])
+      nuclear_locations.append(grids[init_right_nuclei])
+
+      for i in range(int(num_locations / 2) - 1):
+        nuclear_locations.append(grids[init_right_nuclei + (i + 1) * sep_steps])
+        nuclear_locations.append(grids[init_left_nuclei - (i + 1) * sep_steps])
+  else:
+    # odd num_locations. First place nuclei in center.
+    nuclear_locations.append(grids[grids_center_idx])
+    for i in range(2, num_locations+1):
+      location = grids_center_idx + (-1)**i * (i // 2) * sep_steps
+      nuclear_locations.append(grids[location])
+
+  nuclear_locations = jnp.asarray(nuclear_locations)
+  nuclear_locations = jnp.sort(nuclear_locations)
+  return nuclear_locations
+
+if __name__ == '__main__':
+  import numpy as np
+
+  h = 0.08  # grid spacing
+  grids = np.arange(-256, 257) * h
+
+  locations = get_unif_separated_nuclei_positions(grids, 4, 0.08)
+  print(locations)
