@@ -44,7 +44,7 @@ def exponential_coulomb(displacements,
   return amplitude * np.exp(-np.abs(displacements) * kappa)
 
 
-def get_vuncomp(grids, interaction_fn=exponential_coulomb, lam=1):
+def get_vuncomp(grids, interaction_fn=exponential_coulomb):
   N = len(grids)
 
   i_lst = []
@@ -52,7 +52,7 @@ def get_vuncomp(grids, interaction_fn=exponential_coulomb, lam=1):
   vuncomp_lst = []
   for i in range(1, N + 1):
     for j in range(1, N + 1):
-      vuncomp = -lam * interaction_fn(grids[i - 1] - grids[j - 1])
+      vuncomp = interaction_fn(grids[i - 1] - grids[j - 1])
       i_lst.append(i)
       j_lst.append(j)
       vuncomp_lst.append(vuncomp)
