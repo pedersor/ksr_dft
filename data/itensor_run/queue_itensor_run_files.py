@@ -35,6 +35,8 @@ separations = np.arange(0, 6, h)
 
 nuclear_charges = np.array([3, 1])
 
+# load julia
+os.system('''ml julia/1.1.0''')
 cwd = os.getcwd()
 for sep in separations:
   sep_steps = int(round(float(sep / h)))
@@ -63,6 +65,9 @@ for sep in separations:
   copyfile('input', os.path.join(curr_dir, 'input'))
   copyfile('electronBO.cc', os.path.join(curr_dir, 'electronBO.cc'))
   copyfile('Makefile', os.path.join(curr_dir, 'Makefile'))
+
+  os.rename("Ham1c", os.path.join(curr_dir, "Ham1c"))
+  os.rename("Vcompressed", os.path.join(curr_dir, "Vcompressed"))
 
   os.chdir(curr_dir)
   job_name = curr_dir

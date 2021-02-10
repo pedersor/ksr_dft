@@ -71,8 +71,6 @@ if __name__ == '__main__':
   import numpy as np
   import matplotlib.pyplot as plt
 
-  import time
-
   # LiH molcule example
 
   h = 0.08  # grid spacing
