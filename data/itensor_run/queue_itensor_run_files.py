@@ -1,4 +1,8 @@
 import os
+import sys
+sys.path.append('../../')
+
+
 from shutil import copyfile
 import numpy as np
 from jax_dft import utils
