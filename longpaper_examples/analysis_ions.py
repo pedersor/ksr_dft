@@ -1,5 +1,5 @@
 import os
-from longpaper_examples.train_validate_ions import Train_validate_ions
+from longpaper_examples.train_ions import Train_validate_ions
 import numpy as np
 import matplotlib.pyplot as plt
 
