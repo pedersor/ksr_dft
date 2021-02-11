@@ -150,6 +150,26 @@ def get_atomic_chain_potential(
   return jnp.dot(-nuclear_charges, interaction_fn(displacements))
 
 
+def get_atomic_chain_potential_batch(
+    grids, locations, nuclear_charges, interaction_fn):
+  """Gets atomic chain potential.
+
+  Args:
+    grids: Float numpy array with shape (batch_size, num_grids).
+    locations: Float numpy array with shape (batch_size, num_nuclei),
+        the locations of the nuclei.
+    nuclear_charges: Float numpy array with shape (batch_size, num_nuclei),
+        the charges of nuclei.
+    interaction_fn: function takes displacements and returns
+        float numpy array with the same shape of displacements.
+
+  Returns:
+    Float numpy array with shape (batch_size, num_grids).
+  """
+  return jax.vmap(get_atomic_chain_potential, in_axes=(None, 0, 0, None))(
+      grids, locations, nuclear_charges, interaction_fn)
+
+
 def get_nuclear_interaction_energy(locations, nuclear_charges, interaction_fn):
   """Gets nuclear interaction energy for atomic chain.
 
