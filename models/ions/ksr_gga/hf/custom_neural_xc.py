@@ -71,6 +71,7 @@ def gga_functional(network, grids, num_spatial_shift=1):
 
     # Expand batch dimension and channel dimension. We use batch_size=1 here.
     # (1, num_grids, 1)
+    density = density[jnp.newaxis, :, jnp.newaxis]
     density_grad = density_grad[jnp.newaxis, :, jnp.newaxis]
 
     input_features = jnp.stack([density, density_grad], axis=2)
