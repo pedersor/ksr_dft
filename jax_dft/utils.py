@@ -321,7 +321,6 @@ def get_unif_separated_nuclei_positions(grids, num_locations, separation):
 
   num_grids = grids.shape[0]
   grids_center_idx = num_grids // 2
-  #sep_steps = int(round(separation / get_dx(grids)))
   sep_steps = int(round(float(separation / get_dx(grids))))
 
   # positions of nuclei
@@ -355,12 +354,3 @@ def get_unif_separated_nuclei_positions(grids, num_locations, separation):
   nuclear_locations = jnp.asarray(nuclear_locations)
   nuclear_locations = jnp.sort(nuclear_locations)
   return nuclear_locations
-
-if __name__ == '__main__':
-  import numpy as np
-
-  h = 0.08  # grid spacing
-  grids = np.arange(-256, 257) * h
-
-  locations = get_unif_separated_nuclei_positions(grids, 4, 0.08)
-  print(locations)

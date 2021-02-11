@@ -34,7 +34,7 @@ grids = np.arange(-256, 257) * h
 separations = np.arange(0, 6, h)
 nuclear_charges = np.array([3, 1])
 num_electrons = 4
-num_unpaired_electrons = 2
+num_unpaired_electrons = 0
 
 # load julia
 os.system('''ml julia/1.1.0''')
@@ -115,8 +115,9 @@ mkdir_p('dataset')
 locations = np.asarray(locations_lst)
 external_potentials = np.asarray(external_potentials_lst)
 num_samples = len(separations)
-num_electrons = num_electrons*np.ones(num_samples)
-num_unpaired_electrons = num_unpaired_electrons*np.ones(num_samples)
+num_electrons = (num_electrons*np.ones(num_samples)).astype(int)
+num_unpaired_electrons = (num_unpaired_electrons*np.ones(
+  num_samples)).astype(int)
 nuclear_charges = np.tile(nuclear_charges, reps=(num_samples, 1))
 
 np.save('dataset/grids.npy', grids)
