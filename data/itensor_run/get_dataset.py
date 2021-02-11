@@ -83,5 +83,7 @@ if __name__ == '__main__':
     total_energies.append(total_energy)
     densities.append(density)
 
+  total_energies = np.asarray(total_energies)
+  densities = np.asarray(densities)
   np.save('dataset/total_energies.npy', total_energies)
   np.save('dataset/densities.npy', densities)
