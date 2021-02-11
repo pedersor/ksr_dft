@@ -950,7 +950,7 @@ def global_functional_sigma(network, grids, num_spatial_shift=1):
   return init_fn, xc_energy_density_fn
 
 
-def gga_functional(network, grids, num_spatial_shift=1):
+def gga_functional_sigma(network, grids, num_spatial_shift=1):
   """GGA take on neural functional.
 
 

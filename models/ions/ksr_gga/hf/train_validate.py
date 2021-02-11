@@ -30,6 +30,7 @@ from jax_dft import utils
 from jax_dft import xc
 
 from longpaper_examples.train_ions_spin import Train_ions
+import custom_neural_xc
 
 # Set the default dtype as float64
 config.update('jax_enable_x64', True)
@@ -41,7 +42,7 @@ for training are generated using random seed 0.
 """
 
 complete_dataset = datasets.Dataset(os.path.join(abs_path_jax_dft,
-  'data/ions/dmrg/basic_all'), num_grids=513)
+  'data/ions/hf'), num_grids=513)
 trainer = Train_ions(complete_dataset)
 
 training_sets_dict = {'t2': [(1, 1), (2, 2)], 't3': [(1, 1), (2, 2), (3, 3)],
@@ -96,10 +97,24 @@ network = neural_xc.build_sliding_net(
   window_size=1,
   num_filters_list=[16, 16, 16],
   activation='swish')
-init_fn, neural_xc_energy_density_fn = neural_xc.gga_functional(
+init_fn, neural_xc_energy_density_fn = custom_neural_xc.gga_functional(
   network, grids=complete_dataset.grids)
+
+def exch_energy_density_fn(density, params, spin_density=0.):
+  """Spin-scaling exchange energy density fn."""
+
+  density_up = (density + spin_density) / 2
+  density_down = (density - spin_density) / 2
+  zeta = spin_density/density
+  zeta = jnp.nan_to_num(zeta, posinf=0.0, neginf=0.0)
+
+  return 0.5*(
+      (1+zeta)*neural_xc_energy_density_fn(2*density_up, params)
+      + (1-zeta)*neural_xc_energy_density_fn(2*density_down, params)
+  )
+
 trainer.set_neural_xc_functional(model_dir=model_dir,
-  neural_xc_energy_density_fn=neural_xc_energy_density_fn)
+  neural_xc_energy_density_fn=exch_energy_density_fn)
 
 # set initial params from init_fn
 trainer.set_init_model_params(init_fn, key, verbose=1)
