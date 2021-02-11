@@ -71,7 +71,7 @@ if __name__ == '__main__':
   import numpy as np
   import matplotlib.pyplot as plt
 
-  # LiH molcule example
+  # LiH molecule example
 
   h = 0.08  # grid spacing
   grids = np.arange(-256, 257) * h

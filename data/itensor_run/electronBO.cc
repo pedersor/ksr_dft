@@ -180,9 +180,9 @@ int main(int argc, char* argv[])
 		}
 		
 		state.set(((Nx+1)/2)+R_right,"Up");
-		state.set(((Nx+1)/2)-R_left,"Dn");	
-		state.set(((Nx+1)/2)-R_left-1,"Up");	
-		state.set(((Nx+1)/2)-R_left-2,"Dn");	
+		state.set(((Nx+1)/2)-R_left-1,"Dn");
+		state.set(((Nx+1)/2)-R_left-2,"Up");
+		state.set(((Nx+1)/2)-R_left-3,"Dn");
 	
         psi = IQMPS(state);
     }
