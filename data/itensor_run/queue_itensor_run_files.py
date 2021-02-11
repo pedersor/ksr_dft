@@ -32,12 +32,16 @@ h = 0.08  # grid spacing
 grids = np.arange(-256, 257) * h
 # range of separations in Bohr: (min, max)
 separations = np.arange(0, 6, h)
-
 nuclear_charges = np.array([3, 1])
+num_electrons = 4
+num_unpaired_electrons = 2
 
 # load julia
 os.system('''ml julia/1.1.0''')
 cwd = os.getcwd()
+
+locations_lst = []
+external_potentials_lst = []
 for sep in separations:
   sep_steps = int(round(float(sep / h)))
 
@@ -50,10 +54,13 @@ for sep in separations:
 
   locations = utils.get_unif_separated_nuclei_positions(grids,
     num_locations=len(nuclear_charges), separation=sep)
+  locations_lst.append(locations)
 
   external_potential = utils.get_atomic_chain_potential(grids=grids,
     locations=locations, nuclear_charges=nuclear_charges,
     interaction_fn=utils.exponential_coulomb)
+  external_potentials_lst.append(external_potential)
+
 
   hoppingvmaker.get_ham1c(grids, external_potential)
   hoppingvmaker.get_vuncomp(grids)
@@ -101,3 +108,20 @@ for sep in separations:
   # queue runfile and cd out of dir
   os.system('''sbatch jobscript ''')
   os.chdir(cwd)
+
+# create dataset
+mkdir_p('dataset')
+
+locations = np.asarray(locations_lst)
+external_potentials = np.asarray(external_potentials_lst)
+num_samples = len(separations)
+num_electrons = num_electrons*np.ones(num_samples)
+num_unpaired_electrons = num_unpaired_electrons*np.ones(num_samples)
+nuclear_charges = np.tile(nuclear_charges, reps=(num_samples, 1))
+
+np.save('dataset/grids.npy', grids)
+np.save('dataset/locations.npy', locations)
+np.save('dataset/external_potentials.npy', external_potentials)
+np.save('dataset/num_electrons.npy', num_electrons)
+np.save('dataset/num_unpaired_electrons.npy', num_unpaired_electrons)
+np.save('dataset/nuclear_charges.npy', nuclear_charges)
