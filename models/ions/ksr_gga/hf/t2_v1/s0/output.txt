@@ -1,0 +1,59 @@
+to_train = [(1, 1), (2, 2)]
+to_validate = [(4, 3)]
+seed = 0
+number of parameters = 560
+step 0, loss 228183.094820595 in 188.95082449913025 sec
+Save checkpoint ckpt-00000
+step 1, loss nan in 0.0004069805145263672 sec
+step 2, loss nan in 0.0004987716674804688 sec
+step 3, loss nan in 0.0005013942718505859 sec
+step 4, loss nan in 0.00032258033752441406 sec
+step 5, loss nan in 0.0004968643188476562 sec
+step 6, loss nan in 0.000324249267578125 sec
+step 7, loss nan in 0.0003151893615722656 sec
+step 8, loss nan in 0.0004172325134277344 sec
+step 9, loss nan in 0.0003750324249267578 sec
+step 10, loss nan in 0.0003533363342285156 sec
+Save checkpoint ckpt-00010
+step 11, loss nan in 0.0003859996795654297 sec
+step 12, loss nan in 0.0004436969757080078 sec
+step 13, loss nan in 0.0002956390380859375 sec
+step 14, loss nan in 0.0003173351287841797 sec
+step 15, loss nan in 0.00041413307189941406 sec
+step 16, loss nan in 0.00035953521728515625 sec
+step 17, loss nan in 0.0003235340118408203 sec
+step 18, loss nan in 0.00041961669921875 sec
+step 19, loss nan in 0.0003769397735595703 sec
+step 20, loss nan in 0.0003325939178466797 sec
+Save checkpoint ckpt-00020
+step 21, loss nan in 0.00029277801513671875 sec
+step 22, loss nan in 0.0003085136413574219 sec
+step 23, loss nan in 0.00031566619873046875 sec
+step 24, loss nan in 0.0003542900085449219 sec
+step 25, loss nan in 0.0003771781921386719 sec
+step 26, loss nan in 0.00029754638671875 sec
+step 27, loss nan in 0.0003631114959716797 sec
+step 28, loss nan in 0.00029850006103515625 sec
+step 29, loss nan in 0.0002887248992919922 sec
+step 30, loss nan in 0.0002872943878173828 sec
+Save checkpoint ckpt-00030
+step 31, loss nan in 0.0002651214599609375 sec
+step 32, loss nan in 0.00030541419982910156 sec
+step 33, loss nan in 0.00028824806213378906 sec
+step 34, loss nan in 0.00032782554626464844 sec
+step 35, loss nan in 0.0002856254577636719 sec
+step 36, loss nan in 0.0003476142883300781 sec
+step 37, loss nan in 0.00034928321838378906 sec
+step 38, loss nan in 0.000293731689453125 sec
+step 39, loss nan in 0.00029659271240234375 sec
+step 40, loss nan in 0.0003046989440917969 sec
+Save checkpoint ckpt-00040
+Final loss = nan
+Load ckpt-00000
+Load ckpt-00010
+Load ckpt-00020
+Load ckpt-00030
+Load ckpt-00040
+optimal checkpoint: ckpt-00000
+optimal checkpoint loss: 6951.027789154435
+Save optimal_ckpt.pkl

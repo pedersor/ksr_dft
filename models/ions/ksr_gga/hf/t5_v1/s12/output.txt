@@ -1,0 +1,13 @@
+to_train = [(1, 1), (2, 2), (3, 3), (4, 2), (4, 4)]
+to_validate = [(4, 3)]
+seed = 12
+number of parameters = 560
+step 0, loss 4.523678905971309 in 241.8478376865387 sec
+Save checkpoint ckpt-00000
+step 1, loss 508130.55631664605 in 0.00038552284240722656 sec
+step 2, loss 4.523678905971309 in 0.0004620552062988281 sec
+Final loss = 4.523678905971309
+Load ckpt-00000
+optimal checkpoint: ckpt-00000
+optimal checkpoint loss: 1.3155365122876632
+Save optimal_ckpt.pkl
