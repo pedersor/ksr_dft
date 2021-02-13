@@ -102,7 +102,7 @@ class Dataset(object):
       base = os.path.basename(file)
       name = os.path.splitext(base)[0]
       with file_open(file, 'rb') as f:
-        data[name] = np.load(f)
+        data[name] = np.load(f, allow_pickle=True)
     return data
 
   def load_misc(self, attribute, array=None, path=None, file=None):
