@@ -36,14 +36,6 @@ class Train_ions(object):
   def set_dataset(self, complete_dataset):
     self.grids = complete_dataset.grids
     self.grids_integration_factor = utils.get_dx(self.grids) * len(self.grids)
-
-    # Check distances are symmetric
-    if not np.all(utils.location_center_at_grids_center_point(
-        complete_dataset.locations, self.grids)):
-      raise ValueError(
-        'Training set contains examples '
-        'not centered at the center of the grids.')
-
     self.complete_dataset = complete_dataset
     return self
 
