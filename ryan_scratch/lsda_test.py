@@ -20,8 +20,8 @@ import time
 h = 0.08
 grids = np.arange(-256, 257) * h
 locations = np.asarray([0])
-nuclear_charges = np.asarray([3])
-num_electrons = 3
+nuclear_charges = np.asarray([2])
+num_electrons = 2
 num_unpaired_electrons = 1
 
 
@@ -48,9 +48,8 @@ initial_spin_density = jnp.subtract(*densities)
 
 start_time = time.time()
 
-lsda_ksdft = spin_scf.kohn_sham(
-  locations=locations,
-  nuclear_charges=nuclear_charges,
+lsda_ksdft = jit_scf.kohn_sham(
+  external_potential=external_potential,
   num_electrons=num_electrons,
   num_unpaired_electrons=num_unpaired_electrons,
   num_iterations=15,

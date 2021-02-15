@@ -299,11 +299,11 @@ class KohnShamState(typing.NamedTuple):
 
   density: jnp.ndarray
   total_energy: ArrayLike
-  locations: jnp.ndarray
-  nuclear_charges: jnp.ndarray
   external_potential: jnp.ndarray
   grids: jnp.ndarray
   num_electrons: int
+  locations: Optional[jnp.ndarray] = None
+  nuclear_charges: Optional[jnp.ndarray] = None
   num_unpaired_electrons: Optional[int] = None
   spin_density: Optional[jnp.ndarray] = None
   initial_densities: Optional[jnp.ndarray] = None

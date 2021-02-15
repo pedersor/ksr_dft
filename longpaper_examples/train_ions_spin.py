@@ -133,21 +133,18 @@ class Train_ions(object):
     return self
 
   @partial(jax.jit, static_argnums=0)
-  def kohn_sham(self, params, locations, nuclear_charges, initial_densities,
-                initial_spin_densities, num_electrons,
-                num_unpaired_electrons):
-    return self._kohn_sham(params, locations, nuclear_charges,
-                           initial_densities, initial_spin_densities,
-                           num_electrons, num_unpaired_electrons)
+  def kohn_sham(self, params, external_potentials, initial_densities,
+      initial_spin_densities, num_electrons, num_unpaired_electrons):
+    return self._kohn_sham(params, external_potentials, initial_densities,
+      initial_spin_densities, num_electrons, num_unpaired_electrons)
 
-  @partial(jax.vmap, in_axes=(None, None, 0, 0, 0, 0, 0, 0))
-  def _kohn_sham(self, params, locations, nuclear_charges, initial_densities,
+  @partial(jax.vmap, in_axes=(None, None, 0, 0, 0, 0, 0))
+  def _kohn_sham(self, params, external_potentials, initial_densities,
                  initial_spin_densities, num_electrons, num_unpaired_electrons):
     return jax.lax.cond(
       num_unpaired_electrons == 0,
       true_fun=lambda _: jit_scf.kohn_sham(
-        locations=locations,
-        nuclear_charges=nuclear_charges,
+        external_potential=external_potentials,
         num_electrons=num_electrons,
         num_unpaired_electrons=num_unpaired_electrons,
         grids=self.grids,
@@ -164,8 +161,7 @@ class Train_ions(object):
         density_mse_converge_tolerance=self.ks_params['density_mse_converge_tolerance'],
         stop_gradient_step=self.ks_params['stop_gradient_step']),
       false_fun=lambda _: jit_spin_scf.kohn_sham(
-        locations=locations,
-        nuclear_charges=nuclear_charges,
+        external_potential=external_potentials,
         num_electrons=num_electrons,
         num_unpaired_electrons=num_unpaired_electrons,
         grids=self.grids,
@@ -187,8 +183,7 @@ class Train_ions(object):
   def loss_fn(self, flatten_params):
     """Get losses."""
     params = np_utils.unflatten(self.spec, flatten_params)
-    states = self.kohn_sham(params, self.training_set.locations,
-                            self.training_set.nuclear_charges,
+    states = self.kohn_sham(params, self.training_set.external_potential,
                             self.training_set.initial_densities,
                             self.training_set.initial_spin_densities,
                             self.training_set.num_electrons,
@@ -316,8 +311,7 @@ class Train_ions(object):
 
     states = self.kohn_sham(
       self.optimal_ckpt_params,
-      locations=self.test_set.locations,
-      nuclear_charges=self.test_set.nuclear_charges,
+      external_potentials=self.test_set.external_potential,
       initial_densities=self.test_set.initial_densities,
       initial_spin_densities=self.test_set.initial_spin_densities,
       num_electrons=self.test_set.num_electrons,
@@ -336,8 +330,7 @@ class Train_ions(object):
 
     states = self.kohn_sham(
       params,
-      self.validation_set.locations,
-      self.validation_set.nuclear_charges,
+      self.validation_set.external_potential,
       self.validation_set.initial_densities,
       self.validation_set.initial_spin_densities,
       self.validation_set.num_electrons,
@@ -367,7 +360,7 @@ class Train_ions(object):
         target=self.validation_set.density, predict=states.density[:, -1, :],
         num_electrons= self.validation_set.num_electrons
       ) * self.grids_integration_factor
-      
+
       if optimal_ckpt_params is None or loss_value < min_loss:
         optimal_ckpt_params = params
         optimal_ckpt_path = ckpt_path
@@ -410,7 +403,7 @@ if __name__ == '__main__':
 
   # set initial params from init_fn
   key = jax.random.PRNGKey(0)
-  trainer.set_init_ksr_model_params(init_fn, key)
+  trainer.set_init_model_params(init_fn, key)
   # optional: setting all parameters to be negative can help prevent exploding
   # loss in initial steps esp. for KSR-LDA.
   trainer.flatten_init_params = -np.abs(trainer.flatten_init_params)

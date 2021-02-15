@@ -205,10 +205,9 @@ def kohn_sham_iteration(
       xc_energy_density=xc_energy_density)
 
 
-@functools.partial(jax.jit, static_argnums=(4, 7, 10, 11, 12, 13, 14, 15))
+@functools.partial(jax.jit, static_argnums=(3, 6, 9, 10, 11, 12, 13, 14))
 def _kohn_sham(
-    locations,
-    nuclear_charges,
+    external_potential,
     num_electrons,
     num_unpaired_electrons,
     num_iterations,
@@ -268,13 +267,7 @@ def _kohn_sham(
       density=initial_density,
       spin_density=initial_spin_density,
       total_energy=jnp.inf,
-      locations=locations,
-      nuclear_charges=nuclear_charges,
-      external_potential=utils.get_atomic_chain_potential(
-          grids=grids,
-          locations=locations,
-          nuclear_charges=nuclear_charges,
-          interaction_fn=interaction_fn),
+      external_potential=external_potential,
       grids=grids,
       num_electrons=num_electrons,
       num_unpaired_electrons=num_unpaired_electrons,
@@ -297,8 +290,7 @@ def _kohn_sham(
 
 
 def kohn_sham(
-    locations,
-    nuclear_charges,
+    external_potential,
     num_electrons,
     num_unpaired_electrons,
     num_iterations,
@@ -366,19 +358,18 @@ def kohn_sham(
     KohnShamState, the states of all the Kohn-Sham iteration steps.
   """
   return _kohn_sham(
-      locations,
-      nuclear_charges,
-      num_electrons,
-      num_unpaired_electrons,
-      num_iterations,
-      grids,
-      xc_energy_density_fn,
-      interaction_fn,
-      initial_density,
-      initial_spin_density,
-      alpha,
-      alpha_decay,
-      enforce_reflection_symmetry,
-      num_mixing_iterations,
-      density_mse_converge_tolerance,
-      stop_gradient_step)
+    external_potential,
+    num_electrons,
+    num_unpaired_electrons,
+    num_iterations,
+    grids,
+    xc_energy_density_fn,
+    interaction_fn,
+    initial_density,
+    initial_spin_density,
+    alpha,
+    alpha_decay,
+    enforce_reflection_symmetry,
+    num_mixing_iterations,
+    density_mse_converge_tolerance,
+    stop_gradient_step)
