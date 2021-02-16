@@ -214,7 +214,7 @@ class Dataset(object):
       nuclear_charges=self.nuclear_charges[mask],
       external_potential=self.external_potentials[mask],
       grids=np.tile(np.expand_dims(self.grids, axis=0), reps=(num_samples, 1)),
-      num_electrons=np.repeat(self.num_electrons, repeats=num_samples),
+      num_electrons=self.num_electrons[mask],
       num_unpaired_electrons=num_unpaired_electrons,
       converged=np.repeat(True, repeats=num_samples), )
 
