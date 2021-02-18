@@ -184,8 +184,8 @@ class SpinKSR(object):
     loss_value = losses.trajectory_mse(
       target=self.training_set.total_energy,
       predict=states.total_energy[
-              # The starting states have larger errors. Ignore the number of
-              # starting states (here 1) in loss.
+              # The starting states have larger errors. Ignore a number of
+              # starting states in loss.
               :, self.optimization_params['num_skipped_energies']:],
       # The discount factor in the trajectory loss.
       discount=0.9,
