@@ -186,7 +186,7 @@ class Train_ions(object):
       predict=states.total_energy[
               # The starting states have larger errors. Ignore the number of
               # starting states (here 1) in loss.
-              :, 1:],
+              :, self.optimization_params['num_skipped_energies']:],
       # The discount factor in the trajectory loss.
       discount=0.9,
       num_electrons=self.training_set.num_electrons)
@@ -376,7 +376,7 @@ if __name__ == '__main__':
 
   # load complete dataset
   complete_dataset = datasets.Dataset(
-    '../data/ions/lsda/basic_all', num_grids=513)
+    '../data/ions/lsda', num_grids=513)
   trainer = Train_ions(complete_dataset)
 
   # set ML model for xc functional
@@ -385,13 +385,6 @@ if __name__ == '__main__':
   # write model specs to README file
   if not os.path.exists(model_dir):
     os.makedirs(model_dir)
-  readme_file = os.path.join(model_dir, 'README.txt')
-  with open(readme_file, "w") as fh:
-    fh.writelines("name: KSR-LSDA\n")
-    fh.writelines('''network = neural_xc.build_sliding_net(
-      window_size=1,
-      num_filters_list=[16, 16, 16],
-      activation='swish')\n''')
 
   # set initial params from init_fn
   key = jax.random.PRNGKey(0)
@@ -403,7 +396,7 @@ if __name__ == '__main__':
   # set KS parameters
   trainer.set_ks_params(
     # The number of Kohn-Sham iterations in training.
-    num_iterations=15,
+    num_iterations=6,
     # @The density linear mixing factor.
     alpha=0.5,
     # Decay factor of density linear mixing factor.
@@ -418,7 +411,7 @@ if __name__ == '__main__':
     # Apply stop gradient on the output state of this step and all steps
     # before. The first KS step is indexed as 0. Default -1, no stop gradient
     # is applied.
-    stop_gradient_step=-1
+    stop_gradient_step=-1,
   )
 
   ## Train Ions
@@ -433,7 +426,9 @@ if __name__ == '__main__':
   trainer.setup_optimization(
     initial_checkpoint_index=0,
     save_every_n=10,
-    max_train_steps=100
+    max_train_steps=100,
+    # number of iterations skipped in energy loss evaluation
+    num_skipped_energies=1,
   )
 
   # perform training optimization
@@ -447,10 +442,3 @@ if __name__ == '__main__':
   trainer.set_validation_set(validation_set)
   # get optimal checkpoint from validation
   trainer.get_optimal_ckpt(model_dir)
-
-  # append training set and validation set info to README
-  readme_file = os.path.join(model_dir, 'README.txt')
-  with open(readme_file, "a") as fh:
-    fh.writelines('\n')
-    fh.writelines(f"Trained on: {to_train} \n")
-    fh.writelines(f"Validated on: {to_validate} \n")
