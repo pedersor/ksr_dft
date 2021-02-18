@@ -26,7 +26,7 @@ from jax_dft import jit_spin_scf
 config.update('jax_enable_x64', True)
 
 
-class Train_ions(object):
+class SpinKSR(object):
   def __init__(self, complete_dataset):
     self.set_dataset(complete_dataset)
 
@@ -377,7 +377,7 @@ if __name__ == '__main__':
   # load complete dataset
   complete_dataset = datasets.Dataset(
     '../data/ions/lsda', num_grids=513)
-  trainer = Train_ions(complete_dataset)
+  trainer = SpinKSR(complete_dataset)
 
   # set ML model for xc functional
   model_dir = '../models/ions/ksr_lsda/lsda'

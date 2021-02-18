@@ -29,7 +29,7 @@ from jax_dft import scf
 from jax_dft import utils
 from jax_dft import xc
 
-from longpaper_examples.train_ions_spin import Train_ions
+from longpaper_examples.spin_ksr import SpinKSR
 
 # Set the default dtype as float64
 config.update('jax_enable_x64', True)
@@ -42,7 +42,7 @@ for training are generated using random seed 0.
 
 complete_dataset = datasets.Dataset(os.path.join(abs_path_jax_dft,
   'data/ions/lsda/basic_all'), num_grids=513)
-trainer = Train_ions(complete_dataset)
+trainer = SpinKSR(complete_dataset)
 
 training_sets_dict = {'t2': [(1, 1), (2, 2)], 't3': [(1, 1), (2, 2), (3, 3)],
                       't4': [(1, 1), (2, 2), (3, 3), (4, 1)],
