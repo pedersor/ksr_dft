@@ -1,5 +1,3 @@
-import os
-from longpaper_examples.train_ions import Train_validate_ions
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -101,59 +99,3 @@ def get_plots(test_dataset, final_states):
   axs[-1][-1].legend(bbox_to_anchor=(1.2, 0.8))
 
   return fig, axs
-
-
-if __name__ == '__main__':
-  """Example analysis of KSR-LDA results on ions."""
-
-  path = '../data/ions/unpol_lda/basic_all'
-  ions = Train_validate_ions(datasets_base_dir=path)
-  dataset = ions.get_complete_dataset(num_grids=513)
-
-  # set ML model for xc functional
-  model_dir = '../models/ions/unpol_lda'
-  ions.init_ksr_lda_model(model_dir=model_dir)
-
-  # get KS parameters
-  ions.set_ks_params(
-    # The number of Kohn-Sham iterations in training.
-    num_iterations=15,
-    # @The density linear mixing factor.
-    alpha=0.5,
-    # Decay factor of density linear mixing factor.
-    alpha_decay=0.9,
-    # Enforce reflection symmetry across the origin.
-    enforce_reflection_symmetry=True,
-    # The number of density differences in the previous iterations to mix the
-    # density. Linear mixing is num_mixing_iterations = 1.
-    num_mixing_iterations=1,
-    # The stopping criteria of Kohn-Sham iteration on density.
-    density_mse_converge_tolerance=-1.,
-    # Apply stop gradient on the output state of this step and all steps
-    # before. The first KS step is indexed as 0. Default -1, no stop gradient
-    # is applied.
-    stop_gradient_step=-1
-  )
-
-  latex_symbols = np.array(
-    ['H', 'He$^+$', 'Li$^{++}$', 'Be$^{3+}$', 'He', 'Li$^+$',
-     'Be$^{++}$', 'Li', 'Be$^+$', 'Be'])
-  dataset.load_misc(attribute='latex_symbols', array=latex_symbols)
-
-  # set test set
-  to_test = None  # tests all in dataset
-  mask = dataset.get_mask_ions(to_test)
-  test_dataset = dataset.get_subdataset(mask)
-
-  # load optimal checkpoint params
-  ions.set_test_set(test_dataset)
-  final_states = ions.get_final_test_states(
-    optimal_ckpt_path=os.path.join(model_dir, 'optimal_ckpt.pkl'))
-
-  # generate latex table with MAE
-  get_ions_table_MAE(test_dataset, final_states)
-
-  # generate density and xc energy density plots
-  fig, axs = get_plots(test_dataset, final_states)
-  plt.savefig(os.path.join(model_dir, 'xc_energy_densities_plots.pdf'),
-              bbox_inches='tight')
