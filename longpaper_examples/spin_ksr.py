@@ -369,6 +369,32 @@ class SpinKSR(object):
     return optimal_ckpt_path
 
 
+class PureKSR(SpinKSR):
+  def __init__(self, complete_dataset):
+    super().__init__(complete_dataset)
+
+  @partial(jax.vmap, in_axes=(None, None, 0, 0, 0, 0, 0))
+  def _kohn_sham(self, params, external_potentials, initial_densities,
+                 initial_spin_densities, num_electrons, num_unpaired_electrons):
+    return jit_scf.kohn_sham(
+        external_potential=external_potentials,
+        num_electrons=num_electrons,
+        num_unpaired_electrons=num_unpaired_electrons,
+        grids=self.grids,
+        xc_energy_density_fn=tree_util.Partial(
+          self.neural_xc_energy_density_fn, params=params),
+        interaction_fn=utils.exponential_coulomb,
+        initial_density=initial_densities,
+        initial_spin_density=initial_spin_densities,
+        num_iterations=self.ks_params['num_iterations'],
+        alpha=self.ks_params['alpha'],
+        alpha_decay=self.ks_params['alpha_decay'],
+        enforce_reflection_symmetry=self.ks_params['enforce_reflection_symmetry'],
+        num_mixing_iterations=self.ks_params['num_mixing_iterations'],
+        density_mse_converge_tolerance=self.ks_params['density_mse_converge_tolerance'],
+        stop_gradient_step=self.ks_params['stop_gradient_step'])
+
+
 if __name__ == '__main__':
   """Test and validate ions example."""
 
