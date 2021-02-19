@@ -663,6 +663,47 @@ def build_global_local_conv_net(
   return stax.serial(*layers)
 
 
+def build_global_local_conv_net_sigma(
+    num_global_filters, num_local_filters, num_local_conv_layers, activation,
+    grids, minval, maxval, downsample_factor, apply_negativity_transform=True):
+  """Builds global-local convolutional network for spins.
+
+  Args:
+    num_global_filters: Integer, the number of global filters in one cell.
+    num_local_filters: Integer, the number of local filters in one cell.
+    num_local_conv_layers: Integer, the number of local convolution layer in
+        one cell.
+    activation: String, the activation function to use in the network.
+    grids: Float numpy array with shape (num_grids,).
+    minval: Float, the min value in the uniform sampling for exponential width.
+    maxval: Float, the max value in the uniform sampling for exponential width.
+    downsample_factor: Integer, the factor of downsampling. The grids are
+        downsampled with step size 2 ** downsample_factor.
+    apply_negativity_transform: Boolean, whether to add negativity_transform at
+        the end.
+
+  Returns:
+    (init_fn, apply_fn) pair.
+  """
+  layers = []
+  layers.append(
+      global_conv_block_sigma(
+          num_channels=num_global_filters,
+          grids=grids,
+          minval=minval,
+          maxval=maxval,
+          downsample_factor=downsample_factor))
+  layers.extend([
+      Conv1D(num_local_filters, filter_shape=(3,), padding='SAME'),
+      _STAX_ACTIVATION[activation]] * num_local_conv_layers)
+  layers.append(
+      # Use unit convolution filter to aggregate channels.
+      Conv1D(1, filter_shape=(1,), padding='SAME'))
+  if apply_negativity_transform:
+    layers.append(negativity_transform())
+  return stax.serial(*layers)
+
+
 def build_sliding_net(
     window_size, num_filters_list, activation, apply_negativity_transform=True):
   """Builds neural network sliding over the input.
