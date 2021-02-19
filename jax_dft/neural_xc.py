@@ -185,6 +185,109 @@ def global_conv_block(num_channels, grids, minval, maxval, downsample_factor):
   )
 
 
+def exponential_global_convolution_sigma(
+    num_channels,
+    grids,
+    minval,
+    maxval,
+    downsample_factor=0,
+    eta_init=nn.initializers.normal()):
+  """Layer construction function for exponential global convolution.
+
+  Args:
+    num_channels: Integer, the number of channels.
+    grids: Float numpy array with shape (num_grids,).
+    minval: Float, the min value in the uniform sampling for exponential width.
+    maxval: Float, the max value in the uniform sampling for exponential width.
+    downsample_factor: Integer, the factor of downsampling. The grids are
+        downsampled with step size 2 ** downsample_factor.
+    eta_init: Initializer function in nn.initializers.
+
+  Returns:
+    (init_fn, apply_fn) pair.
+  """
+  grids = grids.astype(jnp.float32)[::2 ** downsample_factor]
+  displacements = jnp.expand_dims(
+      grids, axis=0) - jnp.expand_dims(grids, axis=1)
+  dx = utils.get_dx(grids)
+
+  def init_fn(rng, input_shape):
+    if num_channels <= 0:
+      raise ValueError(f'num_channels must be positive but got {num_channels}')
+    if len(input_shape) != 3:
+      raise ValueError(
+          f'The ndim of input should be 3, but got {len(input_shape)}')
+    if input_shape[1] != len(grids):
+      raise ValueError(
+          f'input_shape[1] should be len(grids), but got {input_shape[1]}')
+    if input_shape[2] != 1:
+      raise ValueError(
+          f'input_shape[2] should be 1, but got {input_shape[2]}')
+    output_shape = input_shape[:-1] + (num_channels,)
+    eta = eta_init(rng, shape=(num_channels,))
+    return output_shape, (eta,)
+
+  def apply_fn(params, inputs, **kwargs):
+    """Applies layer.
+
+    Args:
+      params: Layer parameters, (eta,).
+      inputs: Float numpy array with shape
+          (batch_size, num_grids, num_in_channels).
+      **kwargs: Other key word arguments. Unused.
+
+    Returns:
+      Float numpy array with shape (batch_size, num_grids, num_channels).
+    """
+    del kwargs
+    eta, = params
+    # shape (num_grids, num_grids, num_channels)
+    kernels = _exponential_function_channels(
+        displacements, widths=minval + (maxval - minval) * nn.sigmoid(eta))
+    # shape (batch_size, num_grids, num_channels)
+    return jnp.squeeze(
+        # shape (batch_size, 1, num_grids, num_channels)
+        jnp.tensordot(inputs, kernels, axes=(1, 0)) * dx,
+        axis=1)
+
+  return init_fn, apply_fn
+
+
+def global_conv_block_sigma(num_channels, grids, minval, maxval,
+    downsample_factor):
+  """Global convolution block for spins.
+
+  First downsample the input, then apply global conv, finally upsample and
+  concatenate with the input. The input itself is one channel in the output.
+
+  Args:
+    num_channels: Integer, the number of channels.
+    grids: Float numpy array with shape (num_grids,).
+    minval: Float, the min value in the uniform sampling for exponential width.
+    maxval: Float, the max value in the uniform sampling for exponential width.
+    downsample_factor: Integer, the factor of downsampling. The grids are
+        downsampled with step size 2 ** downsample_factor.
+
+  Returns:
+    (init_fn, apply_fn) pair.
+  """
+  layers = []
+  layers.extend([linear_interpolation_transpose()] * downsample_factor)
+  layers.append(exponential_global_convolution_sigma(
+      num_channels=num_channels - 1,  # one channel is reserved for input.
+      grids=grids,
+      minval=minval,
+      maxval=maxval,
+      downsample_factor=downsample_factor))
+  layers.extend([linear_interpolation()] * downsample_factor)
+  global_conv_path = stax.serial(*layers)
+  return stax.serial(
+      stax.FanOut(2),
+      stax.parallel(stax.Identity, global_conv_path),
+      stax.FanInConcat(axis=-1),
+  )
+
+
 def self_interaction_weight(reshaped_density, dx, width):
   """Gets self-interaction weight.
 
