@@ -14,6 +14,7 @@ def round_to_print(to_print, round_to_dec=4):
 
 
 def scientific_round_to_print(to_print, round_to_dec=1):
+  """Round to print but with scientific notation."""
   return format(float(to_print), f'.{round_to_dec}e')
 
 
@@ -33,7 +34,7 @@ def table_print(to_print, round_to_dec=4, last_in_row=False):
 
 
 def get_error_table(test_dataset, final_states):
-  """Generate table of atoms and errors"""
+  """Generate table of energy errors and density losses."""
 
   energy_error_lst = []
   energy_abs_error_lst = []
@@ -104,7 +105,8 @@ def get_ip_table(test_dataset, final_states,
 
 def get_total_separated_ions_energy_lst(molecules_dataset, ions_dataset,
     ions_final_states='exact'):
-  """Gets the total energy of separated ions in molecule to be used in AE calculations. """
+  """Gets the total energy of separated ions in molecule to be used in AE
+  calculations. """
 
   total_separated_ions_energy_lst = []
   for nuclear_charges, num_electrons in zip(molecules_dataset.nuclear_charges,
