@@ -220,7 +220,7 @@ def exponential_global_convolution_sigma(
     if input_shape[1] != len(grids):
       raise ValueError(
           f'input_shape[1] should be len(grids), but got {input_shape[1]}')
-    output_shape = input_shape[:-1] + (num_channels,)
+    output_shape = input_shape[:-1] + (2*num_channels,)
     eta = eta_init(rng, shape=(num_channels,))
     return output_shape, (eta,)
 
