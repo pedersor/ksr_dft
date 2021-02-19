@@ -68,7 +68,8 @@ def get_error_table(test_dataset, final_states):
     table_print(ksr_total_energy + ' (' + total_energy_error + ')')
     table_print(scientific_round_to_print(density_loss), last_in_row=True)
 
-  return np.asarray(energy_abs_error_lst), np.asarray(density_loss_lst)
+  return (np.asarray(energy_error_lst), np.asarray(energy_abs_error_lst),
+    np.asarray(density_loss_lst))
 
 
 def get_ip_table(test_dataset, final_states,
