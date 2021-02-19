@@ -19,17 +19,23 @@ init_fun, apply_fun = neural_xc.global_conv_block_sigma(
 rng = jax.random.PRNGKey(0)
 
 
-_, init_params = init_fun(rng, input_shape=(-1, len(grids), 1))
+_, init_params = init_fun(rng, input_shape=(-1, len(grids), 2))
 
 
 density_up = density[jnp.newaxis, :, jnp.newaxis]
 
-density_down = density[jnp.newaxis, :, jnp.newaxis]
+density_down = 2*density[jnp.newaxis, :, jnp.newaxis]
 
 input_features = jnp.append(density_up, density_down, axis=2)
-
-
 
 input_features = input_features.astype(jnp.float32)
 
 out = apply_fun(init_params, input_features)
+
+print(out[:, :, 0])
+print(out[:, :, 1])
+print(out[:, :, 2])
+print(out[:, :, 3])
+print(out[:, :, 9])
+print(out[:, :, 10])
+

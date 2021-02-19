@@ -192,7 +192,7 @@ def exponential_global_convolution_sigma(
     maxval,
     downsample_factor=0,
     eta_init=nn.initializers.normal()):
-  """Layer construction function for exponential global convolution.
+  """Layer construction function for exponential global convolution for spins.
 
   Args:
     num_channels: Integer, the number of channels.
@@ -220,9 +220,6 @@ def exponential_global_convolution_sigma(
     if input_shape[1] != len(grids):
       raise ValueError(
           f'input_shape[1] should be len(grids), but got {input_shape[1]}')
-    if input_shape[2] != 1:
-      raise ValueError(
-          f'input_shape[2] should be 1, but got {input_shape[2]}')
     output_shape = input_shape[:-1] + (num_channels,)
     eta = eta_init(rng, shape=(num_channels,))
     return output_shape, (eta,)
@@ -242,21 +239,14 @@ def exponential_global_convolution_sigma(
     del kwargs
     eta, = params
 
-    print(jnp.repeat(eta, repeats=2))
-
     # shape (num_grids, num_grids, num_channels)
     kernels = _exponential_function_channels(
         displacements, widths=minval + (maxval - minval) * nn.sigmoid(eta))
-    print(kernels.shape)
 
-
-    print((jnp.tensordot(inputs, kernels, axes=(1, 0)) * dx).shape)
-
-    # shape (batch_size, num_grids, num_channels)
-    return jnp.squeeze(
-        # shape (batch_size, 1, num_grids, num_channels)
-        jnp.tensordot(inputs, kernels, axes=(1, 0)) * dx,
-        axis=1)
+    output = jnp.tensordot(inputs, kernels, axes=(1, 0)) * dx
+    # combine spin channels into single axis
+    output = jnp.append(output[:,0,:,:], output[:,1,:,:], axis=2)
+    return output
 
   return init_fn, apply_fn
 
