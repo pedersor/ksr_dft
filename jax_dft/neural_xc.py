@@ -241,9 +241,17 @@ def exponential_global_convolution_sigma(
     """
     del kwargs
     eta, = params
+
+    print(jnp.repeat(eta, repeats=2))
+
     # shape (num_grids, num_grids, num_channels)
     kernels = _exponential_function_channels(
         displacements, widths=minval + (maxval - minval) * nn.sigmoid(eta))
+    print(kernels.shape)
+
+
+    print((jnp.tensordot(inputs, kernels, axes=(1, 0)) * dx).shape)
+
     # shape (batch_size, num_grids, num_channels)
     return jnp.squeeze(
         # shape (batch_size, 1, num_grids, num_channels)

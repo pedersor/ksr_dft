@@ -22,11 +22,14 @@ rng = jax.random.PRNGKey(0)
 _, init_params = init_fun(rng, input_shape=(-1, len(grids), 1))
 
 
-input_features = density[jnp.newaxis, :, jnp.newaxis]
+density_up = density[jnp.newaxis, :, jnp.newaxis]
+
+density_down = density[jnp.newaxis, :, jnp.newaxis]
+
+input_features = jnp.append(density_up, density_down, axis=2)
+
+
+
 input_features = input_features.astype(jnp.float32)
 
 out = apply_fun(init_params, input_features)
-
-
-print(density)
-print(out)
