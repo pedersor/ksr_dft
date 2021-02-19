@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4032079
+User:      pedersor
+Group:     burke
+Job Name:  t4_v1_s7
+Partition: nes2.8
+QOS:       normal 
+Account:   burke
+Reason:    None,c-3-36
+Nodelist:  c-3-36
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/ions/ksr_global_spin/t4_v1/s7/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/ions/ksr_global_spin/t4_v1/s7
+BatchHost: c-3-36
