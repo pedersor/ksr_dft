@@ -1,7 +1,7 @@
 import os
 import sys
-sys.path.append('../../')
 
+sys.path.append('../../')
 
 from shutil import copyfile
 import numpy as np
@@ -28,101 +28,103 @@ def edit_input_file(separation):
     file.writelines(input)
 
 
-h = 0.08  # grid spacing
-grids = np.arange(-256, 257) * h
-# range of separations in Bohr: (min, max)
-separations = np.arange(0, 6, h)
-nuclear_charges = np.array([3, 1])
-num_electrons = 4
-num_unpaired_electrons = 0
+if __name__ == '__main__':
+  """ LiH example """
 
-# load julia
-os.system('''ml julia/1.1.0''')
-cwd = os.getcwd()
+  h = 0.08  # grid spacing
+  grids = np.arange(-256, 257) * h
+  # range of separations in Bohr: (min, max)
+  separations = np.arange(0, 6, h)
+  nuclear_charges = np.array([3, 1])
+  num_electrons = 4
+  num_unpaired_electrons = 0
 
-locations_lst = []
-external_potentials_lst = []
-for sep in separations:
-  sep_steps = int(round(float(sep / h)))
+  # load julia
+  os.system('''ml julia/1.1.0''')
+  cwd = os.getcwd()
 
-  curr_dir = f'R{sep_steps}'
-  print(curr_dir)
-  mkdir_p(curr_dir)
+  locations_lst = []
+  external_potentials_lst = []
+  for sep in separations:
+    sep_steps = int(round(float(sep / h)))
 
-  # edit the input file
-  edit_input_file(sep_steps)
+    curr_dir = f'R{sep_steps}'
+    print(curr_dir)
+    mkdir_p(curr_dir)
 
-  locations = utils.get_unif_separated_nuclei_positions(grids,
-    num_locations=len(nuclear_charges), separation=sep)
-  locations_lst.append(locations)
+    # edit the input file
+    edit_input_file(sep_steps)
 
-  external_potential = utils.get_atomic_chain_potential(grids=grids,
-    locations=locations, nuclear_charges=nuclear_charges,
-    interaction_fn=utils.exponential_coulomb)
-  external_potentials_lst.append(external_potential)
+    locations = utils.get_unif_separated_nuclei_positions(grids,
+      num_locations=len(nuclear_charges), separation=sep)
+    locations_lst.append(locations)
 
+    external_potential = utils.get_atomic_chain_potential(grids=grids,
+      locations=locations, nuclear_charges=nuclear_charges,
+      interaction_fn=utils.exponential_coulomb)
+    external_potentials_lst.append(external_potential)
 
-  hoppingvmaker.get_ham1c(grids, external_potential)
-  hoppingvmaker.get_vuncomp(grids)
+    hoppingvmaker.get_ham1c(grids, external_potential)
+    hoppingvmaker.get_vuncomp(grids)
 
-  # compress vuncomp to MPO
-  os.system('''julia compressMPO.jl Vuncomp''')
-  os.remove('Vuncomp') # remove the large uncompressed file
+    # compress vuncomp to MPO
+    os.system('''julia compressMPO.jl Vuncomp''')
+    os.remove('Vuncomp')  # remove the large uncompressed file
 
-  copyfile('input', os.path.join(curr_dir, 'input'))
-  copyfile('electronBO.cc', os.path.join(curr_dir, 'electronBO.cc'))
-  copyfile('Makefile', os.path.join(curr_dir, 'Makefile'))
+    copyfile('input', os.path.join(curr_dir, 'input'))
+    copyfile('electronBO.cc', os.path.join(curr_dir, 'electronBO.cc'))
+    copyfile('Makefile', os.path.join(curr_dir, 'Makefile'))
 
-  os.rename("Ham1c", os.path.join(curr_dir, "Ham1c"))
-  os.rename("Vcompressed", os.path.join(curr_dir, "Vcompressed"))
+    os.rename("Ham1c", os.path.join(curr_dir, "Ham1c"))
+    os.rename("Vcompressed", os.path.join(curr_dir, "Vcompressed"))
 
-  os.chdir(curr_dir)
-  job_name = curr_dir
-  with open('jobscript', "w") as fh:
-    # slurm commands
-    fh.writelines("#!/bin/bash\n")
-    fh.writelines(f'''#SBATCH --job-name="{job_name}"\n''')
-    fh.writelines('#SBATCH --account=burke\n')
-    fh.writelines('#SBATCH --partition=nes2.8,brd2.4\n')
-    fh.writelines("#SBATCH --ntasks=1\n")
-    fh.writelines("#SBATCH --nodes=1\n")
-    fh.writelines("#SBATCH --cpus-per-task=2\n")
-    fh.writelines("#SBATCH --time=12:00:00\n")
-    fh.writelines("\n")
+    os.chdir(curr_dir)
+    job_name = curr_dir
+    with open('jobscript', "w") as fh:
+      # slurm commands
+      fh.writelines("#!/bin/bash\n")
+      fh.writelines(f'''#SBATCH --job-name="{job_name}"\n''')
+      fh.writelines('#SBATCH --account=burke\n')
+      fh.writelines('#SBATCH --partition=nes2.8,brd2.4\n')
+      fh.writelines("#SBATCH --ntasks=1\n")
+      fh.writelines("#SBATCH --nodes=1\n")
+      fh.writelines("#SBATCH --cpus-per-task=2\n")
+      fh.writelines("#SBATCH --time=12:00:00\n")
+      fh.writelines("\n")
 
-    # load modules and run
-    fh.writelines('ml purge\n')
-    fh.writelines('ml gnu/9.1.0\n')
-    fh.writelines('ml openblas/0.3.6\n')
-    fh.writelines("\n")
+      # load modules and run
+      fh.writelines('ml purge\n')
+      fh.writelines('ml gnu/9.1.0\n')
+      fh.writelines('ml openblas/0.3.6\n')
+      fh.writelines("\n")
 
-    # compile and run
-    fh.writelines('make\n')
-    fh.writelines(f'srun electronBO input > output.txt \n')
+      # compile and run
+      fh.writelines('make\n')
+      fh.writelines(f'srun electronBO input > output.txt \n')
 
-    # remove large not needed data
-    fh.writelines('rm electronBO\n')
-    fh.writelines('rm electronBO.o\n')
-    fh.writelines('rm sites\n')
+      # remove large not needed data
+      fh.writelines('rm electronBO\n')
+      fh.writelines('rm electronBO.o\n')
+      fh.writelines('rm sites\n')
 
-  # queue runfile and cd out of dir
-  os.system('''sbatch jobscript ''')
-  os.chdir(cwd)
+    # queue runfile and cd out of dir
+    os.system('''sbatch jobscript ''')
+    os.chdir(cwd)
 
-# create dataset
-mkdir_p('dataset')
+  # create dataset
+  mkdir_p('dataset')
 
-locations = np.asarray(locations_lst)
-external_potentials = np.asarray(external_potentials_lst)
-num_samples = len(separations)
-num_electrons = (num_electrons*np.ones(num_samples)).astype(int)
-num_unpaired_electrons = (num_unpaired_electrons*np.ones(
-  num_samples)).astype(int)
-nuclear_charges = np.tile(nuclear_charges, reps=(num_samples, 1))
+  locations = np.asarray(locations_lst)
+  external_potentials = np.asarray(external_potentials_lst)
+  num_samples = len(separations)
+  num_electrons = (num_electrons * np.ones(num_samples)).astype(int)
+  num_unpaired_electrons = (
+        num_unpaired_electrons * np.ones(num_samples)).astype(int)
+  nuclear_charges = np.tile(nuclear_charges, reps=(num_samples, 1))
 
-np.save('dataset/grids.npy', grids)
-np.save('dataset/locations.npy', locations)
-np.save('dataset/external_potentials.npy', external_potentials)
-np.save('dataset/num_electrons.npy', num_electrons)
-np.save('dataset/num_unpaired_electrons.npy', num_unpaired_electrons)
-np.save('dataset/nuclear_charges.npy', nuclear_charges)
+  np.save('dataset/grids.npy', grids)
+  np.save('dataset/locations.npy', locations)
+  np.save('dataset/external_potentials.npy', external_potentials)
+  np.save('dataset/num_electrons.npy', num_electrons)
+  np.save('dataset/num_unpaired_electrons.npy', num_unpaired_electrons)
+  np.save('dataset/nuclear_charges.npy', nuclear_charges)
