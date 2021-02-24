@@ -181,7 +181,7 @@ def exponential_coulomb_uniform_exchange_density(
       - 2 * y * (-1 + zeta) * jnp.arctan(y * (-1 + zeta))
   ) / (4 * (jnp.pi ** 2))
 
-  return e_x / density
+  return jnp.nan_to_num(e_x / density)
 
 @tree_util.Partial
 def exponential_coulomb_uniform_correlation_density(
@@ -213,7 +213,7 @@ def exponential_coulomb_uniform_correlation_density(
                                88.0733, -4.32708, 8)
   zeta = spin_density / density
   e_c = unpol + (zeta ** 2) * (pol - unpol)
-  return e_c / density
+  return jnp.nan_to_num(e_c / density)
 
 @tree_util.Partial
 def lsda_xc_energy_density(density, spin_density):

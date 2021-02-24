@@ -72,7 +72,7 @@ class Generate_dataset():
         enforce_reflection_symmetry=False, num_mixing_iterations=1,
         density_mse_converge_tolerance=-1)
 
-      #lsda_ksdft = scf.get_final_state(lsda_ksdft)
+      lsda_ksdft = scf.get_final_state(lsda_ksdft)
 
       print(
         'finished: (Z, N_e) = (' + str(nuclear_charge) + ',' +
