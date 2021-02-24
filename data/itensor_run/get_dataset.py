@@ -65,7 +65,7 @@ def parse_output(grids, output_path):
 
 
 if __name__ == '__main__':
-  # LiH example
+  """ H_3 chain example """
 
   h = 0.08  # grid spacing
   grids = np.arange(-256, 257) * h

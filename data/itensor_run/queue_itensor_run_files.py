@@ -29,7 +29,10 @@ def edit_input_file(separation):
 
 
 if __name__ == '__main__':
-  """ H_3 chain example """
+  """ H_3 chain example.
+  Note(pedersor): you must change the inital wavefunction in electronBO.cc for 
+  other examples.
+  """
 
   h = 0.08  # grid spacing
   grids = np.arange(-256, 257) * h
