@@ -42,8 +42,6 @@ if __name__ == '__main__':
   num_electrons = 3
   num_unpaired_electrons = 1
 
-  # load julia
-  os.system('''ml julia/1.1.0''')
   cwd = os.getcwd()
 
   locations_lst = []
