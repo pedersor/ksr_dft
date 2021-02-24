@@ -29,15 +29,15 @@ def edit_input_file(separation):
 
 
 if __name__ == '__main__':
-  """ LiH example """
+  """ H_3 chain example """
 
   h = 0.08  # grid spacing
   grids = np.arange(-256, 257) * h
   # range of separations in Bohr: (min, max)
   separations = np.arange(0, 6, h)
-  nuclear_charges = np.array([3, 1])
-  num_electrons = 4
-  num_unpaired_electrons = 0
+  nuclear_charges = np.array([1, 1, 1])
+  num_electrons = 3
+  num_unpaired_electrons = 1
 
   # load julia
   os.system('''ml julia/1.1.0''')
@@ -121,9 +121,13 @@ if __name__ == '__main__':
   num_unpaired_electrons = (
         num_unpaired_electrons * np.ones(num_samples)).astype(int)
   nuclear_charges = np.tile(nuclear_charges, reps=(num_samples, 1))
+  distances = separations
+  distances_x100 = (100*separations).astype(int)
 
   np.save('dataset/grids.npy', grids)
   np.save('dataset/locations.npy', locations)
+  np.save('dataset/distances.npy', locations)
+  np.save('dataset/distances_x100.npy', locations)
   np.save('dataset/external_potentials.npy', external_potentials)
   np.save('dataset/num_electrons.npy', num_electrons)
   np.save('dataset/num_unpaired_electrons.npy', num_unpaired_electrons)
