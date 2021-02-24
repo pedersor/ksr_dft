@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.append('../../')
 
 from collections import deque
@@ -46,7 +47,7 @@ def parse_output(grids, output_path):
       Sz_line = line_split[0]
       n_line = line_split[1]
 
-      magnetization_density.appendleft(get_val_after_equals(Sz_line))
+      magnetization_density.appendleft(2 * get_val_after_equals(Sz_line))
       density.appendleft(get_val_after_equals(n_line))
     elif '<V>' in line:
       v_ee = get_val_after_equals(line)
