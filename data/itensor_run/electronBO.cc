@@ -165,7 +165,8 @@ int main(int argc, char* argv[])
     else{
         // Make a new initial state
         auto state = InitState(sites,"Emp");
-		
+
+		// different distances from origin if even number of ions in chain
 		int R_left = 0;
 		int R_right = 0;
 		if( R % 2 == 0)
@@ -178,11 +179,13 @@ int main(int argc, char* argv[])
 			R_right = (R+1)/2;
 			R_left = (R-1)/2;
 		}
-		
-		state.set(((Nx+1)/2)+R_right,"Up");
-		state.set(((Nx+1)/2)-R_left-1,"Dn");
-		state.set(((Nx+1)/2)-R_left-2,"Up");
-		state.set(((Nx+1)/2)-R_left-3,"Dn");
+
+		// if odd number of ions in chain, it is simpler.
+		// H3 chain example
+		// use +/- 1 to prevent overwriting the site state in the case R = 0.
+		state.set(((Nx+1)/2)-R-1,"Up");
+		state.set(((Nx+1)/2),"Dn"); // electron located at origin
+		state.set(((Nx+1)/2)+R+1,"Up");
 	
         psi = IQMPS(state);
     }
