@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4067714
+User:      pedersor
+Group:     burke
+Job Name:  t4_v1_s14
+Partition: brd2.4
+QOS:       normal 
+Account:   burke
+Reason:    None,c-19-411
+Nodelist:  c-19-411
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/ions/ksr_global_spin/t4_v1/s14/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/ions/ksr_global_spin/t4_v1/s14
+BatchHost: c-19-411
