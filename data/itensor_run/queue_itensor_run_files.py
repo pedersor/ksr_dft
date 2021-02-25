@@ -127,8 +127,8 @@ if __name__ == '__main__':
 
   np.save('dataset/grids.npy', grids)
   np.save('dataset/locations.npy', locations)
-  np.save('dataset/distances.npy', locations)
-  np.save('dataset/distances_x100.npy', locations)
+  np.save('dataset/distances.npy', distances)
+  np.save('dataset/distances_x100.npy', distances_x100)
   np.save('dataset/external_potentials.npy', external_potentials)
   np.save('dataset/num_electrons.npy', num_electrons)
   np.save('dataset/num_unpaired_electrons.npy', num_unpaired_electrons)
