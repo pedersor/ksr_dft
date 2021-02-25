@@ -1,8 +1,6 @@
 import os
 import sys
 
-sys.path.append('../../')
-
 from collections import deque
 import numpy as np
 
