@@ -69,7 +69,7 @@ def get_error_table(test_dataset, final_states):
     table_print(scientific_round_to_print(density_loss), last_in_row=True)
 
   return (np.asarray(energy_error_lst), np.asarray(energy_abs_error_lst),
-    np.asarray(density_loss_lst))
+  np.asarray(density_loss_lst))
 
 
 def get_ip_table(test_dataset, final_states,
@@ -159,9 +159,13 @@ def get_ae_table(molecules_final_states, molecules_dataset, ions_dataset,
   error_lst = []
   for i in range(len(molecules_dataset.total_energies)):
 
-    exact_ae = np.abs(molecules_dataset.total_energies[i] -
+    nuclear_energy = utils.get_nuclear_interaction_energy(
+      molecules_dataset.locations[i], molecules_dataset.nuclear_charges[i],
+      utils.exponential_coulomb)
+
+    exact_ae = np.abs(nuclear_energy + molecules_dataset.total_energies[i] -
                       exact_total_separated_ions_energy_lst[i])
-    ksr_ae = np.abs(molecules_final_states.total_energy[i] -
+    ksr_ae = np.abs(nuclear_energy + molecules_final_states.total_energy[i] -
                     ksr_total_separated_ions_energy_lst[i])
 
     error = ksr_ae - exact_ae
