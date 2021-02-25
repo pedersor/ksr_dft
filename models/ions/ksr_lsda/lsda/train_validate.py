@@ -62,7 +62,7 @@ print(f'to_validate = {to_validate}')
 
 # load random seed num from sys passed arg and create key
 random_seed_dir = sys.argv[3]
-seed_num = int(random_seed_dir[1])
+seed_num = int(random_seed_dir[1:])
 key = jax.random.PRNGKey(seed_num)
 print(f'seed = {seed_num}')
 
