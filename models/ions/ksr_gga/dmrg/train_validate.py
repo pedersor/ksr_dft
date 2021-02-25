@@ -41,12 +41,11 @@ for training are generated using random seed 0.
 """
 
 complete_dataset = datasets.Dataset(os.path.join(abs_path_jax_dft,
-  'data/ions/dmrg/basic_all'), num_grids=513)
+  'data/ions/dmrg'), num_grids=513)
 trainer = SpinKSR(complete_dataset)
 
 training_sets_dict = {'t2': [(1, 1), (2, 2)], 't3': [(1, 1), (2, 2), (3, 3)],
-                      't4': [(1, 1), (2, 2), (3, 3), (4, 2)],
-                      't5': [(1, 1), (2, 2), (3, 3), (4, 2), (4, 4)]}
+                      't4': [(1, 1), (2, 2), (3, 3), (4, 4)]}
 # load training set from sys passed arg
 train_dir = sys.argv[1]
 to_train = training_sets_dict[train_dir]
@@ -107,7 +106,8 @@ trainer.set_init_model_params(init_fn, key, verbose=1)
 trainer.setup_optimization(
   initial_checkpoint_index=0,
   save_every_n=10,
-  max_train_steps=300)
+  max_train_steps=300,
+  num_skipped_energies=-1,)
 
 # perform training optimization
 trainer.do_lbfgs_optimization(verbose=1)
