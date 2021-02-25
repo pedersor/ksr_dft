@@ -11,8 +11,7 @@ def mkdir_p(dir):
 
 training_dirs = np.arange(2, 6, 1)
 validation_dirs = np.array([1])
-seed_dirs = np.arange(0, 20, 1)
-
+seed_dirs = np.arange(0, 30, 1)
 
 cwd = os.getcwd()
 run_file = os.path.join(cwd, 'train_validate.py')
@@ -22,6 +21,8 @@ for train_dir in training_dirs:
 
     train_val_dir = os.path.join(cwd, f't{train_dir}_v{val_dir}')
     mkdir_p(train_val_dir)
+    copyfile('get_optimal_seed.py',
+      os.path.join(train_val_dir, 'get_optimal_seed.py'))
 
     for seed in seed_dirs:
 
@@ -49,9 +50,8 @@ for train_dir in training_dirs:
         fh.writelines('ml gnu/9.1.0\n')
         # python 3 miniconda env with user packages
         fh.writelines('ml miniconda/3/own\n')
-        fh.writelines(
-          f'srun python {run_file} '
-          f't{train_dir} v{val_dir} s{seed} > output.txt \n')
+        fh.writelines(f'srun python {run_file} '
+                      f't{train_dir} v{val_dir} s{seed} > output.txt \n')
 
       # queue runfile and cd out of dir
       os.system('''sbatch jobscript ''')
