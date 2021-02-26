@@ -283,9 +283,13 @@ def concatenate_kohn_sham_states(*ks_states):
   density = np.concatenate([ks_state.density for ks_state in ks_states])
   total_energy = np.concatenate(
     [ks_state.total_energy for ks_state in ks_states])
-  locations = np.concatenate([ks_state.locations for ks_state in ks_states])
-  nuclear_charges = np.concatenate(
-    [ks_state.nuclear_charges for ks_state in ks_states])
+
+  # support jagged arrays
+  locations = [list(ks_state.locations) for ks_state in ks_states]
+  locations = np.asarray(sum(locations, []))
+  nuclear_charges = [list(ks_state.nuclear_charges) for ks_state in ks_states]
+  nuclear_charges = np.asarray(sum(nuclear_charges, []))
+
   external_potential = np.concatenate(
     [ks_state.external_potential for ks_state in ks_states])
   grids = np.concatenate([ks_state.grids for ks_state in ks_states])
