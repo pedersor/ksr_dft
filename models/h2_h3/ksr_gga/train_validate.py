@@ -80,8 +80,8 @@ trainer.set_ks_params(  # The number of Kohn-Sham iterations in training.
 # set ML model for xc functional
 network = neural_xc.build_sliding_net(window_size=1,
   num_filters_list=[16, 16, 16], activation='swish')
-init_fn, neural_xc_energy_density_fn = neural_xc.global_functional_sigma(
-  network, grids=h2_dataset.grids)
+init_fn, neural_xc_energy_density_fn = neural_xc.gga_functional_sigma(network,
+  grids=h2_dataset.grids)
 trainer.set_neural_xc_functional(model_dir=model_dir,
   neural_xc_energy_density_fn=neural_xc_energy_density_fn)
 
