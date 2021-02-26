@@ -275,3 +275,28 @@ class Dataset(object):
       num_electrons=self.num_electrons[mask],
       num_unpaired_electrons=num_unpaired_electrons,
       converged=np.repeat(True, repeats=num_samples), )
+
+
+def concatenate_kohn_sham_states(*ks_states):
+  """Concatenate at least two ks state objects into a single ks state object."""
+
+  density = np.concatenate([ks_state.density for ks_state in ks_states])
+  total_energy = np.concatenate(
+    [ks_state.total_energy for ks_state in ks_states])
+  locations = np.concatenate([ks_state.locations for ks_state in ks_states])
+  nuclear_charges = np.concatenate(
+    [ks_state.nuclear_charges for ks_state in ks_states])
+  external_potential = np.concatenate(
+    [ks_state.external_potential for ks_state in ks_states])
+  grids = np.concatenate([ks_state.grids for ks_state in ks_states])
+  num_electrons = np.concatenate(
+    [ks_state.num_electrons for ks_state in ks_states])
+  num_unpaired_electrons = np.concatenate(
+    [ks_state.num_unpaired_electrons for ks_state in ks_states])
+  converged = np.concatenate([ks_state.converged for ks_state in ks_states])
+
+  return scf.KohnShamState(density=density, total_energy=total_energy,
+    locations=locations, nuclear_charges=nuclear_charges,
+    external_potential=external_potential, grids=grids,
+    num_electrons=num_electrons, num_unpaired_electrons=num_unpaired_electrons,
+    converged=converged, )
