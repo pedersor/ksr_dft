@@ -25,9 +25,9 @@ for training are generated using random seed 0.
 """
 
 h2_dataset = datasets.Dataset(
-  os.path.join(abs_path_jax_dft, 'data/molecules/molecules/h2'), num_grids=513)
+  os.path.join(abs_path_jax_dft, 'data/molecules/h2'), num_grids=513)
 h3_dataset = datasets.Dataset(
-  os.path.join(abs_path_jax_dft, 'data/molecules/molecules/h3'), num_grids=513)
+  os.path.join(abs_path_jax_dft, 'data/molecules/h3'), num_grids=513)
 trainer = SpinKSR(h2_dataset)
 
 training_sets_dict = {'t4': [[128, 384], [128, 384]]}
