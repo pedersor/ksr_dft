@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4076357
+User:      pedersor
+Group:     burke
+Job Name:  t4_v2_s24
+Partition: nes2.8
+QOS:       normal 
+Account:   burke
+Reason:    None,c-7-11
+Nodelist:  c-7-11
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/h2_h3/ksr_gga/t4_v2/s24/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/h2_h3/ksr_gga/t4_v2/s24
+BatchHost: c-7-11

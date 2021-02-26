@@ -1,0 +1,84 @@
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+2021-02-26 00:35:20.586839: E external/org_tensorflow/tensorflow/compiler/xla/pjrt/pjrt_stream_executor_client.cc:1891] Execution of replica 0 failed: Resource exhausted: Failed to allocate request for 6.15GiB (6608925624B) on device ordinal 0
+/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/numpy/core/_asarray.py:102: VisibleDeprecationWarning: Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated. If you meant to do this, you must specify 'dtype=object' when creating the ndarray.
+  return array(a, dtype, copy=False, order=order)
+Traceback (most recent call last):
+  File "/DFS-B/DATA/burke/pedersor/jax_dft_dev/models/h2_h3/ksr_gga/train_validate.py", line 95, in <module>
+    trainer.do_lbfgs_optimization(verbose=1)
+  File "/DFS-B/DATA/burke/pedersor/jax_dft_dev/longpaper_examples/ksr.py", line 261, in do_lbfgs_optimization
+    _, loss, _ = scipy.optimize.fmin_l_bfgs_b(
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/lbfgsb.py", line 197, in fmin_l_bfgs_b
+    res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/lbfgsb.py", line 306, in _minimize_lbfgsb
+    sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/optimize.py", line 261, in _prepare_scalar_function
+    sf = ScalarFunction(fun, x0, args, grad, hess,
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 136, in __init__
+    self._update_fun()
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 226, in _update_fun
+    self._update_fun_impl()
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 133, in update_fun
+    self.f = fun_wrapped(self.x)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 130, in fun_wrapped
+    return fun(x, *args)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/optimize.py", line 74, in __call__
+    self._compute_if_needed(x, *args)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/optimize.py", line 68, in _compute_if_needed
+    fg = self.fun(x, *args)
+  File "/DFS-B/DATA/burke/pedersor/jax_dft_dev/longpaper_examples/ksr.py", line 235, in np_loss_and_grad_fn
+    train_set_loss, train_set_gradient = self.loss_value_and_grad_fn(
+jax._src.traceback_util.FilteredStackTrace: RuntimeError: Resource exhausted: Failed to allocate request for 6.15GiB (6608925624B) on device ordinal 0: while running replica 0 and partition 0 of a replicated computation (other replicas may have failed as well).
+
+The stack trace above excludes JAX-internal frames.
+The following is the original exception that occurred, unmodified.
+
+--------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/DFS-B/DATA/burke/pedersor/jax_dft_dev/models/h2_h3/ksr_gga/train_validate.py", line 95, in <module>
+    trainer.do_lbfgs_optimization(verbose=1)
+  File "/DFS-B/DATA/burke/pedersor/jax_dft_dev/longpaper_examples/ksr.py", line 261, in do_lbfgs_optimization
+    _, loss, _ = scipy.optimize.fmin_l_bfgs_b(
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/lbfgsb.py", line 197, in fmin_l_bfgs_b
+    res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/lbfgsb.py", line 306, in _minimize_lbfgsb
+    sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/optimize.py", line 261, in _prepare_scalar_function
+    sf = ScalarFunction(fun, x0, args, grad, hess,
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 136, in __init__
+    self._update_fun()
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 226, in _update_fun
+    self._update_fun_impl()
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 133, in update_fun
+    self.f = fun_wrapped(self.x)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 130, in fun_wrapped
+    return fun(x, *args)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/optimize.py", line 74, in __call__
+    self._compute_if_needed(x, *args)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/scipy/optimize/optimize.py", line 68, in _compute_if_needed
+    fg = self.fun(x, *args)
+  File "/DFS-B/DATA/burke/pedersor/jax_dft_dev/longpaper_examples/ksr.py", line 235, in np_loss_and_grad_fn
+    train_set_loss, train_set_gradient = self.loss_value_and_grad_fn(
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 139, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/jax/api.py", line 398, in f_jitted
+    return cpp_jitted_f(context, *args, **kwargs)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/jax/api.py", line 289, in cache_miss
+    out_flat = xla.xla_call(
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/jax/core.py", line 1275, in bind
+    return call_bind(self, fun, *args, **params)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/jax/core.py", line 1266, in call_bind
+    outs = primitive.process(top_trace, fun, tracers, params)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/jax/core.py", line 1278, in process
+    return trace.process_call(self, fun, tracers, params)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/jax/core.py", line 631, in process_call
+    return primitive.impl(f, *tracers, **params)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/jax/interpreters/xla.py", line 583, in _xla_call_impl
+    return compiled_fun(*args)
+  File "/export/nfs0home/pedersor/miniconda3/lib/python3.8/site-packages/jax/interpreters/xla.py", line 841, in _execute_compiled
+    out_bufs = compiled.execute(input_bufs)
+RuntimeError: Resource exhausted: Failed to allocate request for 6.15GiB (6608925624B) on device ordinal 0: while running replica 0 and partition 0 of a replicated computation (other replicas may have failed as well).
+srun: error: c-4-9: task 0: Exited with exit code 1
+srun: Terminating job step 4076338.0

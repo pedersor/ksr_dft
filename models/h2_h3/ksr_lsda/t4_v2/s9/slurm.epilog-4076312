@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4076312
+User:      pedersor
+Group:     burke
+Job Name:  t4_v2_s9
+Partition: nes2.8
+QOS:       normal 
+Account:   burke
+Reason:    NonZeroExitCode,c-3-36
+Nodelist:  c-3-36
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/h2_h3/ksr_lsda/t4_v2/s9/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/h2_h3/ksr_lsda/t4_v2/s9
+BatchHost: c-3-36

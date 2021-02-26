@@ -1,0 +1,14 @@
+#!/bin/bash
+#SBATCH --job-name="t4_v2_s10"
+#SBATCH --account=burke
+#SBATCH --partition=nes2.8,brd2.4
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=8
+#SBATCH --time=12:00:00
+#SBATCH --mem=8G
+
+ml purge
+ml gnu/9.1.0
+ml miniconda/3/own
+srun python /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/h2_h3/ksr_gga/train_validate.py t4 v2 s10 > output.txt 

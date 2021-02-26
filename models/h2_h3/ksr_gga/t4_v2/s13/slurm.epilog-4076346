@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4076346
+User:      pedersor
+Group:     burke
+Job Name:  t4_v2_s13
+Partition: nes2.8
+QOS:       normal 
+Account:   burke
+Reason:    NonZeroExitCode,c-4-20
+Nodelist:  c-4-20
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/h2_h3/ksr_gga/t4_v2/s13/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/h2_h3/ksr_gga/t4_v2/s13
+BatchHost: c-4-20
