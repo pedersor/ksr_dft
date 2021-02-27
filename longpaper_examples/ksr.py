@@ -27,17 +27,12 @@ config.update('jax_enable_x64', True)
 
 
 class SpinKSR(object):
-  def __init__(self, complete_dataset):
-    self.set_dataset(complete_dataset)
+  def __init__(self, grids):
+    self.grids = grids
+    self.grids_integration_factor = utils.get_dx(grids) * len(grids)
 
     # get jitted fns
     self.loss_value_and_grad_fn = jax.jit(jax.value_and_grad(self.loss_fn))
-
-  def set_dataset(self, complete_dataset):
-    self.grids = complete_dataset.grids
-    self.grids_integration_factor = utils.get_dx(self.grids) * len(self.grids)
-    self.complete_dataset = complete_dataset
-    return self
 
   def set_training_set(self, training_set):
     # obtain initial densities and spin densities
@@ -50,24 +45,6 @@ class SpinKSR(object):
 
     return self
 
-  def init_ksr_lsda_model(self, model_dir):
-    """KSR-LDA model. Window size = 1 constrains model to only local
-    information."""
-
-    network = neural_xc.build_sliding_net(
-      window_size=1,
-      num_filters_list=[16, 16, 16],
-      activation='swish')
-
-    init_fn, neural_xc_energy_density_fn = neural_xc.global_functional_sigma(
-      network, grids=self.grids)
-    self.neural_xc_energy_density_fn = neural_xc_energy_density_fn
-
-    # update model directory
-    self.model_dir = model_dir
-
-    return init_fn
-
   def set_neural_xc_functional(self, model_dir, neural_xc_energy_density_fn):
     """ Sets the neural XC functional and model directory."""
 
@@ -76,30 +53,6 @@ class SpinKSR(object):
     self.neural_xc_energy_density_fn = neural_xc_energy_density_fn
 
     return self
-
-  def init_ksr_global_model(self, model_dir):
-    """ KSR-global model."""
-
-    network = neural_xc.build_global_local_conv_net(
-      num_global_filters=16,
-      num_local_filters=16,
-      num_local_conv_layers=2,
-      activation='swish',
-      grids=self.grids,
-      minval=0.1,
-      maxval=2.385345,
-      downsample_factor=0)
-    network = neural_xc.wrap_network_with_self_interaction_layer(
-      network, grids=self.grids, interaction_fn=utils.exponential_coulomb)
-
-    init_fn, neural_xc_energy_density_fn = neural_xc.global_functional(
-      network, grids=self.grids)
-    self.neural_xc_energy_density_fn = neural_xc_energy_density_fn
-
-    # update model directory
-    self.model_dir = model_dir
-
-    return init_fn
 
   def set_init_model_params(self, init_fn, key=jax.random.PRNGKey(0),
                                 verbose=1):
@@ -370,8 +323,8 @@ class SpinKSR(object):
 
 
 class PureKSR(SpinKSR):
-  def __init__(self, complete_dataset):
-    super().__init__(complete_dataset)
+  def __init__(self, grids):
+    super().__init__(grids)
 
   @partial(jax.vmap, in_axes=(None, None, 0, 0, 0, 0, 0))
   def _kohn_sham(self, params, external_potentials, initial_densities,
@@ -401,13 +354,22 @@ if __name__ == '__main__':
   ## Load data and setup model
 
   # load complete dataset
-  complete_dataset = datasets.Dataset(
+  ions_dataset = datasets.Dataset(
     '../data/ions/lsda', num_grids=513)
-  trainer = SpinKSR(complete_dataset)
+  grids = ions_dataset.grids
+  trainer = SpinKSR(grids)
 
   # set ML model for xc functional
   model_dir = '../models/ions/ksr_lsda/lsda'
-  init_fn = trainer.init_ksr_lsda_model(model_dir=model_dir)
+  # (semi-)local models
+  network = neural_xc.build_sliding_net(window_size=1,
+    num_filters_list=[16, 16, 16], activation='swish')
+  init_fn, neural_xc_energy_density_fn = neural_xc.global_functional_sigma(network,
+    grids=grids)
+
+  trainer.set_neural_xc_functional(model_dir=model_dir,
+    neural_xc_energy_density_fn=neural_xc_energy_density_fn)
+
   # write model specs to README file
   if not os.path.exists(model_dir):
     os.makedirs(model_dir)
@@ -444,7 +406,7 @@ if __name__ == '__main__':
 
   # set training set
   to_train = [(1, 1), (2, 2)]
-  training_set = complete_dataset.get_ions(to_train)
+  training_set = ions_dataset.get_ions(to_train)
   trainer.set_training_set(training_set)
 
   # setup parameters associated with the optimization
@@ -455,6 +417,8 @@ if __name__ == '__main__':
     max_train_steps=100,
     # number of iterations skipped in energy loss evaluation
     num_skipped_energies=1,
+    # can start from initial params file
+    #initial_params_file='/path/to/params.pkl',
   )
 
   # perform training optimization
@@ -464,7 +428,7 @@ if __name__ == '__main__':
 
   # set validation set
   to_validate = [(3, 3)]
-  validation_set = complete_dataset.get_ions(to_validate)
+  validation_set = ions_dataset.get_ions(to_validate)
   trainer.set_validation_set(validation_set)
   # get optimal checkpoint from validation
   trainer.get_optimal_ckpt(model_dir)
