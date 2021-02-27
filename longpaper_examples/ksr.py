@@ -305,6 +305,7 @@ class SpinKSR(object):
         num_electrons= self.validation_set.num_electrons
       ) * self.grids_integration_factor
 
+      print(f'loss value = {loss_value}')
       if optimal_ckpt_params is None or loss_value < min_loss:
         optimal_ckpt_params = params
         optimal_ckpt_path = ckpt_path
