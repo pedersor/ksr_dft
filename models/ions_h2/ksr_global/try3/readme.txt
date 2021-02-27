@@ -9,7 +9,7 @@ h4_dataset = datasets.Dataset('data/molecules/h4', num_grids=513)
 grids = ions_dataset.grids # same grids for all datasets...
 
 # training sets
-ions_to_train = [(1, 1), (4, 2), (3, 3), (4, 4)]
+ions_to_train = [(1, 1), (4, 2), (3, 3)]
 ion_training_set = ions_dataset.get_ions(ions_to_train)
 h2_mols_to_train = [128, 384]
 h2_training_set = h2_dataset.get_molecules(h2_mols_to_train)
