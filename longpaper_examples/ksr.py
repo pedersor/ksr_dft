@@ -170,8 +170,7 @@ class SpinKSR(object):
       self.optimization_params['initial_checkpoint_index'] = 0
 
     if 'initial_params_file' in self.optimization_params:
-      init_params_file = self.optimization_params['initial_params_file']
-      init_params_path = os.path.join(self.model_dir, init_params_file)
+      init_params_path = self.optimization_params['initial_params_file']
       with open(init_params_path, 'rb') as handle:
         init_params = pickle.load(handle)
 
