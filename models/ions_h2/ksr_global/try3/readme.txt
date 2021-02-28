@@ -1,5 +1,5 @@
 # model dir to save results
-model_dir = 'models/ions_h2/ksr_global/try4'
+model_dir = 'models/ions_h2/ksr_global/try3'
 
 # datasets
 ions_dataset = datasets.Dataset('data/ions/dmrg', num_grids=513)
