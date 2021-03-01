@@ -27,6 +27,6 @@ for seed in seed_list:
 if overall_optimal_ckpt:
   print('overall_optimal_ckpt: ')
   print(overall_optimal_ckpt)
-  copyfile(overall_optimal_ckpt, 'overall_optimal_ckpt.pkl')
+  copyfile(overall_optimal_ckpt, 'optimal_ckpt.pkl')
 else:
   print('problem finding overall optimal ckpt.')
