@@ -93,7 +93,9 @@ class Dataset(object):
     self.total_num_samples = self.total_energies.shape[0]
 
   def _load_from_path(self, path):
-    """Loads npy files from path."""
+    """Loads npy files from path.
+    Note(pedersor): allow_pickle=True for the case of jagged arrays."""
+
     file_open = open
     data = {}
     files = glob.glob(os.path.join(path, '*.npy'))
