@@ -113,7 +113,7 @@ def get_total_separated_ions_energy_lst(molecules_dataset, ions_dataset,
   for nuclear_charges, num_electrons in zip(molecules_dataset.nuclear_charges,
       molecules_dataset.num_electrons):
 
-    electrons_on_site = nuclear_charges
+    electrons_on_site = np.copy(nuclear_charges)
     if np.sum(electrons_on_site) == num_electrons:
       ion_set = list(zip(nuclear_charges, electrons_on_site))
 
