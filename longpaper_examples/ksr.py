@@ -410,6 +410,17 @@ class SpinKSR(object):
 class PureKSR(SpinKSR):
   def __init__(self, grids):
     super().__init__(grids)
+    self.loss_value_and_grad_fn = jax.jit(jax.value_and_grad(self.loss_fn))
+
+  def set_training_set(self, training_set):
+    # obtain initial densities and spin densities
+    initial_densities, initial_spin_densities = (
+      spin_scf.get_initial_density_sigma(training_set, method='noninteracting'))
+    self.training_set = training_set._replace(
+      initial_densities=initial_densities,
+      initial_spin_densities=initial_spin_densities)
+
+    return self
 
   @partial(jax.vmap, in_axes=(None, None, 0, 0, 0, 0, 0))
   def _kohn_sham(self, params, external_potentials, initial_densities,
@@ -428,6 +439,27 @@ class PureKSR(SpinKSR):
       density_mse_converge_tolerance=self.ks_params[
         'density_mse_converge_tolerance'],
       stop_gradient_step=self.ks_params['stop_gradient_step'])
+
+  def loss_fn(self, flatten_params):
+    """Get losses."""
+    params = np_utils.unflatten(self.spec, flatten_params)
+    states = self.restricted_kohn_sham(params,
+      self.training_set.external_potential, self.training_set.initial_densities,
+      self.training_set.initial_spin_densities, self.training_set.num_electrons,
+      self.training_set.num_unpaired_electrons)
+    # Energy loss
+    loss_value = losses.trajectory_mse(target=self.training_set.total_energy,
+      predict=states.total_energy[
+        # The starting states have larger errors. Ignore a number of
+        # starting states in loss.
+      :, self.optimization_params['num_skipped_energies']:],
+      # The discount factor in the trajectory loss.
+      discount=0.9, num_electrons=self.training_set.num_electrons)
+    # Density loss
+    loss_value += losses.mean_square_error(target=self.training_set.density,
+      predict=states.density[:, -1, :],
+      num_electrons=self.training_set.num_electrons) * self.grids_integration_factor
+    return loss_value
 
 
 if __name__ == '__main__':
