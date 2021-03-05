@@ -1,12 +1,7 @@
 import os
-import sys
-
-sys.path.append('../../')
-
 from shutil import copyfile
 import numpy as np
-from jax_dft import utils
-
+import utils
 import hoppingvmaker
 
 
@@ -120,10 +115,10 @@ if __name__ == '__main__':
   num_samples = len(separations)
   num_electrons = (num_electrons * np.ones(num_samples)).astype(int)
   num_unpaired_electrons = (
-        num_unpaired_electrons * np.ones(num_samples)).astype(int)
+      num_unpaired_electrons * np.ones(num_samples)).astype(int)
   nuclear_charges = np.tile(nuclear_charges, reps=(num_samples, 1))
   distances = separations
-  distances_x100 = (100*separations).astype(int)
+  distances_x100 = (100 * separations).astype(int)
 
   np.save('dataset/grids.npy', grids)
   np.save('dataset/locations.npy', locations)
