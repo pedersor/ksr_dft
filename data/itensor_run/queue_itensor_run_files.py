@@ -37,7 +37,7 @@ if __name__ == '__main__':
   h = 0.08  # grid spacing
   grids = np.arange(-256, 257) * h
   # range of separations in Bohr: (min, max)
-  separations = np.arange(0, 6, 1)
+  separations = np.arange(0, 6, h)
   nuclear_charges = np.array([1, 1, 1])
   num_electrons = 3
   num_unpaired_electrons = 1
