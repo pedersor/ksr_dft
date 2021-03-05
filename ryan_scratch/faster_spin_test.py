@@ -7,7 +7,8 @@ grids = ions_dataset.grids
 trainer = ksr.SpinKSR(grids)
 
 # set training set
-to_train = [(1, 1), (2, 2)]
+to_train = [(1, 1), (2, 2), (3, 3)]
 training_set = ions_dataset.get_ions(to_train)
 trainer.set_training_set(training_set)
 
+print(len(trainer.training_set[1].num_electrons))
