@@ -64,6 +64,7 @@ if __name__ == '__main__':
     hoppingvmaker.get_vuncomp(grids)
 
     # compress vuncomp to MPO
+    # Note(pedersor): use julia 1.1.0+
     os.system('''julia compressMPO.jl Vuncomp''')
     os.remove('Vuncomp')  # remove the large uncompressed file
 
