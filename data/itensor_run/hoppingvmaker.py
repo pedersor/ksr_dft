@@ -1,12 +1,10 @@
 import numpy as np
-from jax_dft import utils
-from jax_dft import constants
-
-import jax.numpy as jnp
+import utils
 
 
 def get_ham1c(grids, external_potential):
-  """Gets Hamiltonian file. """
+  """Gets 1-body hamiltonian file.
+  """
 
   N = len(grids)
   finite_diff_coeffs = np.array([30, -16, 1]) / 24 / (utils.get_dx(grids) ** 2)
@@ -39,12 +37,15 @@ def get_ham1c(grids, external_potential):
 
 
 def exponential_coulomb(displacements,
-                        amplitude=constants.EXPONENTIAL_COULOMB_AMPLITUDE,
-                        kappa=constants.EXPONENTIAL_COULOMB_KAPPA):
+    amplitude=utils.EXPONENTIAL_COULOMB_AMPLITUDE,
+    kappa=utils.EXPONENTIAL_COULOMB_KAPPA):
   return amplitude * np.exp(-np.abs(displacements) * kappa)
 
 
 def get_vuncomp(grids, interaction_fn=exponential_coulomb):
+  """Gets 2-body Vee potential file.
+  Note(pedersor): pretty slow.. could be improved..?
+  """
   N = len(grids)
 
   i_lst = []
@@ -67,9 +68,7 @@ def get_vuncomp(grids, interaction_fn=exponential_coulomb):
 
 
 if __name__ == '__main__':
-  import sys
   import numpy as np
-  import matplotlib.pyplot as plt
 
   # LiH molecule example
 

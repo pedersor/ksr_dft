@@ -1,6 +1,6 @@
 input
 {
-separation = 6
+separation = 0
 nsweeps = 40
 sweeps
     {

@@ -1,4 +1,4 @@
-LIBRARY_DIR=/DFS-B/DATA/burke/pedersor/itensor2
+LIBRARY_DIR=/DFS-B/DATA/burke/itensor2
 include $(LIBRARY_DIR)/this_dir.mk
 include $(LIBRARY_DIR)/options.mk
 
