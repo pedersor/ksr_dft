@@ -168,6 +168,9 @@ class SpinKSR(object):
       # for specified checkpoint
       self.spec, self.flatten_init_params = np_utils.flatten(init_params)
 
+    if 'loss_weight' not in self.optimization_params:
+      self.optimization_params['loss_weight'] = 0.5
+
     return self
 
   def np_loss_and_grad_fn(self, flatten_params, verbose):
@@ -357,10 +360,10 @@ if __name__ == '__main__':
   trainer.flatten_init_params = -np.abs(trainer.flatten_init_params)
 
   # set KS parameters
-  trainer.set_ks_params(# The number of Kohn-Sham iterations in training.
-    num_iterations=6, # @The density linear mixing factor.
-    alpha=0.5, # Decay factor of density linear mixing factor.
-    alpha_decay=0.9, # Enforce reflection symmetry across the origin.
+  trainer.set_ks_params(  # The number of Kohn-Sham iterations in training.
+    num_iterations=6,  # @The density linear mixing factor.
+    alpha=0.5,  # Decay factor of density linear mixing factor.
+    alpha_decay=0.9,  # Enforce reflection symmetry across the origin.
     enforce_reflection_symmetry=False,
     # The number of density differences in the previous iterations to mix the
     # density. Linear mixing is num_mixing_iterations = 1.
@@ -384,7 +387,7 @@ if __name__ == '__main__':
   trainer.setup_optimization(initial_checkpoint_index=0, save_every_n=10,
     max_train_steps=100,
     # number of iterations skipped in energy loss evaluation
-    num_skipped_energies=1, # can start from initial params file
+    num_skipped_energies=1,  # can start from initial params file
     # initial_params_file='/path/to/params.pkl',
   )
 
