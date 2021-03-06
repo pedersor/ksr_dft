@@ -391,14 +391,16 @@ class SpinKSR(object):
     for ckpt_path in ckpt_list:
       params, states = self._get_states(ckpt_path)
 
+      weight = self.optimization_params['energy_loss_weight']
+
       # Energy loss
-      loss_value = losses.mean_square_error(
+      loss_value = weight * losses.mean_square_error(
         target=self.validation_set.total_energy,
         predict=states.total_energy[:, -1],
         num_electrons=self.validation_set.num_electrons)
 
       # Density loss (however, KSR paper does not use this for validation)
-      loss_value += losses.mean_square_error(
+      loss_value += (2 - weight) * losses.mean_square_error(
         target=self.validation_set.density,
         predict=states.density[:, -1, :],
         num_electrons=self.validation_set.num_electrons
