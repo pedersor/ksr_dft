@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4099882
+User:      pedersor
+Group:     burke
+Job Name:  w1.25_s5
+Partition: nes2.8
+QOS:       normal 
+Account:   burke
+Reason:    None,c-5-37
+Nodelist:  c-5-37
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/loss_weights_test/w1.25/s5/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/loss_weights_test/w1.25/s5
+BatchHost: c-5-37
