@@ -79,8 +79,6 @@ class SpinKSR(object):
     if verbose == 1:
       num_parameters = len(flatten_init_params)
       print(f'number of parameters = {num_parameters}')
-    else:
-      pass
 
     return self
 
@@ -143,7 +141,8 @@ class SpinKSR(object):
   def _unrestricted_kohn_sham(self, params, external_potentials,
       initial_densities, initial_spin_densities, num_electrons,
       num_unpaired_electrons):
-    return jit_spin_scf.kohn_sham(external_potential=external_potentials,
+    return jit_spin_scf.kohn_sham(
+      external_potential=external_potentials,
       num_electrons=num_electrons,
       num_unpaired_electrons=num_unpaired_electrons, grids=self.grids,
       xc_energy_density_fn=tree_util.Partial(self.neural_xc_energy_density_fn,
@@ -169,7 +168,8 @@ class SpinKSR(object):
   def _restricted_kohn_sham(self, params, external_potentials,
       initial_densities, initial_spin_densities, num_electrons,
       num_unpaired_electrons):
-    return jit_scf.kohn_sham(external_potential=external_potentials,
+    return jit_scf.kohn_sham(
+      external_potential=external_potentials,
       num_electrons=num_electrons,
       num_unpaired_electrons=num_unpaired_electrons, grids=self.grids,
       xc_energy_density_fn=tree_util.Partial(self.neural_xc_energy_density_fn,
@@ -190,7 +190,8 @@ class SpinKSR(object):
 
     unpolarized_training_set, polarized_training_set = self.training_set
 
-    unpolarized_states = self.restricted_kohn_sham(params,
+    unpolarized_states = self.restricted_kohn_sham(
+      params,
       unpolarized_training_set.external_potential,
       unpolarized_training_set.initial_densities,
       unpolarized_training_set.initial_spin_densities,
@@ -198,7 +199,8 @@ class SpinKSR(object):
       unpolarized_training_set.num_unpaired_electrons)
     num_unpolarized_states = len(unpolarized_states.num_electrons)
 
-    polarized_states = self.unrestricted_kohn_sham(params,
+    polarized_states = self.unrestricted_kohn_sham(
+      params,
       polarized_training_set.external_potential,
       polarized_training_set.initial_densities,
       polarized_training_set.initial_spin_densities,
@@ -206,8 +208,10 @@ class SpinKSR(object):
       polarized_training_set.num_unpaired_electrons)
     num_polarized_states = len(polarized_states.num_electrons)
 
+    weight = self.optimization_params['energy_loss_weight']
+
     # unpolarized energy loss
-    loss_value = losses.trajectory_mse(
+    loss_value = weight * losses.trajectory_mse(
       target=unpolarized_training_set.total_energy,
       predict=unpolarized_states.total_energy[
         # The starting states have larger errors. Ignore a number of
@@ -215,10 +219,11 @@ class SpinKSR(object):
       :, self.optimization_params['num_skipped_energies']:],
       # The discount factor in the trajectory loss.
       discount=0.9,
-      num_electrons=unpolarized_training_set.num_electrons) * num_unpolarized_states
+      num_electrons=unpolarized_training_set.num_electrons
+    ) * num_unpolarized_states
 
     # polarized energy loss
-    loss_value += losses.trajectory_mse(
+    loss_value += weight * losses.trajectory_mse(
       target=polarized_training_set.total_energy,
       predict=polarized_states.total_energy[
         # The starting states have larger errors. Ignore a number of
@@ -226,19 +231,22 @@ class SpinKSR(object):
       :, self.optimization_params['num_skipped_energies']:],
       # The discount factor in the trajectory loss.
       discount=0.9,
-      num_electrons=polarized_training_set.num_electrons) * num_polarized_states
+      num_electrons=polarized_training_set.num_electrons
+    ) * num_polarized_states
 
     # unpolarized density loss
-    loss_value += (
-        losses.mean_square_error(target=unpolarized_training_set.density,
-          predict=unpolarized_states.density[:, -1, :],
-          num_electrons=unpolarized_training_set.num_electrons) * self.grids_integration_factor * num_unpolarized_states)
+    loss_value += (2 - weight) * losses.mean_square_error(
+      target=unpolarized_training_set.density,
+      predict=unpolarized_states.density[:, -1, :],
+      num_electrons=unpolarized_training_set.num_electrons
+    ) * self.grids_integration_factor * num_unpolarized_states
 
     # polarized density loss
-    loss_value += (
-        losses.mean_square_error(target=polarized_training_set.density,
-          predict=polarized_states.density[:, -1, :],
-          num_electrons=polarized_training_set.num_electrons) * self.grids_integration_factor * num_polarized_states)
+    loss_value += (2 - weight) * losses.mean_square_error(
+      target=polarized_training_set.density,
+      predict=polarized_states.density[:, -1, :],
+      num_electrons=polarized_training_set.num_electrons
+    ) * self.grids_integration_factor * num_polarized_states
 
     # take average
     return loss_value / (num_polarized_states + num_unpolarized_states)
@@ -271,8 +279,8 @@ class SpinKSR(object):
       # for specified checkpoint
       self.spec, self.flatten_init_params = np_utils.flatten(init_params)
 
-    if 'loss_weight' not in self.optimization_params:
-      self.optimization_params['loss_weight'] = 0.5
+    if 'energy_loss_weight' not in self.optimization_params:
+      self.optimization_params['energy_loss_weight'] = 1.0
 
     return self
 
@@ -334,7 +342,8 @@ class SpinKSR(object):
     initial_densities, initial_spin_densities = (
       spin_scf.get_initial_density_sigma(test_set, method='noninteracting'))
 
-    self.test_set = test_set._replace(initial_densities=initial_densities,
+    self.test_set = test_set._replace(
+      initial_densities=initial_densities,
       initial_spin_densities=initial_spin_densities)
     return self
 
@@ -343,7 +352,8 @@ class SpinKSR(object):
       with open(optimal_ckpt_path, 'rb') as handle:
         self.optimal_ckpt_params = pickle.load(handle)
 
-    states = self.kohn_sham(self.optimal_ckpt_params,
+    states = self.kohn_sham(
+      self.optimal_ckpt_params,
       external_potentials=self.test_set.external_potential,
       initial_densities=self.test_set.initial_densities,
       initial_spin_densities=self.test_set.initial_spin_densities,
@@ -361,7 +371,9 @@ class SpinKSR(object):
     with open(ckpt_path, 'rb') as handle:
       params = pickle.load(handle)
 
-    states = self.kohn_sham(params, self.validation_set.external_potential,
+    states = self.kohn_sham(
+      params,
+      self.validation_set.external_potential,
       self.validation_set.initial_densities,
       self.validation_set.initial_spin_densities,
       self.validation_set.num_electrons,
@@ -386,9 +398,11 @@ class SpinKSR(object):
         num_electrons=self.validation_set.num_electrons)
 
       # Density loss (however, KSR paper does not use this for validation)
-      loss_value += losses.mean_square_error(target=self.validation_set.density,
+      loss_value += losses.mean_square_error(
+        target=self.validation_set.density,
         predict=states.density[:, -1, :],
-        num_electrons=self.validation_set.num_electrons) * self.grids_integration_factor
+        num_electrons=self.validation_set.num_electrons
+      ) * self.grids_integration_factor
 
       print(f'loss value = {loss_value}')
       if optimal_ckpt_params is None or loss_value < min_loss:
@@ -425,7 +439,8 @@ class PureKSR(SpinKSR):
   @partial(jax.vmap, in_axes=(None, None, 0, 0, 0, 0, 0))
   def _kohn_sham(self, params, external_potentials, initial_densities,
       initial_spin_densities, num_electrons, num_unpaired_electrons):
-    return jit_scf.kohn_sham(external_potential=external_potentials,
+    return jit_scf.kohn_sham(
+      external_potential=external_potentials,
       num_electrons=num_electrons,
       num_unpaired_electrons=num_unpaired_electrons, grids=self.grids,
       xc_energy_density_fn=tree_util.Partial(self.neural_xc_energy_density_fn,
@@ -443,12 +458,16 @@ class PureKSR(SpinKSR):
   def loss_fn(self, flatten_params):
     """Get losses."""
     params = np_utils.unflatten(self.spec, flatten_params)
-    states = self.restricted_kohn_sham(params,
-      self.training_set.external_potential, self.training_set.initial_densities,
-      self.training_set.initial_spin_densities, self.training_set.num_electrons,
+    states = self.restricted_kohn_sham(
+      params,
+      self.training_set.external_potential,
+      self.training_set.initial_densities,
+      self.training_set.initial_spin_densities,
+      self.training_set.num_electrons,
       self.training_set.num_unpaired_electrons)
     # Energy loss
-    loss_value = losses.trajectory_mse(target=self.training_set.total_energy,
+    loss_value = losses.trajectory_mse(
+      target=self.training_set.total_energy,
       predict=states.total_energy[
         # The starting states have larger errors. Ignore a number of
         # starting states in loss.
@@ -456,9 +475,11 @@ class PureKSR(SpinKSR):
       # The discount factor in the trajectory loss.
       discount=0.9, num_electrons=self.training_set.num_electrons)
     # Density loss
-    loss_value += losses.mean_square_error(target=self.training_set.density,
+    loss_value += losses.mean_square_error(
+      target=self.training_set.density,
       predict=states.density[:, -1, :],
-      num_electrons=self.training_set.num_electrons) * self.grids_integration_factor
+      num_electrons=self.training_set.num_electrons
+    ) * self.grids_integration_factor
     return loss_value
 
 
@@ -470,13 +491,15 @@ if __name__ == '__main__':
   # load complete dataset
   ions_dataset = datasets.Dataset('../data/ions/lsda', num_grids=513)
   grids = ions_dataset.grids
-  trainer = SpinKSR(grids)
+  trainer = PureKSR(grids)
 
   # set ML model for xc functional
   model_dir = '../models/ions/ksr_lsda/lsda'
   # (semi-)local models
-  network = neural_xc.build_sliding_net(window_size=1,
-    num_filters_list=[16, 16, 16], activation='swish')
+  network = neural_xc.build_sliding_net(
+    window_size=1,
+    num_filters_list=[16, 16, 16],
+    activation='swish')
   init_fn, neural_xc_energy_density_fn = neural_xc.global_functional_sigma(
     network, grids=grids)
 
@@ -519,7 +542,9 @@ if __name__ == '__main__':
 
   # setup parameters associated with the optimization
   # TODO: add aditional params..
-  trainer.setup_optimization(initial_checkpoint_index=0, save_every_n=10,
+  trainer.setup_optimization(
+    initial_checkpoint_index=0,
+    save_every_n=10,
     max_train_steps=100,
     # number of iterations skipped in energy loss evaluation
     num_skipped_energies=1,  # can start from initial params file
