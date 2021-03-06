@@ -38,7 +38,7 @@ complete_dataset = datasets.Dataset(
   os.path.join(abs_path_jax_dft, 'data/ions/dmrg'), num_grids=513)
 trainer = SpinKSR(complete_dataset.grids)
 
-weight_dir = sys.argv[0]
+weight_dir = sys.argv[1]
 weight = float(weight_dir[1:])
 
 to_train = [(1, 1), (4, 2), (3, 3), (4, 4)]
@@ -52,7 +52,7 @@ trainer.set_validation_set(validation_set)
 print(f'to_validate = {to_validate}')
 
 # load random seed num from sys passed arg and create key
-random_seed_dir = sys.argv[1]
+random_seed_dir = sys.argv[2]
 seed_num = int(random_seed_dir[1:])
 key = jax.random.PRNGKey(seed_num)
 print(f'seed = {seed_num}')
