@@ -36,7 +36,7 @@ config.update('jax_enable_x64', True)
 
 complete_dataset = datasets.Dataset(
   os.path.join(abs_path_jax_dft, 'data/ions/dmrg'), num_grids=513)
-trainer = SpinKSR(complete_dataset)
+trainer = SpinKSR(complete_dataset.grids)
 
 weight_dir = sys.argv[0]
 weight = float(weight_dir[1:])
