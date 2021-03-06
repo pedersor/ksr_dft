@@ -491,7 +491,7 @@ if __name__ == '__main__':
   # load complete dataset
   ions_dataset = datasets.Dataset('../data/ions/lsda', num_grids=513)
   grids = ions_dataset.grids
-  trainer = PureKSR(grids)
+  trainer = SpinKSR(grids)
 
   # set ML model for xc functional
   model_dir = '../models/ions/ksr_lsda/lsda'
@@ -547,6 +547,7 @@ if __name__ == '__main__':
     save_every_n=10,
     max_train_steps=100,
     # number of iterations skipped in energy loss evaluation
+    # a value of -1 corresponds to using the final KS only.
     num_skipped_energies=1,  # can start from initial params file
     # initial_params_file='/path/to/params.pkl',
   )
