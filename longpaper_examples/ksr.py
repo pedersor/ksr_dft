@@ -394,12 +394,16 @@ class SpinKSR(object):
       weight = self.optimization_params['energy_loss_weight']
 
       # Energy loss
-      loss_value = weight * losses.mean_square_error(
+      loss_value = weight * losses.trajectory_mse(
         target=self.validation_set.total_energy,
-        predict=states.total_energy[:, -1],
-        num_electrons=self.validation_set.num_electrons)
+        predict=states.total_energy[
+          # The starting states have larger errors. Ignore a number of
+          # starting states in loss.
+        :, self.optimization_params['num_skipped_energies']:],
+        # The discount factor in the trajectory loss.
+        discount=0.9, num_electrons=self.validation_set.num_electrons)
 
-      # Density loss (however, KSR paper does not use this for validation)
+      # Density loss
       loss_value += (2 - weight) * losses.mean_square_error(
         target=self.validation_set.density,
         predict=states.density[:, -1, :],
@@ -467,8 +471,10 @@ class PureKSR(SpinKSR):
       self.training_set.initial_spin_densities,
       self.training_set.num_electrons,
       self.training_set.num_unpaired_electrons)
+
+    weight = self.optimization_params['energy_loss_weight']
     # Energy loss
-    loss_value = losses.trajectory_mse(
+    loss_value = weight * losses.trajectory_mse(
       target=self.training_set.total_energy,
       predict=states.total_energy[
         # The starting states have larger errors. Ignore a number of
@@ -477,7 +483,7 @@ class PureKSR(SpinKSR):
       # The discount factor in the trajectory loss.
       discount=0.9, num_electrons=self.training_set.num_electrons)
     # Density loss
-    loss_value += losses.mean_square_error(
+    loss_value += (2 - weight) * losses.mean_square_error(
       target=self.training_set.density,
       predict=states.density[:, -1, :],
       num_electrons=self.training_set.num_electrons
