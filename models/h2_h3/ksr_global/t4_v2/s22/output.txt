@@ -543,3 +543,69 @@ step 488, loss 1.4966458819609493e-05 in 0.00039505958557128906 sec
 step 489, loss 1.4919434771882737e-05 in 0.0003936290740966797 sec
 step 490, loss 1.488916185239656e-05 in 0.00039076805114746094 sec
 Save checkpoint ckpt-00490
+step 491, loss 1.4878764155120437e-05 in 0.0003821849822998047 sec
+step 492, loss 1.4865965558777538e-05 in 0.0003933906555175781 sec
+step 493, loss 1.4890907861167306e-05 in 0.0004107952117919922 sec
+step 494, loss 1.4850638881009079e-05 in 0.0004057884216308594 sec
+step 495, loss 1.4822990589148748e-05 in 0.0003955364227294922 sec
+step 496, loss 1.4776151960942404e-05 in 0.0003902912139892578 sec
+step 497, loss 1.4721858474335785e-05 in 0.0004076957702636719 sec
+step 498, loss 1.4700039501655795e-05 in 0.0005598068237304688 sec
+step 499, loss 1.4653074780286366e-05 in 0.0004227161407470703 sec
+step 500, loss 1.46411231701008e-05 in 0.000396728515625 sec
+Save checkpoint ckpt-00500
+Final loss = 1.46411231701008e-05
+Load ckpt-00000
+Load ckpt-00010
+Load ckpt-00020
+Load ckpt-00030
+Load ckpt-00040
+Load ckpt-00050
+Load ckpt-00060
+Load ckpt-00070
+Load ckpt-00080
+Load ckpt-00090
+Load ckpt-00100
+Load ckpt-00110
+Load ckpt-00120
+Load ckpt-00130
+Load ckpt-00140
+Load ckpt-00150
+Load ckpt-00160
+Load ckpt-00170
+Load ckpt-00180
+Load ckpt-00190
+Load ckpt-00200
+Load ckpt-00210
+Load ckpt-00220
+Load ckpt-00230
+Load ckpt-00240
+Load ckpt-00250
+Load ckpt-00260
+Load ckpt-00270
+Load ckpt-00280
+Load ckpt-00290
+Load ckpt-00300
+Load ckpt-00310
+Load ckpt-00320
+Load ckpt-00330
+Load ckpt-00340
+Load ckpt-00350
+Load ckpt-00360
+Load ckpt-00370
+Load ckpt-00380
+Load ckpt-00390
+Load ckpt-00400
+Load ckpt-00410
+Load ckpt-00420
+Load ckpt-00430
+Load ckpt-00440
+Load ckpt-00450
+Load ckpt-00460
+Load ckpt-00470
+Load ckpt-00480
+Load ckpt-00490
+Load ckpt-00500
+optimal checkpoint: ckpt-00190
+optimal checkpoint loss: 2.897751569139485e-05
+Save optimal_ckpt.pkl

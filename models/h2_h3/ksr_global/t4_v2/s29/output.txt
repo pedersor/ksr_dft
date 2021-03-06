@@ -554,3 +554,58 @@ step 498, loss 1.6740399347533218e-05 in 0.0004878044128417969 sec
 step 499, loss 1.673035020463691e-05 in 0.0003840923309326172 sec
 step 500, loss 1.6728489465474346e-05 in 0.00039505958557128906 sec
 Save checkpoint ckpt-00500
+Final loss = 1.6728489465474346e-05
+Load ckpt-00000
+Load ckpt-00010
+Load ckpt-00020
+Load ckpt-00030
+Load ckpt-00040
+Load ckpt-00050
+Load ckpt-00060
+Load ckpt-00070
+Load ckpt-00080
+Load ckpt-00090
+Load ckpt-00100
+Load ckpt-00110
+Load ckpt-00120
+Load ckpt-00130
+Load ckpt-00140
+Load ckpt-00150
+Load ckpt-00160
+Load ckpt-00170
+Load ckpt-00180
+Load ckpt-00190
+Load ckpt-00200
+Load ckpt-00210
+Load ckpt-00220
+Load ckpt-00230
+Load ckpt-00240
+Load ckpt-00250
+Load ckpt-00260
+Load ckpt-00270
+Load ckpt-00280
+Load ckpt-00290
+Load ckpt-00300
+Load ckpt-00310
+Load ckpt-00320
+Load ckpt-00330
+Load ckpt-00340
+Load ckpt-00350
+Load ckpt-00360
+Load ckpt-00370
+Load ckpt-00380
+Load ckpt-00390
+Load ckpt-00400
+Load ckpt-00410
+Load ckpt-00420
+Load ckpt-00430
+Load ckpt-00440
+Load ckpt-00450
+Load ckpt-00460
+Load ckpt-00470
+Load ckpt-00480
+Load ckpt-00490
+Load ckpt-00500
+optimal checkpoint: ckpt-00190
+optimal checkpoint loss: 3.0319189595178477e-05
+Save optimal_ckpt.pkl
