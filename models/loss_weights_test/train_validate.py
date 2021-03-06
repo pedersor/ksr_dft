@@ -98,7 +98,7 @@ trainer.setup_optimization(
 )
 
 # perform training optimization
-trainer.do_lbfgs_optimization(verbose=1)
+#trainer.do_lbfgs_optimization(verbose=1)
 
 # get optimal checkpoint from validation
 _ = trainer.get_optimal_ckpt(model_dir)
