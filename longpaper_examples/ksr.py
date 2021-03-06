@@ -546,10 +546,13 @@ if __name__ == '__main__':
     initial_checkpoint_index=0,
     save_every_n=10,
     max_train_steps=100,
-    # number of iterations skipped in energy loss evaluation
+    # number of iterations skipped in energy loss evaluation,
     # a value of -1 corresponds to using the final KS only.
-    num_skipped_energies=1,  # can start from initial params file
+    num_skipped_energies=1,
+    # can start from initial params file:
     # initial_params_file='/path/to/params.pkl',
+    # can also modify energy vs density weight in loss function:
+    # energy_loss_weight=1,
   )
 
   # perform training optimization
