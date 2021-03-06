@@ -9,26 +9,26 @@ def mkdir_p(dir):
     os.mkdir(dir)
 
 
-weight_dirs = np.arange(0.25, 2.0, 0.25)
-seed_dirs = np.arange(0, 30, 1)
+weights = np.arange(0.25, 2.0, 0.25)
+seeds = np.arange(0, 30, 1)
 
 cwd = os.getcwd()
 run_file = os.path.join(cwd, 'train_validate.py')
 
-for weight_dir in weight_dirs:
+for weight in weights:
 
-  curr_dir = os.path.join(cwd, f'w{weight_dir}')
-  mkdir_p(curr_dir)
+  weight_dir = os.path.join(cwd, f'w{weight}')
+  mkdir_p(weight_dir)
   copyfile('get_optimal_seed.py',
-    os.path.join(curr_dir, 'get_optimal_seed.py'))
+    os.path.join(weight_dir, 'get_optimal_seed.py'))
 
-  for seed in seed_dirs:
+  for seed in seeds:
 
-    curr_dir = os.path.join(cwd, curr_dir, f's{seed}')
-    mkdir_p(curr_dir)
+    seed_dir = os.path.join(cwd, weight_dir, f's{seed}')
+    mkdir_p(seed_dir)
 
-    os.chdir(curr_dir)
-    job_name = f'w{weight_dir}_s{seed}'
+    os.chdir(seed_dir)
+    job_name = f'w{weight}_s{seed}'
 
     with open('jobscript', "w") as fh:
       # slurm commands
@@ -49,7 +49,7 @@ for weight_dir in weight_dirs:
       # python 3 miniconda env with user packages
       fh.writelines('ml miniconda/3/own\n')
       fh.writelines(f'srun python {run_file} '
-                    f'w{weight_dir} s{seed} > output.txt \n')
+                    f'w{weight} s{seed} > output.txt \n')
 
     # queue runfile and cd out of dir
     os.system('''sbatch jobscript ''')
