@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4101975
+User:      pedersor
+Group:     burke
+Job Name:  n9_s11
+Partition: nes2.8
+QOS:       normal 
+Account:   burke
+Reason:    None,c-17-40
+Nodelist:  c-17-40
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/global_sig_and_trajectory_test/no_sig/n9/s11/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/global_sig_and_trajectory_test/no_sig/n9/s11
+BatchHost: c-17-40

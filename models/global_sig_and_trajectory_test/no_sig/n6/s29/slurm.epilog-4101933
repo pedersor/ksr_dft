@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4101933
+User:      pedersor
+Group:     burke
+Job Name:  n6_s29
+Partition: nes2.8
+QOS:       normal 
+Account:   burke
+Reason:    None,c-6-231
+Nodelist:  c-6-231
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/global_sig_and_trajectory_test/no_sig/n6/s29/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/global_sig_and_trajectory_test/no_sig/n6/s29
+BatchHost: c-6-231

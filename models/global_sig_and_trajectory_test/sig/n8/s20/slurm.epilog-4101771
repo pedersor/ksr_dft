@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4101771
+User:      pedersor
+Group:     burke
+Job Name:  n8_s20
+Partition: brd2.4
+QOS:       normal 
+Account:   burke
+Reason:    None,c-19-411
+Nodelist:  c-19-411
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/global_sig_and_trajectory_test/sig/n8/s20/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/global_sig_and_trajectory_test/sig/n8/s20
+BatchHost: c-19-411
