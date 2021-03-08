@@ -405,22 +405,20 @@ def self_interaction_layer_sigma(grids, interaction_fn):
       raise ValueError(
           f'self_interaction_layer must have two inputs, '
           f'but got {len(input_shape)}')
-    if input_shape[0] != input_shape[1]:
-      raise ValueError(
-          f'The input shape to self_interaction_layer must be equal, '
-          f'but got {input_shape[0]} and {input_shape[1]}')
-    return input_shape[0], (jnp.array(1.),)
+    return input_shape[-1], (jnp.array(1.),)
 
   def apply_fn(params, inputs, **kwargs):  # pylint: disable=missing-docstring
     del kwargs
     width, = params
-    reshaped_density, features = inputs
+    reshaped_densities, features = inputs
+    # sum spin densities to get total density
+    reshaped_density = reshaped_densities.sum(axis=2).reshape(features.shape)
     beta = self_interaction_weight(
         reshaped_density=reshaped_density, dx=dx, width=width)
     hartree = -0.5 * scf.get_hartree_potential(
         density=reshaped_density.reshape(-1),
         grids=grids,
-        interaction_fn=interaction_fn).reshape(reshaped_density.shape)
+        interaction_fn=interaction_fn).reshape(features.shape)
     return hartree * beta + features * (1 - beta)
 
   return init_fn, apply_fn
