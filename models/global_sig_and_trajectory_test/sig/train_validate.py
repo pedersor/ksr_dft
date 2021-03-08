@@ -39,7 +39,7 @@ complete_dataset = datasets.Dataset(
 trainer = SpinKSR(complete_dataset.grids)
 
 num_skipped_dir = sys.argv[1]
-num_skipped = float(num_skipped_dir[1:])
+num_skipped = int(num_skipped_dir[1:])
 
 to_train = [(1, 1), (4, 2), (3, 3), (4, 4)]
 training_set = complete_dataset.get_ions(to_train)
