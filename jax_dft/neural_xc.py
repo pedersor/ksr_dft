@@ -377,6 +377,79 @@ def wrap_network_with_self_interaction_layer(network, grids, interaction_fn):
   )
 
 
+def self_interaction_layer_sigma(grids, interaction_fn):
+  """Layer construction function for self-interaction.
+
+  The first input is density and the second input is the feature to mix.
+
+  When the density integral is one, this layer outputs -0.5 * Hartree potential
+  in the same shape of the density which will cancel the Hartree term.
+  When the density integral is not one, the output is a linear combination of
+  two inputs to this layer. The weight are determined by
+  self_interaction_weight().
+
+  Args:
+    grids: Float numpy array with shape (num_grids,).
+    interaction_fn: function takes displacements and returns
+        float numpy array with the same shape of displacements.
+
+  Returns:
+    (init_fn, apply_fn) pair.
+  """
+  grids = grids.astype(jnp.float32)
+  dx = utils.get_dx(grids)
+
+  def init_fn(rng, input_shape):
+    del rng
+    if len(input_shape) != 2:
+      raise ValueError(
+          f'self_interaction_layer must have two inputs, '
+          f'but got {len(input_shape)}')
+    if input_shape[0] != input_shape[1]:
+      raise ValueError(
+          f'The input shape to self_interaction_layer must be equal, '
+          f'but got {input_shape[0]} and {input_shape[1]}')
+    return input_shape[0], (jnp.array(1.),)
+
+  def apply_fn(params, inputs, **kwargs):  # pylint: disable=missing-docstring
+    del kwargs
+    width, = params
+    reshaped_density, features = inputs
+    beta = self_interaction_weight(
+        reshaped_density=reshaped_density, dx=dx, width=width)
+    hartree = -0.5 * scf.get_hartree_potential(
+        density=reshaped_density.reshape(-1),
+        grids=grids,
+        interaction_fn=interaction_fn).reshape(reshaped_density.shape)
+    return hartree * beta + features * (1 - beta)
+
+  return init_fn, apply_fn
+
+
+def wrap_network_with_self_interaction_layer_sigma(network, grids,
+    interaction_fn):
+  """Wraps a network with self-interaction layer.
+
+  Args:
+    network: an (init_fn, apply_fn) pair.
+     * init_fn: The init_fn of the neural network. It takes an rng key and
+         an input shape and returns an (output_shape, params) pair.
+     * apply_fn: The apply_fn of the neural network. It takes params,
+         inputs, and an rng key and applies the layer.
+    grids: Float numpy array with shape (num_grids,).
+    interaction_fn: function takes displacements and returns
+        float numpy array with the same shape of displacements.
+
+  Returns:
+    (init_fn, apply_fn) pair.
+  """
+  return stax.serial(
+      stax.FanOut(2),
+      stax.parallel(stax.Identity, network),
+      self_interaction_layer_sigma(grids, interaction_fn),
+  )
+
+
 # pylint: disable=invalid-name
 def GeneralConvWithoutBias(
     dimension_numbers, out_chan, filter_shape,
@@ -1008,8 +1081,6 @@ def global_functional(network, grids, num_spatial_shift=1):
 
 def global_functional_sigma(network, grids, num_spatial_shift=1):
   """Spin-decomposed version of `global_functional`.
-
-  NOTE(Ryan): WIP.
 
   Args:
     network: an (init_fn, apply_fn) pair.

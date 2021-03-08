@@ -119,6 +119,8 @@ def get_xc_energy_sigma(densities, xc_energy_density_fn, grids):
   density = density_up + density_down
   spin_density = density_up - density_down
 
+  # TODO: symmetrize neural_xc functional instead of doing here..
+
   return  jnp.dot(0.5*(xc_energy_density_fn(density, spin_density=spin_density)
     + xc_energy_density_fn(density, spin_density=-1.*spin_density)),
     density) * utils.get_dx(grids)
