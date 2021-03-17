@@ -220,8 +220,12 @@ class Dataset(object):
       num_unpaired_electrons=num_unpaired_electrons,
       converged=np.repeat(True, repeats=num_samples), )
 
-  def get_subdataset(self, mask, exceptions={'grids'}, downsample_step=None):
+  def get_subdataset(self, mask=None, exceptions={'grids'},
+      downsample_step=None):
     """Gets subdataset."""
+    if mask is None:
+      mask = np.ones(self.total_num_samples, dtype=bool)
+
     # downsample data, if specified.
     if downsample_step is not None:
       sample_mask = np.zeros(self.total_num_samples, dtype=bool)
