@@ -76,7 +76,7 @@ def _wavefunctions_to_density(num_electrons, wavefunctions, grids):
   # create one hot-type vector to retrieve relevant lowest eigenvectors
   counts = jnp.arange(len(grids) * 2)
   one_hot = jnp.where(counts < num_electrons,
-                      1.0, 0.0)
+    1.0, 0.0)
   one_hot = jnp.expand_dims(one_hot, axis=1)
   # Normalize the wavefunctions.
   wavefunctions = wavefunctions / jnp.sqrt(jnp.sum(
@@ -357,8 +357,8 @@ def kohn_sham_iteration(
   if enforce_reflection_symmetry:
     xc_energy_density_fn = _flip_and_average_fn(
       xc_energy_density_fn, locations=state.locations, grids=state.grids)
-    xc_potential = get_xc_potential(state.density,xc_energy_density_fn,
-                                                               state.grids)
+    xc_potential = get_xc_potential(state.density, xc_energy_density_fn,
+      state.grids)
     # nan values may appear in regions where the density value is very small.
     xc_potential = jnp.nan_to_num(xc_potential)
   else:

@@ -21,8 +21,7 @@ def _wavefunctions_to_density(num_electrons, wavefunctions, grids):
   """Converts wavefunctions to density."""
   # create one hot-type vector to retrieve relevant lowest eigenvectors
   counts = jnp.arange(len(grids))
-  one_hot = jnp.where(counts < num_electrons,
-                      1.0, 0.0)
+  one_hot = jnp.where(counts < num_electrons, 1.0, 0.0)
   one_hot = jnp.expand_dims(one_hot, axis=1)
   # Normalize the wavefunctions.
   wavefunctions = wavefunctions / jnp.sqrt(jnp.sum(
@@ -98,7 +97,7 @@ def solve_noninteracting_system(external_potential, num_electrons, grids):
 
 def batch_solve_noninteracting_system(external_potential, num_electrons, grids):
   return jax.vmap(solve_noninteracting_system, in_axes=(0, 0, None),
-                  out_axes=(0))(external_potential, num_electrons, grids)
+    out_axes=(0))(external_potential, num_electrons, grids)
 
 
 def get_xc_energy_sigma(densities, xc_energy_density_fn, grids):
@@ -121,8 +120,9 @@ def get_xc_energy_sigma(densities, xc_energy_density_fn, grids):
 
   # TODO: symmetrize neural_xc functional instead of doing here..
 
-  return  jnp.dot(0.5*(xc_energy_density_fn(density, spin_density=spin_density)
-    + xc_energy_density_fn(density, spin_density=-1.*spin_density)),
+  return jnp.dot(0.5 * (xc_energy_density_fn(density, spin_density=spin_density)
+                        + xc_energy_density_fn(density,
+        spin_density=-1. * spin_density)),
     density) * utils.get_dx(grids)
 
 
@@ -199,29 +199,29 @@ def kohn_sham_iteration(
   densities = (density_up, density_down)
 
   xc_potential_up, xc_potential_down = get_xc_potential_sigma(densities,
-                                                              xc_energy_density_fn,
-                                                              state.grids)
+    xc_energy_density_fn,
+    state.grids)
   xc_potential_up = jnp.nan_to_num(xc_potential_up) / utils.get_dx(state.grids)
   xc_potential_down = jnp.nan_to_num(
     xc_potential_down) / utils.get_dx(state.grids)
 
   ks_potentials_sigma = jnp.array(
     [hartree_potential + xc_potential_up + state.external_potential,
-     hartree_potential + xc_potential_down + state.external_potential])
+      hartree_potential + xc_potential_down + state.external_potential])
   num_electrons_sigma = jnp.array([num_up_electrons, num_down_electrons])
 
   densities, total_eigen_energies_sigma = (
     batch_solve_noninteracting_system(ks_potentials_sigma,
-                                      num_electrons_sigma, state.grids))
+      num_electrons_sigma, state.grids))
   densities = tuple(densities)
 
   density = 0
   spin_density = 0
   kinetic_energy = 0
   for i, (density_sigma, total_eigen_energy_sigma,
-          ks_potential_sigma) in enumerate(zip(densities,
-                                               total_eigen_energies_sigma,
-                                               ks_potentials_sigma)):
+  ks_potential_sigma) in enumerate(zip(densities,
+    total_eigen_energies_sigma,
+    ks_potentials_sigma)):
     density += density_sigma
     spin_density += (-1) ** (i) * density_sigma
     kinetic_energy += (total_eigen_energy_sigma -
@@ -342,7 +342,7 @@ def kohn_sham(
       jnp.array([num_up_electrons, num_down_electrons]), grids)
 
     initial_density = jnp.sum(densities, axis=0)
-    initial_spin_density = jnp.squeeze(-1*jnp.diff(densities, axis=0))
+    initial_spin_density = jnp.squeeze(-1 * jnp.diff(densities, axis=0))
 
   # Create initial state.
   state = scf.KohnShamState(
@@ -421,9 +421,9 @@ def get_initial_density_sigma(state, method):
 
     # get initial density and spin_density
     solve = jax.vmap(batch_solve_noninteracting_system,
-                     in_axes=(0, 0, None))
+      in_axes=(0, 0, None))
     initial_up_down_densities, _ = solve(external_potentials, num_up_down,
-                                         state.grids[0])
+      state.grids[0])
     initial_densities = jnp.sum(initial_up_down_densities, axis=1)
     initial_spin_densities = jnp.squeeze(
       -1 * jnp.diff(initial_up_down_densities, axis=1))
