@@ -11,4 +11,4 @@
 ml purge
 ml gnu/9.1.0
 ml miniconda/3/own
-srun python train_validate.py > output.txt
+srun python train.py > output.txt
