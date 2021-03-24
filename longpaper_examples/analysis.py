@@ -110,35 +110,18 @@ def get_total_separated_ions_energy_lst(molecules_dataset, ions_dataset,
   calculations. """
 
   total_separated_ions_energy_lst = []
-  for nuclear_charges, num_electrons in zip(molecules_dataset.nuclear_charges,
-      molecules_dataset.num_electrons):
+  for ion_multiset in molecules_dataset.dissocation_info:
 
-    electrons_on_site = np.copy(nuclear_charges)
-    if np.sum(electrons_on_site) == num_electrons:
-      ion_set = list(zip(nuclear_charges, electrons_on_site))
-
-
-    else:
-      for i, num_el in enumerate(electrons_on_site):
-        if num_el > 1:
-          electrons_on_site[i] -= 1
-
-      if np.sum(electrons_on_site) == num_electrons:
-        ion_set = list(zip(nuclear_charges, electrons_on_site))
-      else:
-        # H_chain^+ case...
-        ion_set = list(zip(nuclear_charges[1:], electrons_on_site[1:]))
-
-    ion_multiset = Counter(ion_set)
     total_separated_ions_energy = 0
     possible_ions_lst = [(nuc_charge[0], num_el) for nuc_charge, num_el in
       zip(ions_dataset.nuclear_charges, ions_dataset.num_electrons)]
-    for key, value in ion_multiset.items():
+
+    for key, multiplicity in ion_multiset.items():
       idx = possible_ions_lst.index(key)
       if ions_final_states == 'exact':
-        total_separated_ions_energy += value * ions_dataset.total_energies[idx]
+        total_separated_ions_energy += multiplicity * ions_dataset.total_energies[idx]
       else:
-        total_separated_ions_energy += value * ions_final_states.total_energy[
+        total_separated_ions_energy += multiplicity * ions_final_states.total_energy[
           idx]
 
     total_separated_ions_energy_lst.append(total_separated_ions_energy)
