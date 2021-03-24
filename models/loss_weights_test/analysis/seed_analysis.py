@@ -39,7 +39,7 @@ seed_dir = sys.argv[1]
 
 # set dataset path
 complete_dataset = datasets.Dataset(
-  '/content/jax_dft_dev/data/ions/dmrg', num_grids=513)
+  os.path.join(abs_path_jax_dft, 'data/ions/dmrg'), num_grids=513)
 
 weights = np.arange(0.25, 2.0, 0.25) / 2
 
@@ -54,7 +54,7 @@ for weight in weights:
   print(f'weight = {weight}')
 
   # set model path
-  model_base_dir = 'models/loss_weights_test/'
+  model_base_dir = os.path.join(abs_path_jax_dft, 'models/loss_weights_test/')
   weight_dir = f'w{2 * weight}'
   model_dir = os.path.join(model_base_dir, weight_dir, seed_dir)
 
@@ -95,7 +95,8 @@ for weight in weights:
 
   # train set:
   ions_dataset = datasets.Dataset(
-    '/content/jax_dft_dev/data/ions/dmrg', num_grids=513)
+    os.path.join(abs_path_jax_dft, '/data/ions/dmrg'),
+    num_grids=513)
   tester.set_test_set(ions_dataset.get_ions([(1, 1), (4, 2), (3, 3), (4, 4)]))
   ions_states = tester.get_test_states(
     optimal_ckpt_path=os.path.join(model_dir, 'optimal_ckpt.pkl'))
@@ -124,8 +125,6 @@ for weight in weights:
   # IP, AE, density loss
 
   # set ion test set
-  ions_dataset = datasets.Dataset(
-    '/content/jax_dft_dev/data/ions/dmrg', num_grids=513)
   tester.set_test_set(ions_dataset.get_ions())
   # load optimal checkpoint params
   ions_states = tester.get_test_states(
@@ -134,7 +133,8 @@ for weight in weights:
 
   # set molecules test set
   molecules_dataset = datasets.Dataset(
-    '/content/jax_dft_dev/data/molecules/relaxed_all', num_grids=513)
+    os.path.join(abs_path_jax_dft,
+      'data/molecules/relaxed_all'), num_grids=513)
   tester.set_test_set(molecules_dataset.get_molecules())
   # load optimal checkpoint params
   molecules_states = tester.get_test_states(
