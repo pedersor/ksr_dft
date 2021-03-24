@@ -95,8 +95,7 @@ for weight in weights:
 
   # train set:
   ions_dataset = datasets.Dataset(
-    os.path.join(abs_path_jax_dft, '/data/ions/dmrg'),
-    num_grids=513)
+    os.path.join(abs_path_jax_dft, 'data/ions/dmrg'), num_grids=513)
   tester.set_test_set(ions_dataset.get_ions([(1, 1), (4, 2), (3, 3), (4, 4)]))
   ions_states = tester.get_test_states(
     optimal_ckpt_path=os.path.join(model_dir, 'optimal_ckpt.pkl'))
