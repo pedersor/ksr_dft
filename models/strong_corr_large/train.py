@@ -73,16 +73,17 @@ h3_plus_training_set = h3_plus_dataset.get_molecules([168, 384])
 h_be_h_training_set = h_be_h_dataset.get_molecules([352])
 li_h_training_set = li_h_dataset.get_molecules([312])
 he_h_plus_training_set = he_h_plus_dataset.get_molecules([312, 504])
+h3_training_set = h3_dataset.get_molecules([208])
 
 training_set = datasets.concatenate_kohn_sham_states(
   ion_training_set,
-  unpolarized_h,
   h2_training_set,
   h4_training_set,
   h3_plus_training_set,
   h_be_h_training_set,
   li_h_training_set,
-  he_h_plus_training_set)
+  he_h_plus_training_set,
+  h3_training_set)
 
 # validation sets
 ions_validation_set = ions_dataset.get_ions([(4, 3)])
@@ -131,12 +132,12 @@ key = jax.random.PRNGKey(0)
 trainer.set_init_model_params(init_fn, key, verbose=1)
 
 trainer.setup_optimization(
-  initial_checkpoint_index=0,
+  initial_checkpoint_index=680,
   save_every_n=10,
   max_train_steps=500,
-  num_skipped_energies=-1,
-  initial_params_file=os.path.join(abs_path_jax_dft,
-    'models/ions/ksr_global/t5_v1/optimal_ckpt.pkl'))
+  num_skipped_energies=-1,)
+  #initial_params_file=os.path.join(abs_path_jax_dft,
+  #  'models/ions/ksr_global/t5_v1/optimal_ckpt.pkl'))
 
 # perform training optimization
 trainer.do_lbfgs_optimization(verbose=1)
