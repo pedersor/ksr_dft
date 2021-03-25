@@ -9,7 +9,7 @@ def mkdir_p(dir):
     os.mkdir(dir)
 
 
-seed_dirs = np.arange(0, 5, 1)
+seed_dirs = np.arange(0, 30, 1)
 
 cwd = os.getcwd()
 run_file = os.path.join(cwd, 'train_validate.py')
@@ -31,8 +31,8 @@ for seed in seed_dirs:
     fh.writelines("#SBATCH --ntasks=1\n")
     fh.writelines("#SBATCH --nodes=1\n")
     fh.writelines("#SBATCH --cpus-per-task=8\n")
-    fh.writelines("#SBATCH --time=12:00:00\n")
-    fh.writelines("#SBATCH --mem=8G\n")
+    fh.writelines("#SBATCH --time=24:00:00\n")
+    fh.writelines("#SBATCH --mem=16G\n")
     fh.writelines("\n")
 
     # load modules and run
