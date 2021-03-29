@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4190109
+User:      pedersor
+Group:     burke
+Job Name:  s0
+Partition: nes2.8
+QOS:       normal 
+Account:   burke
+Reason:    None,c-8-292
+Nodelist:  c-8-292
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/strong_corr_large/s0/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/strong_corr_large/s0
+BatchHost: c-8-292

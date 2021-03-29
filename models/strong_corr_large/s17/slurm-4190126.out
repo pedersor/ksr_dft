@@ -1,0 +1,3 @@
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+slurmstepd: error: *** JOB 4190126 ON c-6-234 CANCELLED AT 2021-03-25T23:16:42 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 4190126.0 ON c-6-234 CANCELLED AT 2021-03-25T23:16:42 DUE TO TIME LIMIT ***

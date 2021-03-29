@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4190130
+User:      pedersor
+Group:     burke
+Job Name:  s21
+Partition: nes2.8
+QOS:       normal 
+Account:   burke
+Reason:    TimeLimit,c-8-251
+Nodelist:  c-8-251
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/strong_corr_large/s21/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/strong_corr_large/s21
+BatchHost: c-8-251

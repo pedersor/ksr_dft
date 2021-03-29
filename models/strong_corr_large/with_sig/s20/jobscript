@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH --job-name="sig_s20"
+#SBATCH --account=burke
+#SBATCH --partition=nes2.8,brd2.4
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=8
+#SBATCH --time=24:00:00
+#SBATCH --mem=16G
+
+ml purge
+ml miniconda/3/own
+srun python /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/strong_corr_large/with_sig/train_validate.py s20 > output.txt 

@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4190119
+User:      pedersor
+Group:     burke
+Job Name:  s10
+Partition: nes2.8
+QOS:       normal 
+Account:   burke
+Reason:    TimeLimit,c-13-222
+Nodelist:  c-13-222
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/strong_corr_large/s10/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/strong_corr_large/s10
+BatchHost: c-13-222
