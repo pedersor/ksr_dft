@@ -1,4 +1,0 @@
-to_train = [[128, 384], [128, 384]]
-to_validate = [[168], [224]]
-seed = 12
-number of parameters = 576
