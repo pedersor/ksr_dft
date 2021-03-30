@@ -29,7 +29,7 @@ from jax_dft import scf
 from jax_dft import utils
 from jax_dft import xc
 
-from longpaper_examples import ksr
+from ks_regularizer import ksr
 
 # Set the default dtype as float64
 config.update('jax_enable_x64', True)
