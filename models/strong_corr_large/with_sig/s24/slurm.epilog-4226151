@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4226151
+User:      pedersor
+Group:     burke
+Job Name:  sig_s24
+Partition: brd2.4
+QOS:       normal 
+Account:   burke
+Reason:    None,c-19-412
+Nodelist:  c-19-412
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/strong_corr_large/with_sig/s24/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/strong_corr_large/with_sig/s24
+BatchHost: c-19-412
