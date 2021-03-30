@@ -140,7 +140,7 @@ trainer.setup_optimization(
   num_skipped_energies=-1, )
 
 # perform training optimization
-trainer.do_lbfgs_optimization(verbose=1)
+#trainer.do_lbfgs_optimization(verbose=1)
 
 # setup validation
 

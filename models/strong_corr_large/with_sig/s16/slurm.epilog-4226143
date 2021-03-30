@@ -1,0 +1,13 @@
+-------------- slurm.epilog ---------------
+Job ID:    4226143
+User:      pedersor
+Group:     burke
+Job Name:  sig_s16
+Partition: nes2.8
+QOS:       normal 
+Account:   burke
+Reason:    None,c-13-223
+Nodelist:  c-13-223
+Command:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/strong_corr_large/with_sig/s16/jobscript
+WorkDir:   /DFS-B/DATA/burke/pedersor/jax_dft_dev/models/strong_corr_large/with_sig/s16
+BatchHost: c-13-223
