@@ -35,6 +35,8 @@ class SpinKSR(object):
     self.loss_value_and_grad_fn = jax.jit(jax.value_and_grad(self.loss_fn))
 
   def set_training_set(self, training_set):
+    """Sets training set for KSR object."""
+
     # obtain initial densities and spin densities
     initial_densities, initial_spin_densities = (
       spin_scf.get_initial_density_sigma(training_set, method='noninteracting'))
@@ -95,6 +97,21 @@ class SpinKSR(object):
     return self
 
   def set_ks_params(self, **kwargs):
+    """Sets KS parameters:
+
+      num_iterations: The number of Kohn-Sham iterations in training.
+      alpha: The density linear mixing factor.
+      alpha_decay: Decay factor of density linear mixing factor.
+      enforce_reflection_symmetry: Enforce reflection symmetry across the
+        origin.
+      num_mixing_iterations: The number of density differences in the previous
+        iterations to mix the density. Linear mixing is num_mixing_iterations=1.
+      density_mse_converge_tolerance: The stopping criteria of Kohn-Sham
+        iteration on density.
+      stop_gradient_step: Apply stop gradient on the output state of this step
+        and all steps before. The first KS step is indexed as 0. Default -1,
+        no stop gradient is applied.
+    """
     self.ks_params = kwargs
     return self
 
@@ -107,6 +124,9 @@ class SpinKSR(object):
   @partial(jax.vmap, in_axes=(None, None, 0, 0, 0, 0, 0))
   def _kohn_sham(self, params, external_potentials, initial_densities,
       initial_spin_densities, num_electrons, num_unpaired_electrons):
+    """KS calculation. If num_unpaired_electrons = 0, the calculation
+    is restricted KS, else the calculation is unrestricted KS."""
+
     return jax.lax.cond(num_unpaired_electrons == 0,
       true_fun=lambda _: jit_scf.kohn_sham(
         external_potential=external_potentials, num_electrons=num_electrons,
@@ -197,7 +217,7 @@ class SpinKSR(object):
       stop_gradient_step=self.ks_params['stop_gradient_step'])
 
   def loss_fn(self, flatten_params):
-    """Get losses."""
+    """Get losses and returns total loss."""
 
     params = np_utils.unflatten(self.spec, flatten_params)
     unpolarized_training_set, polarized_training_set = self.training_set
@@ -232,7 +252,7 @@ class SpinKSR(object):
       ) * num_unpolarized_states
 
       # unpolarized density loss
-      loss_value += (2 - weight) * losses.mean_square_error(
+      loss_value += (1 - weight) * losses.mean_square_error(
         target=unpolarized_training_set.density,
         predict=unpolarized_states.density[:, -1, :],
         num_electrons=unpolarized_training_set.num_electrons
@@ -261,7 +281,7 @@ class SpinKSR(object):
       ) * num_polarized_states
 
       # polarized density loss
-      loss_value += (2 - weight) * losses.mean_square_error(
+      loss_value += (1 - weight) * losses.mean_square_error(
         target=polarized_training_set.density,
         predict=polarized_states.density[:, -1, :],
         num_electrons=polarized_training_set.num_electrons
@@ -271,6 +291,22 @@ class SpinKSR(object):
     return loss_value / (num_polarized_states + num_unpolarized_states)
 
   def setup_optimization(self, **kwargs):
+    """Setup optimization parameters.
+
+    initial_checkpoint_index: Start from an initial checkpoint index. If new
+      calculation, use initial_checkpoint_index=0.
+    save_every_n: During optimization, save parameters every n steps.
+    max_train_steps: Maximum number of training steps in optimization, generally
+      max_train_steps ~ O(100) to O(1000).
+    num_skipped_energies: Number of iterations skipped in energy loss
+      evaluation, a value of -1 corresponds to using the final (converged) KS
+      values only.
+    initial_params_file: Optional. Specify a path to a parameter.pkl file which
+      will be used as the starting model parameters.
+    energy_loss_weight: Default 0.5. The weight, w, determines the total loss
+      which is given by wL_E + (1-w)L_n.
+    """
+
     self.loss_record = []
     self.optimization_params = kwargs
 
@@ -299,7 +335,7 @@ class SpinKSR(object):
       self.spec, self.flatten_init_params = np_utils.flatten(init_params)
 
     if 'energy_loss_weight' not in self.optimization_params:
-      self.optimization_params['energy_loss_weight'] = 1.0
+      self.optimization_params['energy_loss_weight'] = 0.5
 
     return self
 
@@ -341,10 +377,8 @@ class SpinKSR(object):
     print(f'Final loss = {loss}')
     return self
 
-  # Validation fns -------------------------------------------------------------
-
   def set_validation_set(self, validation_set):
-    """Sets the validation set from a list of ions."""
+    """Sets validation set for KSR object."""
     # obtain initial densities and spin densities
     initial_densities, initial_spin_densities = (
       spin_scf.get_initial_density_sigma(validation_set,
@@ -356,7 +390,7 @@ class SpinKSR(object):
     return self
 
   def set_test_set(self, test_set):
-    """Sets the test set from a list of ions."""
+    """Sets test set for KSR object."""
     # obtain initial densities and spin densities
     initial_densities, initial_spin_densities = (
       spin_scf.get_initial_density_sigma(test_set, method='noninteracting'))
@@ -367,6 +401,7 @@ class SpinKSR(object):
     return self
 
   def get_test_states(self, optimal_ckpt_path=None):
+    """Gets test set states."""
     if optimal_ckpt_path is not None:
       with open(optimal_ckpt_path, 'rb') as handle:
         self.optimal_ckpt_params = pickle.load(handle)
@@ -381,7 +416,7 @@ class SpinKSR(object):
     return states
 
   def get_final_states(self, states):
-    """ Get only converged results. """
+    """Get only final (hopefully converged) results."""
 
     return tree_util.tree_map(lambda x: x[:, -1], states)
 
@@ -401,6 +436,9 @@ class SpinKSR(object):
     return params, states
 
   def get_optimal_ckpt(self, path_to_ckpts):
+    """Gets and saves optimal checkpoint parameters. Validates according to
+    loss function."""
+
     # TODO: non-jitted/vmapped option.
     ckpt_list = sorted(glob.glob(os.path.join(path_to_ckpts, 'ckpt-?????')))
 
@@ -423,13 +461,13 @@ class SpinKSR(object):
         discount=0.9, num_electrons=self.validation_set.num_electrons)
 
       # Density loss
-      loss_value += (2 - weight) * losses.mean_square_error(
+      loss_value += (1 - weight) * losses.mean_square_error(
         target=self.validation_set.density,
         predict=states.density[:, -1, :],
         num_electrons=self.validation_set.num_electrons
       ) * self.grids_integration_factor
 
-      print(f'loss value = {loss_value}')
+      print(f'loss value = {loss_value}', flush=True)
       if optimal_ckpt_params is None or loss_value < min_loss:
         optimal_ckpt_params = params
         optimal_ckpt_path = ckpt_path
@@ -502,7 +540,7 @@ class PureKSR(SpinKSR):
       # The discount factor in the trajectory loss.
       discount=0.9, num_electrons=self.training_set.num_electrons)
     # Density loss
-    loss_value += (2 - weight) * losses.mean_square_error(
+    loss_value += (1 - weight) * losses.mean_square_error(
       target=self.training_set.density,
       predict=states.density[:, -1, :],
       num_electrons=self.training_set.num_electrons
@@ -545,19 +583,13 @@ if __name__ == '__main__':
   trainer.flatten_init_params = -np.abs(trainer.flatten_init_params)
 
   # set KS parameters
-  trainer.set_ks_params(  # The number of Kohn-Sham iterations in training.
-    num_iterations=6,  # @The density linear mixing factor.
-    alpha=0.5,  # Decay factor of density linear mixing factor.
-    alpha_decay=0.9,  # Enforce reflection symmetry across the origin.
+  trainer.set_ks_params(
+    num_iterations=6,
+    alpha=0.5,
+    alpha_decay=0.9,
     enforce_reflection_symmetry=False,
-    # The number of density differences in the previous iterations to mix the
-    # density. Linear mixing is num_mixing_iterations = 1.
     num_mixing_iterations=1,
-    # The stopping criteria of Kohn-Sham iteration on density.
     density_mse_converge_tolerance=-1.,
-    # Apply stop gradient on the output state of this step and all steps
-    # before. The first KS step is indexed as 0. Default -1, no stop gradient
-    # is applied.
     stop_gradient_step=-1, )
 
   ## Train Ions
@@ -579,7 +611,7 @@ if __name__ == '__main__':
     # can start from initial params file:
     # initial_params_file='/path/to/params.pkl',
     # can also modify energy vs density weight in loss function:
-    # energy_loss_weight=1,
+    # energy_loss_weight=0.5,
   )
 
   # perform training optimization
