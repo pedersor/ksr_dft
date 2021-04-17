@@ -45,12 +45,12 @@ weights = np.arange(0.25, 2.0, 0.25) / 2
 
 ip_maes = []
 ae_maes = []
-density_loss_mae = []
+ions_density_loss_mae = []
+mols_density_loss_mae = []
 train_energy_loss = []
 train_density_loss = []
 
 for weight in weights:
-
   print(f'weight = {weight}')
 
   # set model path
@@ -142,27 +142,32 @@ for weight in weights:
 
   _, ip_mae = analysis.get_ip_table(ions_dataset, ions_final_states)
   _, ae_mae = analysis.get_ae_table(molecules_final_states,
-    molecules_dataset, ions_dataset, ions_final_states)
+    molecules_dataset, ions_dataset,
+    ions_final_states)
 
   _, _, ions_density_loss = analysis.get_error_table(ions_dataset,
     ions_final_states)
   _, _, molecules_density_loss = analysis.get_error_table(molecules_dataset,
     molecules_final_states)
 
-  density_loss = np.concatenate((ions_density_loss, molecules_density_loss))
-  density_loss_mae.append(np.mean(density_loss))
+  ions_density_loss_mae.append(np.mean(ions_density_loss))
+  mols_density_loss_mae.append(np.mean(molecules_density_loss))
+
   ip_maes.append(ip_mae)
   ae_maes.append(ae_mae)
 
 # convert to arrays..
 ip_maes = np.asarray(ip_maes)
 ae_maes = np.asarray(ae_maes)
-density_loss_mae = np.asarray(density_loss_mae)
+ions_density_loss_mae = np.asarray(ions_density_loss_mae)
+mols_density_loss_mae = np.asarray(mols_density_loss_mae)
+
 train_energy_loss = np.asarray(train_energy_loss)
 train_density_loss = np.asarray(train_density_loss)
 
-np.save(f'ip_maes_{seed_dir}.npy', ip_maes)
-np.save(f'ae_maes_{seed_dir}.npy', ae_maes)
-np.save(f'density_loss_mae_{seed_dir}.npy', density_loss_mae)
+np.save(f'ip_maes/ip_maes_{seed_dir}.npy', ip_maes)
+np.save(f'ae_maes/ae_maes_{seed_dir}.npy', ae_maes)
+np.save(f'ions_density_loss_maes/{seed_dir}.npy', ions_density_loss_mae)
+np.save(f'mols_density_loss_maes/{seed_dir}.npy', mols_density_loss_mae)
 np.save(f'train_energy_loss_{seed_dir}.npy', train_energy_loss)
 np.save(f'train_density_loss_{seed_dir}.npy', train_density_loss)
