@@ -1,2 +1,14 @@
-.idea
-*.pyc
+# byte-compiled
+__pycache__/
+
+# Mac OS
+.DS_Store
+
+# VScode
+.vscode/
+
+# IntelliJ
+.idea/
+
+# virtual envs
+venv_*
