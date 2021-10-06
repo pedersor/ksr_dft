@@ -357,8 +357,8 @@ def kohn_sham(
     num_unpaired_electrons=num_unpaired_electrons)
 
   states = []
-  density_differences = None
-  spin_density_differences = None
+  density_diffs = None
+  spin_density_diffs = None
   converged = False
   for _ in range(num_iterations):
     if converged:
@@ -371,25 +371,25 @@ def kohn_sham(
       xc_energy_density_fn=xc_energy_density_fn,
       interaction_fn=interaction_fn,
       enforce_reflection_symmetry=enforce_reflection_symmetry)
-    density_difference = state.density - old_state.density
-    spin_density_difference = state.spin_density - old_state.spin_density
-    if density_differences is None and spin_density_differences is None:
-      density_differences = jnp.array([density_difference])
-      spin_density_differences = jnp.array([spin_density_difference])
+    density_diff = state.density - old_state.density
+    spin_density_diff = state.spin_density - old_state.spin_density
+    if density_diffs is None and spin_density_diffs is None:
+      density_diffs = jnp.array([density_diff])
+      spin_density_diffs = jnp.array([spin_density_diff])
     else:
-      density_differences = jnp.vstack([density_differences, density_difference])
-      spin_density_differences = jnp.vstack([spin_density_differences, 
-        spin_density_difference])
+      density_diffs = jnp.vstack([density_diffs, density_diff])
+      spin_density_diffs = jnp.vstack([spin_density_diffs, 
+        spin_density_diff])
     if jnp.mean(
-        jnp.square(density_difference)) < density_mse_converge_tolerance:
+        jnp.square(density_diff)) < density_mse_converge_tolerance:
       converged = True
     state = state._replace(converged=converged)
     # Density mixing.
     state = state._replace(
       density=old_state.density
-        + alpha * jnp.mean(density_differences[-num_mixing_iterations:], axis=0),
+        + alpha * jnp.mean(density_diffs[-num_mixing_iterations:], axis=0),
       spin_density=old_state.spin_density
-        + alpha * jnp.mean(spin_density_differences[-num_mixing_iterations:], axis=0),)
+        + alpha * jnp.mean(spin_density_diffs[-num_mixing_iterations:], axis=0),)
     states.append(state)
     alpha *= alpha_decay
 

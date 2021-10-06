@@ -103,6 +103,7 @@ def lsda_scf_example():
             initial_spin_density=system_info.initial_spin_densities[i],
             )
 
+        print()
         print(f'Example system: {symbols[i]}')
         states = {"spin_scf result: ": lsda_ksdft_scf, "jit_spin_scf result: ": lsda_ksdft_jit_scf}
         for label, state in states.items():
@@ -118,6 +119,7 @@ def lsda_scf_example():
             np.testing.assert_allclose(system_info.total_energy[i], total_energy, rtol=0, atol=10**(-3))
             np.testing.assert_allclose(system_info.xc_energy[i], xc_energy, rtol=0, atol=10**(-3))
             print('(match ref. values)')
+
 
 def lda_scf_example():
   # grid with spacing h
@@ -207,6 +209,7 @@ def lda_scf_example():
         initial_spin_density=system_info.initial_spin_densities[i],
         )
 
+    print()
     print(f'Example system: {symbols[i]}')
     states = {"scf result: ": lda_ksdft_scf, "jit_scf result: ": lda_ksdft_jit_scf}
     for label, state in states.items():
@@ -222,7 +225,6 @@ def lda_scf_example():
         np.testing.assert_allclose(system_info.total_energy[i], total_energy, rtol=0, atol=10**(-3))
         np.testing.assert_allclose(system_info.xc_energy[i], xc_energy, rtol=0, atol=10**(-3))
         print('(match ref. values)')
-
 
 
 if __name__ == '__main__':
