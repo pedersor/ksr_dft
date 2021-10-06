@@ -334,7 +334,7 @@ def kohn_sham(
   num_down_electrons = (num_electrons - num_unpaired_electrons) // 2
   num_up_electrons = num_down_electrons + num_unpaired_electrons
 
-  if initial_density is None and initial_spin_density is None:
+  if initial_density is None or initial_spin_density is None:
     # Use the non-interacting solution from the external_potential as initial
     # guess.
     densities, _ = batch_solve_noninteracting_system(
