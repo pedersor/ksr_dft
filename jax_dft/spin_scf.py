@@ -357,7 +357,8 @@ def kohn_sham(
     num_unpaired_electrons=num_unpaired_electrons)
 
   states = []
-  differences = None
+  density_differences = None
+  spin_density_differences = None
   converged = False
   for _ in range(num_iterations):
     if converged:
@@ -371,10 +372,14 @@ def kohn_sham(
       interaction_fn=interaction_fn,
       enforce_reflection_symmetry=enforce_reflection_symmetry)
     density_difference = state.density - old_state.density
-    if differences is None:
-      differences = jnp.array([density_difference])
+    spin_density_difference = state.spin_density - old_state.spin_density
+    if density_differences is None and spin_density_differences is None:
+      density_differences = jnp.array([density_difference])
+      spin_density_differences = jnp.array([spin_density_difference])
     else:
-      differences = jnp.vstack([differences, density_difference])
+      density_differences = jnp.vstack([density_differences, density_difference])
+      spin_density_differences = jnp.vstack([spin_density_differences, 
+        spin_density_difference])
     if jnp.mean(
         jnp.square(density_difference)) < density_mse_converge_tolerance:
       converged = True
@@ -382,7 +387,9 @@ def kohn_sham(
     # Density mixing.
     state = state._replace(
       density=old_state.density
-              + alpha * jnp.mean(differences[-num_mixing_iterations:], axis=0))
+        + alpha * jnp.mean(density_differences[-num_mixing_iterations:], axis=0),
+      spin_density=old_state.spin_density
+        + alpha * jnp.mean(spin_density_differences[-num_mixing_iterations:], axis=0),)
     states.append(state)
     alpha *= alpha_decay
 

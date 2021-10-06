@@ -229,31 +229,35 @@ def _kohn_sham(
   weights = _connection_weights(num_iterations, num_mixing_iterations)
 
   def _converged_kohn_sham_iteration(old_state_differences):
-    old_state, differences = old_state_differences
-    return old_state._replace(converged=True), differences
+    old_state, density_differences, spin_density_differences = old_state_differences
+    return old_state._replace(converged=True), density_differences, spin_density_differences 
 
   def _uncoveraged_kohn_sham_iteration(idx_old_state_alpha_differences):
-    idx, old_state, alpha, differences = idx_old_state_alpha_differences
+    idx, old_state, alpha, density_differences, spin_density_differences = idx_old_state_alpha_differences
     state = kohn_sham_iteration(
         state=old_state,
         xc_energy_density_fn=xc_energy_density_fn,
         interaction_fn=interaction_fn,
         enforce_reflection_symmetry=enforce_reflection_symmetry)
-    differences = jax.ops.index_update(
-        differences, idx, state.density - old_state.density)
+    density_differences = jax.ops.index_update(
+        density_differences, idx, state.density - old_state.density)
+    spin_density_differences = jax.ops.index_update(
+        spin_density_differences, idx, state.spin_density - old_state.spin_density)
+    
     # Density mixing.
     state = state._replace(
-        density=old_state.density + alpha * jnp.dot(weights[idx], differences))
-    return state, differences
+        density = old_state.density + alpha * jnp.dot(weights[idx], density_differences),
+        spin_density = old_state.spin_density + alpha * jnp.dot(weights[idx], spin_density_differences),)
+    return state, density_differences, spin_density_differences
 
   def _single_kohn_sham_iteration(carry, inputs):
     del inputs
-    idx, old_state, alpha, converged, differences = carry
-    state, differences = jax.lax.cond(
+    idx, old_state, alpha, converged, density_differences, spin_density_differences = carry
+    state, density_differences, spin_density_differences = jax.lax.cond(
         converged,
-        true_operand=(old_state, differences),
+        true_operand=(old_state, density_differences, spin_density_differences),
         true_fun=_converged_kohn_sham_iteration,
-        false_operand=(idx, old_state, alpha, differences),
+        false_operand=(idx, old_state, alpha, density_differences, spin_density_differences),
         false_fun=_uncoveraged_kohn_sham_iteration)
     converged = jnp.mean(jnp.square(
         state.density - old_state.density)) < density_mse_converge_tolerance
@@ -262,7 +266,7 @@ def _kohn_sham(
         true_fun=jax.lax.stop_gradient,
         false_fun=lambda x: x,
         operand=state)
-    return (idx + 1, state, alpha * alpha_decay, converged, differences), state
+    return (idx + 1, state, alpha * alpha_decay, converged, density_differences, spin_density_differences), state
 
   # Create initial state.
   state = scf.KohnShamState(
@@ -282,11 +286,13 @@ def _kohn_sham(
       converged=False)
   # Initialize the density differences with all zeros since the carry in
   # lax.scan must keep the same shape.
-  differences = jnp.zeros((num_iterations, num_grids))
+  density_differences = jnp.zeros((num_iterations, num_grids))
+  spin_density_differences = jnp.zeros((num_iterations, num_grids))
 
   _, states = jax.lax.scan(
       _single_kohn_sham_iteration,
-      init=(0, state, alpha, state.converged, differences),
+      init=(0, state, alpha, state.converged, 
+        density_differences, spin_density_differences),
       xs=jnp.arange(num_iterations))
   return states
 
