@@ -1162,7 +1162,7 @@ def global_functional_sigma(network, grids, num_spatial_shift=1):
 
 
 def gga_functional_sigma(network, grids, num_spatial_shift=1):
-  """GGA take on neural functional.
+  """*explicit* GGA take on neural functional.
 
 
   Args:
@@ -1213,10 +1213,11 @@ def gga_functional_sigma(network, grids, num_spatial_shift=1):
       Float numpy array with shape (num_grids,).
     """
 
-    spin_density = spin_density * jnp.ones(len(density))
+    spin_density = spin_density * jnp.ones_like(density)
     density_up = (density + spin_density) / 2
     density_down = (density - spin_density) / 2
 
+    # scaled density gradient, |\grad n| / 2
     density_grad = jnp.abs(jnp.gradient(density, utils.get_dx(grids))) / 2
 
 
@@ -1231,7 +1232,7 @@ def gga_functional_sigma(network, grids, num_spatial_shift=1):
 
     #TODO?: num_spatial_shift...
 
-    # If the network use convolution layer, the backend function
+    # If the network uses a convolution layer, the backend function
     # conv_general_dilated requires float32.
     input_features = input_features.astype(jnp.float32)
     params = tree_util.tree_map(lambda x: x.astype(jnp.float32), params)
