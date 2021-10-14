@@ -12,3 +12,7 @@ __pycache__/
 
 # virtual envs
 venv_*
+
+# misc output data
+ckpt-*
+slurm*
