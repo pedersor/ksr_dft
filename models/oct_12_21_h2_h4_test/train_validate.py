@@ -5,7 +5,7 @@ import sys
 import argparse
 
 # NOTE(pedersor): change to your local jax_dft_dev dir
-abs_path_jax_dft = '/DFS-B/DATA/burke/pedersor/jax_dft_dev'
+abs_path_jax_dft = pathlib.Path('/DFS-B/DATA/burke/pedersor/jax_dft_dev')
 sys.path.append(abs_path_jax_dft)
 
 import numpy as np

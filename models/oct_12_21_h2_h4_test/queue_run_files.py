@@ -37,7 +37,7 @@ for seed in seed_dirs:
         #!/bin/bash
         #SBATCH --job-name="{job_name}"
         #SBATCH --account=burke
-        #SBATCH --partition=nes2.8,brd2.4,sib2.9
+        #SBATCH --partition=sib2.9
         #SBATCH --ntasks=1
         #SBATCH --nodes=1
         #SBATCH --cpus-per-task=8
@@ -46,7 +46,7 @@ for seed in seed_dirs:
 
         ml purge
         ml miniconda/3/own
-        srun python {run_file} --seed {seed} >> {output_file}
+        srun python {run_file} --seed {seed} >> {output_file} 2>&1
 
     """)
 
