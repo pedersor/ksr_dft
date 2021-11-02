@@ -145,8 +145,10 @@ def get_xc_potential_sigma(densities, xc_energy_density_fn, grids):
     Float numpy array with shape (num_grids,).
   """
 
-  return jax.grad(get_xc_energy_sigma)(
+  xc_potentials = jax.grad(get_xc_energy_sigma)(
     densities, xc_energy_density_fn, grids)
+  xc_potentials = jnp.nan_to_num(jnp.asarray(xc_potentials)) / utils.get_dx(grids)
+  return xc_potentials 
 
 
 def _flip_and_average_fn(fn, locations, grids):
@@ -201,9 +203,6 @@ def kohn_sham_iteration(
   xc_potential_up, xc_potential_down = get_xc_potential_sigma(densities,
     xc_energy_density_fn,
     state.grids)
-  xc_potential_up = jnp.nan_to_num(xc_potential_up) / utils.get_dx(state.grids)
-  xc_potential_down = jnp.nan_to_num(
-    xc_potential_down) / utils.get_dx(state.grids)
 
   ks_potentials_sigma = jnp.array(
     [hartree_potential + xc_potential_up + state.external_potential,

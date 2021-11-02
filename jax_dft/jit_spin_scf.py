@@ -81,9 +81,6 @@ def _kohn_sham_iteration(
 
   xc_potential_up, xc_potential_down = spin_scf.get_xc_potential_sigma(
     densities, xc_energy_density_fn, grids)
-  xc_potential_up = jnp.nan_to_num(xc_potential_up) / utils.get_dx(grids)
-  xc_potential_down = jnp.nan_to_num(
-    xc_potential_down) / utils.get_dx(grids)
 
   ks_potentials_sigma = jnp.array(
     [hartree_potential + xc_potential_up + external_potential,
