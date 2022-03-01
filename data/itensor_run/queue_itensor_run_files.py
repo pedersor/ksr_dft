@@ -1,7 +1,7 @@
 import os
 from shutil import copyfile
 import numpy as np
-import utils
+from jax_dft import utils
 import hoppingvmaker
 
 
@@ -37,6 +37,9 @@ if __name__ == '__main__':
   num_electrons = 3
   num_unpaired_electrons = 1
 
+  # load julia
+  # Note(pedersor): use julia 1.1.0+
+  os.system('''ml julia/1.1.0''')
   cwd = os.getcwd()
 
   locations_lst = []
@@ -51,20 +54,21 @@ if __name__ == '__main__':
     # edit the input file
     edit_input_file(sep_steps)
 
-    locations = utils.get_unif_separated_nuclei_positions(grids,
-      num_locations=len(nuclear_charges), separation=sep)
+    locations = utils.get_unif_separated_nuclei_positions(
+        grids, num_locations=len(nuclear_charges), separation=sep)
     locations_lst.append(locations)
 
-    external_potential = utils.get_atomic_chain_potential(grids=grids,
-      locations=locations, nuclear_charges=nuclear_charges,
-      interaction_fn=utils.exponential_coulomb)
+    external_potential = utils.get_atomic_chain_potential(
+        grids=grids,
+        locations=locations,
+        nuclear_charges=nuclear_charges,
+        interaction_fn=utils.exponential_coulomb)
     external_potentials_lst.append(external_potential)
 
     hoppingvmaker.get_ham1c(grids, external_potential)
     hoppingvmaker.get_vuncomp(grids)
 
     # compress vuncomp to MPO
-    # Note(pedersor): use julia 1.1.0+
     os.system('''julia compressMPO.jl Vuncomp''')
     os.remove('Vuncomp')  # remove the large uncompressed file
 
@@ -85,7 +89,7 @@ if __name__ == '__main__':
       fh.writelines('#SBATCH --partition=nes2.8,brd2.4\n')
       fh.writelines("#SBATCH --ntasks=1\n")
       fh.writelines("#SBATCH --nodes=1\n")
-      fh.writelines("#SBATCH --cpus-per-task=2\n")
+      fh.writelines("#SBATCH --cpus-per-task=8\n")
       fh.writelines("#SBATCH --time=12:00:00\n")
       fh.writelines("\n")
 
@@ -115,8 +119,8 @@ if __name__ == '__main__':
   external_potentials = np.asarray(external_potentials_lst)
   num_samples = len(separations)
   num_electrons = (num_electrons * np.ones(num_samples)).astype(int)
-  num_unpaired_electrons = (
-      num_unpaired_electrons * np.ones(num_samples)).astype(int)
+  num_unpaired_electrons = (num_unpaired_electrons *
+                            np.ones(num_samples)).astype(int)
   nuclear_charges = np.tile(nuclear_charges, reps=(num_samples, 1))
   distances = separations
   distances_x100 = (100 * separations).astype(int)

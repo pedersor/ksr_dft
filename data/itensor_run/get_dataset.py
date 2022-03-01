@@ -68,7 +68,7 @@ if __name__ == '__main__':
   h = 0.08  # grid spacing
   grids = np.arange(-256, 257) * h
   # range of separations in Bohr: (min, max)
-  separations = np.arange(0, 6, h)
+  separations = np.load('dataset/distances.npy')
 
   total_energies = []
   densities = []
@@ -78,8 +78,8 @@ if __name__ == '__main__':
 
     curr_dir = f'R{sep_steps}'
     output = os.path.join(curr_dir, 'output.txt')
-    v_ee, t_plus_v_ext, density, magnetization_density = parse_output(grids,
-      output)
+    v_ee, t_plus_v_ext, density, magnetization_density = parse_output(
+        grids, output)
 
     total_energy = v_ee + t_plus_v_ext
     total_energies.append(total_energy)
