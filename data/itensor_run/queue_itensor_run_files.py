@@ -86,7 +86,7 @@ if __name__ == '__main__':
       fh.writelines("#!/bin/bash\n")
       fh.writelines(f'''#SBATCH --job-name="{job_name}"\n''')
       fh.writelines('#SBATCH --account=burke\n')
-      fh.writelines('#SBATCH --partition=nes2.8,brd2.4\n')
+      fh.writelines('#SBATCH --partition=sib2.9\n')
       fh.writelines("#SBATCH --ntasks=1\n")
       fh.writelines("#SBATCH --nodes=1\n")
       fh.writelines("#SBATCH --cpus-per-task=8\n")
