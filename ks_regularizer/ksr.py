@@ -362,6 +362,11 @@ class SpinKSR(object):
     # Automatic differentiation.
     train_set_loss, train_set_gradient = self.loss_value_and_grad_fn(
         flatten_params)
+
+    # for benchmarking
+    train_set_loss.block_until_ready()
+    train_set_gradient.block_until_ready()
+
     step_time = time.time() - start_time
     step = self.optimization_params['initial_checkpoint_index'] + len(
         self.loss_record)
