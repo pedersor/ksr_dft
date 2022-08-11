@@ -1309,3 +1309,99 @@ def gga_functional_sigma(network, grids, num_spatial_shift=1):
     return output
 
   return init_fn, xc_energy_density_fn
+
+
+def mgga_functional_sigma(network, grids, num_spatial_shift=1):
+  """*explicit* MGGA take on neural functional that uses the laplacian.
+
+
+  Args:
+    network: an (init_fn, apply_fn) pair.
+     * init_fn: The init_fn of the neural network. It takes an rng key and
+         an input shape and returns an (output_shape, params) pair.
+     * apply_fn: The apply_fn of the neural network. It takes params,
+         inputs, and an rng key and applies the layer.
+    grids: Float numpy array with shape (num_grids,).
+        num_grids must be 2 ** k + 1, where k is an non-zero integer.
+    num_spatial_shift: Integer, the number of spatial shift (include the
+        original input).
+
+  Returns:
+    init_fn: A function takes an rng key and returns initial params.
+    xc_energy_density_fn: A function takes density (1d array) and params,
+        returns xc energy density with the same shape of density.
+
+  Raises:
+    ValueError: If num_spatial_shift is less than 1
+        or the num_grids is not 2 ** k + 1.
+  """
+  if num_spatial_shift < 1:
+    raise ValueError(
+        f'num_spatial_shift can not be less than 1 but got {num_spatial_shift}')
+
+  network_init_fn, network_apply_fn = network
+  num_grids = grids.shape[0]
+
+  if not _is_power_of_two(num_grids - 1):
+    raise ValueError(
+        'The num_grids must be power of two plus one for global functional '
+        'but got %d' % num_grids)
+
+  def init_fn(rng):
+    _, params = network_init_fn(rng=rng, input_shape=(-1, num_grids, 4))
+    return params
+
+  @jax.jit
+  def xc_energy_density_fn(density, params, spin_density=0.):
+    """Gets xc energy density.
+
+    Args:
+      density: Float numpy array with shape (num_grids,).
+      params: Parameters of the network.
+
+    Returns:
+      Float numpy array with shape (num_grids,).
+    """
+
+    spin_density = spin_density * jnp.ones_like(density)
+    density_up = (density + spin_density) / 2
+    density_down = (density - spin_density) / 2
+
+    # scaled density gradient, |\grad n| / 2
+    density_grad = jnp.abs(jnp.gradient(density, utils.get_dx(grids))) / 2
+
+    # scaled density laplacian, |\nabla^2 n| / 2
+    density_2grad = jnp.abs(
+        -2 * jnp.matmul(scf.get_kinetic_matrix(grids), density)) / 2
+
+    # Expand batch dimension and channel dimension. We use batch_size=1 here.
+    # (1, num_grids, 1)
+    density_up = density_up[jnp.newaxis, :, jnp.newaxis]
+    density_down = density_down[jnp.newaxis, :, jnp.newaxis]
+    density_grad = density_grad[jnp.newaxis, :, jnp.newaxis]
+    density_2grad = density_2grad[jnp.newaxis, :, jnp.newaxis]
+
+    input_features = jnp.stack(
+        [density_up, density_down, density_grad, density_2grad], axis=2)
+    input_features = jnp.squeeze(input_features, axis=3)
+
+    #TODO?: num_spatial_shift...
+
+    # If the network uses a convolution layer, the backend function
+    # conv_general_dilated requires float32.
+    input_features = input_features.astype(jnp.float32)
+    params = tree_util.tree_map(lambda x: x.astype(jnp.float32), params)
+    output = network_apply_fn(params, input_features)
+
+    # Remove the channel dimension.
+    # (num_spatial_shift, num_grids)
+    output = jnp.squeeze(output, axis=2)
+    _check_network_output(output, num_grids)
+
+    #TODO?: num_spatial_shift...
+
+    output = jnp.mean(output, axis=0).astype(jnp.float64)
+
+    return output
+
+  return init_fn, xc_energy_density_fn
