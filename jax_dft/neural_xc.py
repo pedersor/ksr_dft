@@ -29,7 +29,6 @@ from jax.scipy import ndimage
 from jax_dft import scf
 from jax_dft import utils
 
-
 _STAX_ACTIVATION = {
     'relu': stax.Relu,
     'elu': stax.Elu,
@@ -50,6 +49,7 @@ def negativity_transform():
   Returns:
     (init_fn, apply_fn) pair.
   """
+
   def negative_fn(x):
     return -nn.swish(x)
 
@@ -79,8 +79,8 @@ def _exponential_function_channels(displacements, widths):
   Returns:
     Float numpy array with shape (spatial_size, spatial_size, num_channels).
   """
-  return jax.vmap(_exponential_function, in_axes=(None, 0), out_axes=2)(
-      displacements, widths)
+  return jax.vmap(_exponential_function, in_axes=(None, 0),
+                  out_axes=2)(displacements, widths)
 
 
 def exponential_global_convolution(
@@ -89,7 +89,8 @@ def exponential_global_convolution(
     minval,
     maxval,
     downsample_factor=0,
-    eta_init=nn.initializers.normal()):
+    eta_init=nn.initializers.normal(),
+):
   """Layer construction function for exponential global convolution.
 
   Args:
@@ -104,9 +105,9 @@ def exponential_global_convolution(
   Returns:
     (init_fn, apply_fn) pair.
   """
-  grids = grids.astype(jnp.float32)[::2 ** downsample_factor]
-  displacements = jnp.expand_dims(
-      grids, axis=0) - jnp.expand_dims(grids, axis=1)
+  grids = grids.astype(jnp.float32)[::2**downsample_factor]
+  displacements = jnp.expand_dims(grids, axis=0) - jnp.expand_dims(grids,
+                                                                   axis=1)
   dx = utils.get_dx(grids)
 
   def init_fn(rng, input_shape):
@@ -119,8 +120,7 @@ def exponential_global_convolution(
       raise ValueError(
           f'input_shape[1] should be len(grids), but got {input_shape[1]}')
     if input_shape[2] != 1:
-      raise ValueError(
-          f'input_shape[2] should be 1, but got {input_shape[2]}')
+      raise ValueError(f'input_shape[2] should be 1, but got {input_shape[2]}')
     output_shape = input_shape[:-1] + (num_channels,)
     eta = eta_init(rng, shape=(num_channels,))
     return output_shape, (eta,)
@@ -170,12 +170,13 @@ def global_conv_block(num_channels, grids, minval, maxval, downsample_factor):
   """
   layers = []
   layers.extend([linear_interpolation_transpose()] * downsample_factor)
-  layers.append(exponential_global_convolution(
-      num_channels=num_channels - 1,  # one channel is reserved for input.
-      grids=grids,
-      minval=minval,
-      maxval=maxval,
-      downsample_factor=downsample_factor))
+  layers.append(
+      exponential_global_convolution(
+          num_channels=num_channels - 1,  # one channel is reserved for input.
+          grids=grids,
+          minval=minval,
+          maxval=maxval,
+          downsample_factor=downsample_factor))
   layers.extend([linear_interpolation()] * downsample_factor)
   global_conv_path = stax.serial(*layers)
   return stax.serial(
@@ -191,7 +192,8 @@ def exponential_global_convolution_sigma(
     minval,
     maxval,
     downsample_factor=0,
-    eta_init=nn.initializers.normal()):
+    eta_init=nn.initializers.normal(),
+):
   """Layer construction function for exponential global convolution for spins.
 
   Args:
@@ -206,9 +208,9 @@ def exponential_global_convolution_sigma(
   Returns:
     (init_fn, apply_fn) pair.
   """
-  grids = grids.astype(jnp.float32)[::2 ** downsample_factor]
-  displacements = jnp.expand_dims(
-      grids, axis=0) - jnp.expand_dims(grids, axis=1)
+  grids = grids.astype(jnp.float32)[::2**downsample_factor]
+  displacements = jnp.expand_dims(grids, axis=0) - jnp.expand_dims(grids,
+                                                                   axis=1)
   dx = utils.get_dx(grids)
 
   def init_fn(rng, input_shape):
@@ -220,7 +222,7 @@ def exponential_global_convolution_sigma(
     if input_shape[1] != len(grids):
       raise ValueError(
           f'input_shape[1] should be len(grids), but got {input_shape[1]}')
-    output_shape = input_shape[:-1] + (2*num_channels,)
+    output_shape = input_shape[:-1] + (2 * num_channels,)
     eta = eta_init(rng, shape=(num_channels,))
     return output_shape, (eta,)
 
@@ -245,14 +247,14 @@ def exponential_global_convolution_sigma(
 
     output = jnp.tensordot(inputs, kernels, axes=(1, 0)) * dx
     # combine spin channels into single axis
-    output = jnp.append(output[:,0,:,:], output[:,1,:,:], axis=2)
+    output = jnp.append(output[:, 0, :, :], output[:, 1, :, :], axis=2)
     return output
 
   return init_fn, apply_fn
 
 
 def global_conv_block_sigma(num_channels, grids, minval, maxval,
-    downsample_factor):
+                            downsample_factor):
   """Global convolution block for spins.
 
   First downsample the input, then apply global conv, finally upsample and
@@ -271,12 +273,13 @@ def global_conv_block_sigma(num_channels, grids, minval, maxval,
   """
   layers = []
   layers.extend([linear_interpolation_transpose()] * downsample_factor)
-  layers.append(exponential_global_convolution_sigma(
-      num_channels=num_channels - 1,  # one channel is reserved for input.
-      grids=grids,
-      minval=minval,
-      maxval=maxval,
-      downsample_factor=downsample_factor))
+  layers.append(
+      exponential_global_convolution_sigma(
+          num_channels=num_channels - 1,  # one channel is reserved for input.
+          grids=grids,
+          minval=minval,
+          maxval=maxval,
+          downsample_factor=downsample_factor))
   layers.extend([linear_interpolation()] * downsample_factor)
   global_conv_path = stax.serial(*layers)
   return stax.serial(
@@ -330,9 +333,8 @@ def self_interaction_layer(grids, interaction_fn):
   def init_fn(rng, input_shape):
     del rng
     if len(input_shape) != 2:
-      raise ValueError(
-          f'self_interaction_layer must have two inputs, '
-          f'but got {len(input_shape)}')
+      raise ValueError(f'self_interaction_layer must have two inputs, '
+                       f'but got {len(input_shape)}')
     if input_shape[0] != input_shape[1]:
       raise ValueError(
           f'The input shape to self_interaction_layer must be equal, '
@@ -344,7 +346,10 @@ def self_interaction_layer(grids, interaction_fn):
     width, = params
     reshaped_density, features = inputs
     beta = self_interaction_weight(
-        reshaped_density=reshaped_density, dx=dx, width=width)
+        reshaped_density=reshaped_density,
+        dx=dx,
+        width=width,
+    )
     hartree = -0.5 * scf.get_hartree_potential(
         density=reshaped_density.reshape(-1),
         grids=grids,
@@ -402,9 +407,8 @@ def self_interaction_layer_sigma(grids, interaction_fn):
   def init_fn(rng, input_shape):
     del rng
     if len(input_shape) != 2:
-      raise ValueError(
-          f'self_interaction_layer must have two inputs, '
-          f'but got {len(input_shape)}')
+      raise ValueError(f'self_interaction_layer must have two inputs, '
+                       f'but got {len(input_shape)}')
     return input_shape[-1], (jnp.array(1.),)
 
   def apply_fn(params, inputs, **kwargs):  # pylint: disable=missing-docstring
@@ -414,7 +418,10 @@ def self_interaction_layer_sigma(grids, interaction_fn):
     # sum spin densities to get total density
     reshaped_density = reshaped_densities.sum(axis=2).reshape(features.shape)
     beta = self_interaction_weight(
-        reshaped_density=reshaped_density, dx=dx, width=width)
+        reshaped_density=reshaped_density,
+        dx=dx,
+        width=width,
+    )
     hartree = -0.5 * scf.get_hartree_potential(
         density=reshaped_density.reshape(-1),
         grids=grids,
@@ -424,8 +431,11 @@ def self_interaction_layer_sigma(grids, interaction_fn):
   return init_fn, apply_fn
 
 
-def wrap_network_with_self_interaction_layer_sigma(network, grids,
-    interaction_fn):
+def wrap_network_with_self_interaction_layer_sigma(
+    network,
+    grids,
+    interaction_fn,
+):
   """Wraps a network with self-interaction layer.
 
   Args:
@@ -450,29 +460,51 @@ def wrap_network_with_self_interaction_layer_sigma(network, grids,
 
 # pylint: disable=invalid-name
 def GeneralConvWithoutBias(
-    dimension_numbers, out_chan, filter_shape,
-    strides=None, padding='VALID', W_init=None):
+    dimension_numbers,
+    out_chan,
+    filter_shape,
+    strides=None,
+    padding='VALID',
+    W_init=None,
+):
   """Layer construction function for a general convolution layer."""
   lhs_spec, rhs_spec, _ = dimension_numbers
   one = (1,) * len(filter_shape)
   strides = strides or one
-  W_init = W_init or jax.nn.initializers.he_normal(
-      rhs_spec.index('I'), rhs_spec.index('O'))
+  W_init = W_init or jax.nn.initializers.he_normal(rhs_spec.index('I'),
+                                                   rhs_spec.index('O'))
+
   def init_fun(rng, input_shape):
     filter_shape_iter = iter(filter_shape)
-    kernel_shape = [out_chan if c == 'O' else
-                    input_shape[lhs_spec.index('C')] if c == 'I' else
-                    next(filter_shape_iter) for c in rhs_spec]
+    kernel_shape = [
+        out_chan if c == 'O' else input_shape[lhs_spec.index('C')]
+        if c == 'I' else next(filter_shape_iter) for c in rhs_spec
+    ]
     output_shape = lax.conv_general_shape_tuple(
-        input_shape, kernel_shape, strides, padding, dimension_numbers)
+        input_shape,
+        kernel_shape,
+        strides,
+        padding,
+        dimension_numbers,
+    )
     W = W_init(rng, kernel_shape)
     return output_shape, (W,)
+
   def apply_fun(params, inputs, **kwargs):
     del kwargs
     W, = params
-    return lax.conv_general_dilated(inputs, W, strides, padding, one, one,
-                                    dimension_numbers=dimension_numbers)
+    return lax.conv_general_dilated(
+        inputs,
+        W,
+        strides,
+        padding,
+        one,
+        one,
+        dimension_numbers=dimension_numbers,
+    )
+
   return init_fun, apply_fun
+
 
 Conv1D = functools.partial(GeneralConvWithoutBias, ('NHC', 'HIO', 'NHC'))
 
@@ -507,6 +539,7 @@ def linear_interpolation():
   Returns:
     (init_fn, apply_fn) pair.
   """
+
   def init_fn(rng, input_shape):
     del rng
     output_shape = input_shape[0], 2 * input_shape[1] - 1, input_shape[2]
@@ -547,6 +580,7 @@ def linear_interpolation_transpose():
   Raises:
     ValueError: if the size of the input spatial domain is not odd.
   """
+
   def init_fn(rng, input_shape):
     del rng
     if input_shape[1] % 2 == 0:
@@ -639,14 +673,20 @@ def _build_unet_shell(layer, num_filters, activation):
       stax.FanOut(2),
       stax.parallel(stax.Identity, layer),
       stax.FanInConcat(axis=-1),
-      upsampling_block(num_filters, activation=activation)
+      upsampling_block(num_filters, activation=activation),
   )
 
 
 def build_unet(
-    num_filters_list, core_num_filters, activation,
-    num_channels=0, grids=None, minval=None, maxval=None,
-    apply_negativity_transform=True):
+    num_filters_list,
+    core_num_filters,
+    activation,
+    num_channels=0,
+    grids=None,
+    minval=None,
+    maxval=None,
+    apply_negativity_transform=True,
+):
   """Builds U-net.
 
   This neural network is used to parameterize a many-to-many mapping.
@@ -673,8 +713,8 @@ def build_unet(
     (init_fn, apply_fn) pair.
   """
   layer = stax.serial(
-      Conv1D(core_num_filters, filter_shape=(3,), padding='SAME'),
-      _STAX_ACTIVATION[activation],
+      Conv1D(core_num_filters, filter_shape=(3,),
+             padding='SAME'), _STAX_ACTIVATION[activation],
       Conv1D(core_num_filters, filter_shape=(3,), padding='SAME'),
       _STAX_ACTIVATION[activation])
   for num_filters in num_filters_list[::-1]:
@@ -694,8 +734,16 @@ def build_unet(
 
 
 def build_global_local_conv_net(
-    num_global_filters, num_local_filters, num_local_conv_layers, activation,
-    grids, minval, maxval, downsample_factor, apply_negativity_transform=True):
+    num_global_filters,
+    num_local_filters,
+    num_local_conv_layers,
+    activation,
+    grids,
+    minval,
+    maxval,
+    downsample_factor,
+    apply_negativity_transform=True,
+):
   """Builds global-local convolutional network.
 
   Args:
@@ -717,15 +765,15 @@ def build_global_local_conv_net(
   """
   layers = []
   layers.append(
-      global_conv_block(
-          num_channels=num_global_filters,
-          grids=grids,
-          minval=minval,
-          maxval=maxval,
-          downsample_factor=downsample_factor))
+      global_conv_block(num_channels=num_global_filters,
+                        grids=grids,
+                        minval=minval,
+                        maxval=maxval,
+                        downsample_factor=downsample_factor),)
   layers.extend([
       Conv1D(num_local_filters, filter_shape=(3,), padding='SAME'),
-      _STAX_ACTIVATION[activation]] * num_local_conv_layers)
+      _STAX_ACTIVATION[activation]
+  ] * num_local_conv_layers)
   layers.append(
       # Use unit convolution filter to aggregate channels.
       Conv1D(1, filter_shape=(1,), padding='SAME'))
@@ -735,8 +783,16 @@ def build_global_local_conv_net(
 
 
 def build_global_local_conv_net_sigma(
-    num_global_filters, num_local_filters, num_local_conv_layers, activation,
-    grids, minval, maxval, downsample_factor, apply_negativity_transform=True):
+    num_global_filters,
+    num_local_filters,
+    num_local_conv_layers,
+    activation,
+    grids,
+    minval,
+    maxval,
+    downsample_factor,
+    apply_negativity_transform=True,
+):
   """Builds global-local convolutional network for spins.
 
   Args:
@@ -758,15 +814,15 @@ def build_global_local_conv_net_sigma(
   """
   layers = []
   layers.append(
-      global_conv_block_sigma(
-          num_channels=num_global_filters,
-          grids=grids,
-          minval=minval,
-          maxval=maxval,
-          downsample_factor=downsample_factor))
+      global_conv_block_sigma(num_channels=num_global_filters,
+                              grids=grids,
+                              minval=minval,
+                              maxval=maxval,
+                              downsample_factor=downsample_factor),)
   layers.extend([
       Conv1D(num_local_filters, filter_shape=(3,), padding='SAME'),
-      _STAX_ACTIVATION[activation]] * num_local_conv_layers)
+      _STAX_ACTIVATION[activation]
+  ] * num_local_conv_layers)
   layers.append(
       # Use unit convolution filter to aggregate channels.
       Conv1D(1, filter_shape=(1,), padding='SAME'))
@@ -776,7 +832,11 @@ def build_global_local_conv_net_sigma(
 
 
 def build_sliding_net(
-    window_size, num_filters_list, activation, apply_negativity_transform=True):
+    window_size,
+    num_filters_list,
+    activation,
+    apply_negativity_transform=True,
+):
   """Builds neural network sliding over the input.
 
   The receptive field of this network is window_size.
@@ -827,8 +887,8 @@ def _check_network_output(output, num_features):
   shape = output.shape
   if output.ndim != 2 or shape[1] != num_features:
     raise ValueError(
-        'The output shape of the network should be (-1, {}) but got {}'
-        .format(num_features, shape))
+        'The output shape of the network should be (-1, {}) but got {}'.format(
+            num_features, shape))
 
 
 def _is_power_of_two(number):
@@ -885,8 +945,8 @@ def _spatial_shift_input(features, num_spatial_shift):
   for sample_features in features:
     for offset in range(num_spatial_shift):
       output.append(
-          jax.vmap(functools.partial(utils.shift, offset=offset), 1, 1)
-          (sample_features))
+          jax.vmap(functools.partial(utils.shift, offset=offset), 1,
+                   1)(sample_features))
   return jnp.stack(output)
 
 
@@ -1054,8 +1114,8 @@ def global_functional(network, grids, num_spatial_shift=1):
     if num_spatial_shift > 1:
       # The batch dimension size will be num_spatial_shift.
       # (num_spatial_shift, num_grids, num_input_features)
-      input_features = _spatial_shift_input(
-          input_features, num_spatial_shift=num_spatial_shift)
+      input_features = _spatial_shift_input(input_features,
+                                            num_spatial_shift=num_spatial_shift)
     # If the network use convolution layer, the backend function
     # conv_general_dilated requires float32.
     input_features = input_features.astype(jnp.float32)
@@ -1219,7 +1279,6 @@ def gga_functional_sigma(network, grids, num_spatial_shift=1):
 
     # scaled density gradient, |\grad n| / 2
     density_grad = jnp.abs(jnp.gradient(density, utils.get_dx(grids))) / 2
-
 
     # Expand batch dimension and channel dimension. We use batch_size=1 here.
     # (1, num_grids, 1)
