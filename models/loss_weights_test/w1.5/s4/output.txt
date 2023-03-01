@@ -1,9 +1,0 @@
-to_train = [(1, 1), (4, 2), (3, 3), (4, 4)]
-to_validate = [(4, 3), (2, 2)]
-seed = 4
-number of parameters = 560
-Load ckpt-00000
-loss value = 0.5427373228558754
-optimal checkpoint: ckpt-00000
-optimal checkpoint loss: 0.5427373228558754
-Save optimal_ckpt.pkl

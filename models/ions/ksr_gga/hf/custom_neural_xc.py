@@ -10,9 +10,10 @@ from jax.experimental import stax
 import jax.numpy as jnp
 from jax.scipy import ndimage
 
-from jax_dft import scf
-from jax_dft import utils
-from jax_dft import neural_xc
+from ksr_dft import scf
+from ksr_dft import utils
+from ksr_dft import neural_xc
+
 
 def gga_functional(network, grids, num_spatial_shift=1):
   """GGA take on neural functional.
@@ -67,7 +68,6 @@ def gga_functional(network, grids, num_spatial_shift=1):
     """
 
     density_grad = jnp.abs(jnp.gradient(density, utils.get_dx(grids)))
-
 
     # Expand batch dimension and channel dimension. We use batch_size=1 here.
     # (1, num_grids, 1)
