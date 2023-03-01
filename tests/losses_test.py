@@ -36,6 +36,7 @@ class LossesTest(absltest.TestCase):
       losses.trajectory_mse(target=jnp.array([[0.2, 0.2, 0.2, 0.2],
                                               [0.6, 0.6, 0.6, 0.6]]),
                             predict=jnp.array([0.6, 0.6, 0.6, 0.6]),
+                            num_electrons=jnp.array([1]),
                             discount=1.)
 
   def test_trajectory_mse_wrong_predict_target_ndim_difference(self):
@@ -43,20 +44,21 @@ class LossesTest(absltest.TestCase):
         ValueError, 'The size of the shape of predict should be greater than '
         'the size of the shape of target by 1, '
         r'but got predict \(2\) and target \(2\)'):
-      losses.trajectory_mse(target=jnp.array([[0.2, 0.2, 0.2, 0.2],
-                                              [0.6, 0.6, 0.6, 0.6]]),
-                            predict=jnp.array([[0.2, 0.2, 0.2, 0.2],
-                                               [0.6, 0.6, 0.6, 0.6]]),
-                            discount=1.)
+      losses.trajectory_mse(
+          target=jnp.array([[0.2, 0.2, 0.2, 0.2], [0.6, 0.6, 0.6, 0.6]]),
+          predict=jnp.array([[0.2, 0.2, 0.2, 0.2], [0.6, 0.6, 0.6, 0.6]]),
+          discount=1.,
+          num_electrons=jnp.array([1, 1]),
+      )
 
   def test_density_mse(self):
     self.assertAlmostEqual(
         float(
-            losses.mean_square_error(target=jnp.array([[0.2, 0.2, 0.2, 0.2],
-                                                       [0.6, 0.6, 0.6, 0.6]]),
-                                     predict=jnp.array([[0.4, 0.5, 0.2, 0.3],
-                                                        [0.6, 0.6, 0.6,
-                                                         0.6]]))),
+            losses.mean_square_error(
+                target=jnp.array([[0.2, 0.2, 0.2, 0.2], [0.6, 0.6, 0.6, 0.6]]),
+                predict=jnp.array([[0.4, 0.5, 0.2, 0.3], [0.6, 0.6, 0.6, 0.6]]),
+                num_electrons=jnp.array([1, 1]),
+            )),
         # ((
         #   (0.4 - 0.2) ** 2 + (0.5 - 0.2) ** 2
         #   + (0.2 - 0.2) ** 2 + (0.3 - 0.2) ** 2
@@ -66,8 +68,11 @@ class LossesTest(absltest.TestCase):
   def test_energy_mse(self):
     self.assertAlmostEqual(
         float(
-            losses.mean_square_error(target=jnp.array([[0.2, 0.6]]),
-                                     predict=jnp.array([[0.4, 0.7]]))),
+            losses.mean_square_error(
+                target=jnp.array([[0.2, 0.6]]),
+                predict=jnp.array([[0.4, 0.7]]),
+                num_electrons=jnp.array([1, 1]),
+            )),
         # ((0.4 - 0.2) ** 2 + (0.7 - 0.6) ** 2) / 2 = 0.025
         0.025)
 
@@ -79,15 +84,15 @@ class LossesTest(absltest.TestCase):
   def test_trajectory_mse_on_density(self):
     self.assertAlmostEqual(
         float(
-            losses.trajectory_mse(target=jnp.array([[0.2, 0.2, 0.2, 0.2],
-                                                    [0.6, 0.6, 0.6, 0.6]]),
-                                  predict=jnp.array([[[0.4, 0.5, 0.2, 0.3],
-                                                      [0.3, 0.3, 0.2, 0.2],
-                                                      [0.3, 0.3, 0.3, 0.2]],
-                                                     [[0.6, 0.6, 0.6, 0.6],
-                                                      [0.6, 0.6, 0.6, 0.5],
-                                                      [0.6, 0.6, 0.6, 0.6]]]),
-                                  discount=0.6)),
+            losses.trajectory_mse(
+                target=jnp.array([[0.2, 0.2, 0.2, 0.2], [0.6, 0.6, 0.6, 0.6]]),
+                predict=jnp.array([[[0.4, 0.5, 0.2, 0.3], [0.3, 0.3, 0.2, 0.2],
+                                    [0.3, 0.3, 0.3, 0.2]],
+                                   [[0.6, 0.6, 0.6, 0.6], [0.6, 0.6, 0.6, 0.5],
+                                    [0.6, 0.6, 0.6, 0.6]]]),
+                discount=0.6,
+                num_electrons=jnp.array([1, 1, 1]),
+            )),
         # First sample in the batch:
         # (
         #   (0.4 - 0.2) ** 2 + (0.5 - 0.2) ** 2
@@ -121,10 +126,12 @@ class LossesTest(absltest.TestCase):
   def test_trajectory_mse_on_energy(self):
     self.assertAlmostEqual(
         float(
-            losses.trajectory_mse(target=jnp.array([0.2, 0.6]),
-                                  predict=jnp.array([[0.4, 0.3, 0.2],
-                                                     [0.7, 0.7, 0.7]]),
-                                  discount=0.6)),
+            losses.trajectory_mse(
+                target=jnp.array([0.2, 0.6]),
+                predict=jnp.array([[0.4, 0.3, 0.2], [0.7, 0.7, 0.7]]),
+                discount=0.6,
+                num_electrons=jnp.array([1, 1]),
+            )),
         # First sample in the batch:
         # ((0.4 - 0.2) ** 2 * 0.6 * 0.6
         #  + (0.3 - 0.2) ** 2 * 0.6 + (0.2 - 0.2) ** 2) = 0.0204
