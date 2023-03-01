@@ -97,7 +97,6 @@ class KohnShamIterationTest(parameterized.TestCase):
     # The total energy should be finite after one iteration.
     self.assertTrue(jnp.isfinite(state.total_energy))
     self.assertLen(state.hartree_potential, len(state.grids))
-    self.assertLen(state.xc_potential, len(state.grids))
     # locations, nuclear_charges, external_potential, grids and num_electrons
     # remain unchanged.
     np.testing.assert_allclose(initial_state.locations, state.locations)
@@ -107,7 +106,6 @@ class KohnShamIterationTest(parameterized.TestCase):
                                state.external_potential)
     np.testing.assert_allclose(initial_state.grids, state.grids)
     self.assertEqual(initial_state.num_electrons, state.num_electrons)
-    self.assertGreater(state.gap, 0)
 
   @parameterized.parameters(True, False)
   def test_kohn_sham_iteration_neural_xc(self, enforce_reflection_symmetry):
@@ -118,7 +116,6 @@ class KohnShamIterationTest(parameterized.TestCase):
         utils.exponential_coulomb)
     next_state = jit_scf.kohn_sham_iteration(
         state=initial_state,
-        num_electrons=self.num_electrons,
         xc_energy_density_fn=tree_util.Partial(xc_energy_density_fn,
                                                params=params_init),
         interaction_fn=utils.exponential_coulomb,
@@ -134,6 +131,8 @@ class KohnShamTest(parameterized.TestCase):
     self.num_electrons = 2
     self.locations = jnp.array([-0.5, 0.5])
     self.nuclear_charges = jnp.array([1, 1])
+    self.external_potential = self._create_testing_external_potential(
+        utils.exponential_coulomb)
 
   def _create_testing_external_potential(self, interaction_fn):
     return utils.get_atomic_chain_potential(
@@ -150,15 +149,11 @@ class KohnShamTest(parameterized.TestCase):
     # The total energy should be finite after iterations.
     self.assertTrue(jnp.isfinite(state.total_energy))
     self.assertLen(state.hartree_potential, len(state.grids))
-    self.assertLen(state.xc_potential, len(state.grids))
-    # locations, nuclear_charges, external_potential, grids and num_electrons
+    # external_potential, grids and num_electrons
     # remain unchanged.
-    np.testing.assert_allclose(state.locations, self.locations)
-    np.testing.assert_allclose(state.nuclear_charges, self.nuclear_charges)
     np.testing.assert_allclose(external_potential, state.external_potential)
     np.testing.assert_allclose(state.grids, self.grids)
     self.assertEqual(state.num_electrons, self.num_electrons)
-    self.assertGreater(state.gap, 0)
 
   @parameterized.parameters((jnp.inf, [False, True, True]),
                             (-1, [False, False, False]))
@@ -169,9 +164,9 @@ class KohnShamTest(parameterized.TestCase):
     params_init = init_fn(rng=random.PRNGKey(0))
 
     states = jit_scf.kohn_sham(
-        locations=self.locations,
-        nuclear_charges=self.nuclear_charges,
+        external_potential=self.external_potential,
         num_electrons=self.num_electrons,
+        num_unpaired_electrons=0,
         num_iterations=3,
         grids=self.grids,
         xc_energy_density_fn=tree_util.Partial(xc_energy_density_fn,
@@ -179,6 +174,7 @@ class KohnShamTest(parameterized.TestCase):
         interaction_fn=utils.exponential_coulomb,
         initial_density=self.num_electrons *
         utils.gaussian(grids=self.grids, center=0., sigma=0.5),
+        initial_spin_density=jnp.zeros_like(self.grids),
         density_mse_converge_tolerance=density_mse_converge_tolerance)
 
     np.testing.assert_array_equal(states.converged, expected_converged)
@@ -196,9 +192,9 @@ class KohnShamTest(parameterized.TestCase):
     params_init = init_fn(rng=random.PRNGKey(0))
 
     states = jit_scf.kohn_sham(
-        locations=self.locations,
-        nuclear_charges=self.nuclear_charges,
+        external_potential=self.external_potential,
         num_electrons=self.num_electrons,
+        num_unpaired_electrons=0,
         num_iterations=3,
         grids=self.grids,
         xc_energy_density_fn=tree_util.Partial(xc_energy_density_fn,
@@ -206,6 +202,7 @@ class KohnShamTest(parameterized.TestCase):
         interaction_fn=utils.exponential_coulomb,
         initial_density=self.num_electrons *
         utils.gaussian(grids=self.grids, center=0., sigma=0.5),
+        initial_spin_density=jnp.zeros_like(self.grids),
         num_mixing_iterations=num_mixing_iterations)
 
     for single_state in scf.state_iterator(states):
