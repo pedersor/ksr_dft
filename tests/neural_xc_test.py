@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # Lint as: python3
-"""Tests for jax_dft.neural_xc."""
+"""Tests for ksr_dft.neural_xc."""
 
 from absl.testing import absltest
 from absl.testing import parameterized

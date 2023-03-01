@@ -20,7 +20,7 @@ Including prior knowledge is important for effective machine learning models in 
 
 ## Installation
 
-Clone this repository and install in-place:
+A Python virtual environment is recommended: this code uses Python packages with fixed versions to avoid compatability errors in the future. Clone this repository and install in-place:
 
 ```bash
 git clone https://github.com/pedersor/ksr_dft.git

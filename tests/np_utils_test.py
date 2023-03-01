@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # Lint as: python3
-"""Tests for jax_dft.np_utils."""
+"""Tests for ksr_dft.np_utils."""
 
 from absl.testing import absltest
 from jax.config import config

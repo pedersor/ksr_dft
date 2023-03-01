@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # Lint: python3
-"""Tests for jax_dft.scf."""
+"""Tests for ksr_dft.scf."""
 
 import functools
 import os

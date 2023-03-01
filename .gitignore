@@ -13,6 +13,9 @@ __pycache__/
 # virtual envs
 venv*
 
+# pip install info
+*.egg-info
+
 # misc output data
 ckpt-*
 slurm*

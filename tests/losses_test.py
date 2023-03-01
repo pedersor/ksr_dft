@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # Lint as: python3
-"""Tests for jax_dft.losses."""
+"""Tests for ksr_dft.losses."""
 
 from absl.testing import absltest
 from jax.config import config
