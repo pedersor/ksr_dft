@@ -290,9 +290,7 @@ class KohnShamState(typing.NamedTuple):
     num_electrons: Integer, the number of electrons in the system. The first
         num_electrons states are occupid.
     hartree_potential: A float numpy array with shape (num_grids,).
-    xc_potential: A float numpy array with shape (num_grids,).
     xc_energy_density: A float numpy array with shape (num_grids,).
-    gap: Float, the Kohn-Sham gap.
     converged: Boolean, whether the state is converged.
   """
 
