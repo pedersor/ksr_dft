@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2020 The Google Research Authors.
+# Copyright 2023 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ def mean_square_error(target, predict, num_electrons):
     Float.
   """
   num_electrons = jnp.expand_dims(num_electrons, axis=1)
-  return jnp.mean((target - predict) ** 2 / num_electrons)
+  return jnp.mean((target - predict)**2 / num_electrons)
 
 
 def _get_discount_coefficients(num_steps, discount):
@@ -88,9 +88,8 @@ def trajectory_error(error, discount):
 def _trajectory_mse(target, predict, discount, num_electrons):
   """Computes trajectory mean square error."""
   if predict.ndim < 2:
-    raise ValueError(
-        'The size of the shape of predict should be '
-        f'greater or equal to 2, got {predict.ndim}')
+    raise ValueError('The size of the shape of predict should be '
+                     f'greater or equal to 2, got {predict.ndim}')
   if predict.ndim - target.ndim != 1:
     raise ValueError(
         'The size of the shape of predict should be greater than '
@@ -99,7 +98,7 @@ def _trajectory_mse(target, predict, discount, num_electrons):
   # Insert a dimension for num_steps on target and num_electrons.
   target = jnp.expand_dims(target, axis=1)
   num_electrons = jnp.expand_dims(num_electrons, axis=1)
-  return trajectory_error((target - predict) ** 2 / num_electrons, discount)
+  return trajectory_error((target - predict)**2 / num_electrons, discount)
 
 
 def trajectory_mse(target, predict, discount, num_electrons):

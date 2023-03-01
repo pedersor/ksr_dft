@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2020 The Google Research Authors.
+# Copyright 2023 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Functions for self-consistent field calculation simplified for jit."""
 
 import functools
@@ -31,28 +30,24 @@ def _flip_and_average_on_center(array):
 
 def _flip_and_average_on_center_fn(fn):
   """Flips and averages a function on the center."""
+
   def averaged_fn(array):
     return _flip_and_average_on_center(fn(_flip_and_average_on_center(array)))
+
   return averaged_fn
 
 
 def _connection_weights(num_iterations, num_mixing_iterations):
   """Gets the connection weights."""
-  mask = jnp.triu(
-      jnp.tril(jnp.ones((num_iterations, num_iterations))),
-      k=-num_mixing_iterations + 1)
+  mask = jnp.triu(jnp.tril(jnp.ones((num_iterations, num_iterations))),
+                  k=-num_mixing_iterations + 1)
   return mask / jnp.sum(mask, axis=1, keepdims=True)
 
 
 @functools.partial(jax.jit, static_argnums=(5, 6))
-def _kohn_sham_iteration(
-    density,
-    external_potential,
-    grids,
-    num_electrons,
-    xc_energy_density_fn,
-    interaction_fn,
-    enforce_reflection_symmetry):
+def _kohn_sham_iteration(density, external_potential, grids, num_electrons,
+                         xc_energy_density_fn, interaction_fn,
+                         enforce_reflection_symmetry):
   """One iteration of Kohn-Sham calculation."""
   # NOTE(leeley): Since num_electrons in KohnShamState need to specify as
   # static argument in jit function, this function can not directly take
@@ -62,74 +57,55 @@ def _kohn_sham_iteration(
     # NOTE(pedersor): only works if the center of the system is the center of
     # the grids!
     xc_energy_density_fn = _flip_and_average_on_center_fn(xc_energy_density_fn)
-    xc_potential = jnp.nan_to_num(scf.get_xc_potential(density,
-                                                       xc_energy_density_fn,
-                                                       grids))
+    xc_potential = jnp.nan_to_num(
+        scf.get_xc_potential(density, xc_energy_density_fn, grids))
   else:
     # NOTE(pedersor): jitting `get_xc_potential` can be much faster but requires
     # static xc_energy_density_fn which is violated if symmetry is turned on.
-    xc_potential = jnp.nan_to_num(jax.jit(scf.get_xc_potential,
-        static_argnums=1)(density, xc_energy_density_fn, grids))
+    xc_potential = jnp.nan_to_num(
+        jax.jit(scf.get_xc_potential,
+                static_argnums=1)(density, xc_energy_density_fn, grids))
 
-  hartree_potential = scf.get_hartree_potential(
-      density=density,
-      grids=grids,
-      interaction_fn=interaction_fn)
+  hartree_potential = scf.get_hartree_potential(density=density,
+                                                grids=grids,
+                                                interaction_fn=interaction_fn)
   ks_potential = hartree_potential + xc_potential + external_potential
   xc_energy_density = xc_energy_density_fn(density)
 
   # Solve Kohn-Sham equation.
   density, total_eigen_energies, gap = scf.solve_noninteracting_system(
-      external_potential=ks_potential,
-      num_electrons=num_electrons,
-      grids=grids)
+      external_potential=ks_potential, num_electrons=num_electrons, grids=grids)
 
   # KS kinetic energy = total_eigen_energies - external_potential_energy
   kinetic_energy = total_eigen_energies - scf.get_external_potential_energy(
-      external_potential=ks_potential,
-      density=density,
-      grids=grids)
+      external_potential=ks_potential, density=density, grids=grids)
 
   # xc energy
-  xc_energy = scf.get_xc_energy(
-      density=density,
-      xc_energy_density_fn=xc_energy_density_fn,
-      grids=grids)
+  xc_energy = scf.get_xc_energy(density=density,
+                                xc_energy_density_fn=xc_energy_density_fn,
+                                grids=grids)
 
   total_energy = (
       # kinetic energy
       kinetic_energy
       # Hartree energy
       + scf.get_hartree_energy(
-          density=density,
-          grids=grids,
-          interaction_fn=interaction_fn)
+          density=density, grids=grids, interaction_fn=interaction_fn)
       # xc energy
       + xc_energy
       # external energy
       + scf.get_external_potential_energy(
-          external_potential=external_potential,
-          density=density,
-          grids=grids)
-      )
+          external_potential=external_potential, density=density, grids=grids))
 
   if enforce_reflection_symmetry:
     density = _flip_and_average_on_center(density)
 
-  return (
-      density,
-      total_energy,
-      kinetic_energy,
-      xc_energy,
-      hartree_potential,
-      xc_energy_density)
+  return (density, total_energy, kinetic_energy, xc_energy, hartree_potential,
+          xc_energy_density)
 
 
-def kohn_sham_iteration(
-    state,
-    xc_energy_density_fn,
-    interaction_fn,
-    enforce_reflection_symmetry):
+def kohn_sham_iteration(state, xc_energy_density_fn, interaction_fn,
+                        enforce_reflection_symmetry):
   """One iteration of Kohn-Sham calculation.
 
   Note xc_energy_density_fn must be wrapped by jax.tree_util.Partial so this
@@ -151,46 +127,25 @@ def kohn_sham_iteration(
   Returns:
     KohnShamState, the next state of Kohn-Sham iteration.
   """
-  (
-      density,
-      total_energy,
-      kinetic_energy,
-      xc_energy,
-      hartree_potential,
-      xc_energy_density) = _kohn_sham_iteration(
-          state.density,
-          state.external_potential,
-          state.grids,
-          state.num_electrons,
-          xc_energy_density_fn,
-          interaction_fn,
-          enforce_reflection_symmetry)
-  return state._replace(
-      density=density,
-      total_energy=total_energy,
-      hartree_potential=hartree_potential,
-      xc_energy=xc_energy,
-      kinetic_energy=kinetic_energy,
-      xc_energy_density=xc_energy_density)
+  (density, total_energy, kinetic_energy, xc_energy,
+   hartree_potential, xc_energy_density) = _kohn_sham_iteration(
+       state.density, state.external_potential, state.grids,
+       state.num_electrons, xc_energy_density_fn, interaction_fn,
+       enforce_reflection_symmetry)
+  return state._replace(density=density,
+                        total_energy=total_energy,
+                        hartree_potential=hartree_potential,
+                        xc_energy=xc_energy,
+                        kinetic_energy=kinetic_energy,
+                        xc_energy_density=xc_energy_density)
 
 
 @functools.partial(jax.jit, static_argnums=(3, 6, 9, 10, 11, 12, 13, 14))
-def _kohn_sham(
-    external_potential,
-    num_electrons,
-    num_unpaired_electrons,
-    num_iterations,
-    grids,
-    xc_energy_density_fn,
-    interaction_fn,
-    initial_density,
-    initial_spin_density,
-    alpha,
-    alpha_decay,
-    enforce_reflection_symmetry,
-    num_mixing_iterations,
-    density_mse_converge_tolerance,
-    stop_gradient_step):
+def _kohn_sham(external_potential, num_electrons, num_unpaired_electrons,
+               num_iterations, grids, xc_energy_density_fn, interaction_fn,
+               initial_density, initial_spin_density, alpha, alpha_decay,
+               enforce_reflection_symmetry, num_mixing_iterations,
+               density_mse_converge_tolerance, stop_gradient_step):
   """Jit-able Kohn Sham calculation."""
   num_grids = grids.shape[0]
   weights = _connection_weights(num_iterations, num_mixing_iterations)
@@ -206,11 +161,11 @@ def _kohn_sham(
         xc_energy_density_fn=xc_energy_density_fn,
         interaction_fn=interaction_fn,
         enforce_reflection_symmetry=enforce_reflection_symmetry)
-    differences = jax.ops.index_update(
-        differences, idx, state.density - old_state.density)
+    differences = jax.ops.index_update(differences, idx,
+                                       state.density - old_state.density)
     # Density mixing.
-    state = state._replace(
-        density=old_state.density + alpha * jnp.dot(weights[idx], differences))
+    state = state._replace(density=old_state.density +
+                           alpha * jnp.dot(weights[idx], differences))
     return state, differences
 
   def _single_kohn_sham_iteration(carry, inputs):
@@ -222,13 +177,13 @@ def _kohn_sham(
         true_fun=_converged_kohn_sham_iteration,
         false_operand=(idx, old_state, alpha, differences),
         false_fun=_uncoveraged_kohn_sham_iteration)
-    converged = jnp.mean(jnp.square(
-        state.density - old_state.density)) < density_mse_converge_tolerance
-    state = jax.lax.cond(
-        idx <= stop_gradient_step,
-        true_fun=jax.lax.stop_gradient,
-        false_fun=lambda x: x,
-        operand=state)
+    converged = jnp.mean(
+        jnp.square(state.density -
+                   old_state.density)) < density_mse_converge_tolerance
+    state = jax.lax.cond(idx <= stop_gradient_step,
+                         true_fun=jax.lax.stop_gradient,
+                         false_fun=lambda x: x,
+                         operand=state)
     return (idx + 1, state, alpha * alpha_decay, converged, differences), state
 
   # Create initial state.
@@ -251,29 +206,27 @@ def _kohn_sham(
   # lax.scan must keep the same shape.
   differences = jnp.zeros((num_iterations, num_grids))
 
-  _, states = jax.lax.scan(
-      _single_kohn_sham_iteration,
-      init=(0, state, alpha, state.converged, differences),
-      xs=jnp.arange(num_iterations))
+  _, states = jax.lax.scan(_single_kohn_sham_iteration,
+                           init=(0, state, alpha, state.converged, differences),
+                           xs=jnp.arange(num_iterations))
   return states
 
 
-def kohn_sham(
-    external_potential,
-    num_electrons,
-    num_unpaired_electrons,
-    num_iterations,
-    grids,
-    xc_energy_density_fn,
-    interaction_fn,
-    initial_density,
-    initial_spin_density,
-    alpha=0.5,
-    alpha_decay=0.9,
-    enforce_reflection_symmetry=False,
-    num_mixing_iterations=2,
-    density_mse_converge_tolerance=-1.,
-    stop_gradient_step=-1):
+def kohn_sham(external_potential,
+              num_electrons,
+              num_unpaired_electrons,
+              num_iterations,
+              grids,
+              xc_energy_density_fn,
+              interaction_fn,
+              initial_density,
+              initial_spin_density,
+              alpha=0.5,
+              alpha_decay=0.9,
+              enforce_reflection_symmetry=False,
+              num_mixing_iterations=2,
+              density_mse_converge_tolerance=-1.,
+              stop_gradient_step=-1):
   """Jit-able Kohn Sham calculation.
 
   In order to make it jit-able. The following options are removed from
@@ -323,19 +276,8 @@ def kohn_sham(
   Returns:
     KohnShamState, the states of all the Kohn-Sham iteration steps.
   """
-  return _kohn_sham(
-      external_potential,
-      num_electrons,
-      num_unpaired_electrons,
-      num_iterations,
-      grids,
-      xc_energy_density_fn,
-      interaction_fn,
-      initial_density,
-      initial_spin_density,
-      alpha,
-      alpha_decay,
-      enforce_reflection_symmetry,
-      num_mixing_iterations,
-      density_mse_converge_tolerance,
-      stop_gradient_step)
+  return _kohn_sham(external_potential, num_electrons, num_unpaired_electrons,
+                    num_iterations, grids, xc_energy_density_fn, interaction_fn,
+                    initial_density, initial_spin_density, alpha, alpha_decay,
+                    enforce_reflection_symmetry, num_mixing_iterations,
+                    density_mse_converge_tolerance, stop_gradient_step)

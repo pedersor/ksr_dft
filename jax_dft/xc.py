@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2020 The Google Research Authors.
+# Copyright 2023 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -71,8 +71,8 @@ def unpolarized_exponential_coulomb_uniform_exchange_density(
   y = jnp.pi * density / kappa
   return jnp.where(
       y > epsilon,
-      amplitude / (2 * jnp.pi) * (jnp.log(1 + y ** 2) / y - 2 * jnp.arctan(y)),
-      amplitude / (2 * jnp.pi) * (-y + y ** 3 / 6))
+      amplitude / (2 * jnp.pi) * (jnp.log(1 + y**2) / y - 2 * jnp.arctan(y)),
+      amplitude / (2 * jnp.pi) * (-y + y**3 / 6))
 
 
 @tree_util.Partial
@@ -125,11 +125,9 @@ def unpolarized_exponential_coulomb_uniform_correlation_density(
   # nan at 0.
   finite_y = jnp.where(y == 0., 1., y)
   out = -amplitude * finite_y / jnp.pi / (
-      alpha + beta * jnp.sqrt(finite_y)
-      + gamma * finite_y + delta * finite_y ** 1.5
-      + eta * finite_y ** 2 + sigma * finite_y ** 2.5
-      + nu * jnp.pi * kappa ** 2 / amplitude * finite_y ** 3
-      )
+      alpha + beta * jnp.sqrt(finite_y) + gamma * finite_y +
+      delta * finite_y**1.5 + eta * finite_y**2 + sigma * finite_y**2.5 +
+      nu * jnp.pi * kappa**2 / amplitude * finite_y**3)
   return jnp.where(y == 0., -amplitude * y / jnp.pi / alpha, out)
 
 
@@ -147,9 +145,8 @@ def unpolarized_lda_xc_energy_density(density):
   Returns:
     Float numpy array with shape (num_grids,).
   """
-  return (
-      unpolarized_exponential_coulomb_uniform_exchange_density(density)
-      + unpolarized_exponential_coulomb_uniform_correlation_density(density))
+  return (unpolarized_exponential_coulomb_uniform_exchange_density(density) +
+          unpolarized_exponential_coulomb_uniform_correlation_density(density))
 
 
 def get_unpolarized_lda_xc_energy_density_fn():
@@ -160,10 +157,13 @@ def get_unpolarized_lda_xc_energy_density_fn():
       * density: Float numpy array with shape (num_grids,).
       * params: A dummy argument, not used.
   """
+
   def lda_xc_energy_density_fn(density, params):
     del params
     return unpolarized_lda_xc_energy_density(density)
+
   return lda_xc_energy_density_fn
+
 
 @tree_util.Partial
 def exponential_coulomb_uniform_exchange_density(
@@ -175,13 +175,14 @@ def exponential_coulomb_uniform_exchange_density(
   y = jnp.pi * density / kappa
   zeta = spin_density / density
   e_x = amplitude * kappa * (
-      jnp.log(1 + (y ** 2) * ((1 + zeta) ** 2))
-      - 2 * y * (1 + zeta) * jnp.arctan(y * (1 + zeta))
-      + jnp.log(1 + (y ** 2) * ((-1 + zeta) ** 2))
-      - 2 * y * (-1 + zeta) * jnp.arctan(y * (-1 + zeta))
-  ) / (4 * (jnp.pi ** 2))
+      jnp.log(1 + (y**2) * ((1 + zeta)**2)) - 2 * y *
+      (1 + zeta) * jnp.arctan(y *
+                              (1 + zeta)) + jnp.log(1 + (y**2) *
+                                                    ((-1 + zeta)**2)) - 2 * y *
+      (-1 + zeta) * jnp.arctan(y * (-1 + zeta))) / (4 * (jnp.pi**2))
 
   return jnp.nan_to_num(e_x / density)
+
 
 @tree_util.Partial
 def exponential_coulomb_uniform_correlation_density(
@@ -191,34 +192,33 @@ def exponential_coulomb_uniform_correlation_density(
     kappa=constants.EXPONENTIAL_COULOMB_KAPPA):
   """Correlation energy density. Parameters derived in [Baker2015]_."""
 
-  def correlation_expression(density, alpha, beta, gamma, delta, eta,
-                             sigma, nu):
+  def correlation_expression(density, alpha, beta, gamma, delta, eta, sigma,
+                             nu):
     """
     Pade approximate with parameters.
     """
     y = jnp.pi * density / kappa
-    return (-amplitude * kappa * (y ** 2) / (jnp.pi ** 2)) / (
-        alpha
-        + beta * (y ** (1. / 2.))
-        + gamma * y + delta * (y ** (3. / 2.))
-        + eta * (y ** 2)
-        + sigma * (y ** (5. / 2.))
-        + nu * (jnp.pi * (kappa ** 2) / amplitude) * (y ** 3))
+    return (-amplitude * kappa * (y**2) /
+            (jnp.pi**2)) / (alpha + beta * (y**(1. / 2.)) + gamma * y + delta *
+                            (y**(3. / 2.)) + eta * (y**2) + sigma *
+                            (y**(5. / 2.)) + nu *
+                            (jnp.pi * (kappa**2) / amplitude) * (y**3))
 
   # Parameters below derived in [Baker2015]_.
   unpol = correlation_expression(density, 2, -1.00077, 6.26099, -11.9041,
-                                 9.62614,
-                                 -1.48334, 1)
+                                 9.62614, -1.48334, 1)
   pol = correlation_expression(density, 180.891, -541.124, 651.615, -356.504,
                                88.0733, -4.32708, 8)
   zeta = spin_density / density
-  e_c = unpol + (zeta ** 2) * (pol - unpol)
+  e_c = unpol + (zeta**2) * (pol - unpol)
   return jnp.nan_to_num(e_c / density)
+
 
 @tree_util.Partial
 def lsda_xc_energy_density(density, spin_density):
-  return (exponential_coulomb_uniform_exchange_density(density, spin_density)
-    + exponential_coulomb_uniform_correlation_density(density, spin_density))
+  return (
+      exponential_coulomb_uniform_exchange_density(density, spin_density) +
+      exponential_coulomb_uniform_correlation_density(density, spin_density))
 
 
 def get_lsda_xc_energy_density_fn():
@@ -229,8 +229,10 @@ def get_lsda_xc_energy_density_fn():
       * density: Float numpy array with shape (num_grids,).
       * params: A dummy argument, not used.
   """
+
   def lsda_xc_energy_density_fn(density, spin_density=0., params=None):
     del params
-    return lsda_xc_energy_density(density, spin_density*jnp.ones(len(density)))
+    return lsda_xc_energy_density(density,
+                                  spin_density * jnp.ones(len(density)))
 
   return lsda_xc_energy_density_fn

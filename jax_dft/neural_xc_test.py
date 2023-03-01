@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2020 The Google Research Authors.
+# Copyright 2023 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ from jax_dft import neural_xc
 from jax_dft import scf
 from jax_dft import utils
 
-
 # Set the default dtype as float64
 config.update('jax_enable_x64', True)
 
@@ -38,13 +37,14 @@ class NetworkTest(parameterized.TestCase):
   def test_negativity_transform(self):
     init_fn, apply_fn = neural_xc.negativity_transform()
 
-    output_shape, init_params = init_fn(
-        random.PRNGKey(0), input_shape=(-1, 3, 1))
+    output_shape, init_params = init_fn(random.PRNGKey(0),
+                                        input_shape=(-1, 3, 1))
 
     self.assertEqual(output_shape, (-1, 3, 1))
     self.assertEqual(init_params, ())
-    self.assertTrue(np.all(
-        apply_fn(init_params, jnp.array([[[-0.5], [0.], [0.5]]])) <= 0.278))
+    self.assertTrue(
+        np.all(
+            apply_fn(init_params, jnp.array([[[-0.5], [0.], [0.5]]])) <= 0.278))
 
   @parameterized.parameters(0.5, 1.5, 2.)
   def test_exponential_function_normalization(self, width):
@@ -52,21 +52,21 @@ class NetworkTest(parameterized.TestCase):
     grids = jnp.arange(-256, 257) * 0.08
     self.assertAlmostEqual(
         jnp.sum(neural_xc._exponential_function(grids, width)) * 0.08,
-        1., places=2)
+        1.,
+        places=2)
 
   def test_exponential_function_channels(self):
     self.assertEqual(
         neural_xc._exponential_function_channels(
             displacements=jnp.array(np.random.rand(11, 11)),
-            widths=jnp.array([1., 2., 3.])).shape,
-        (11, 11, 3))
+            widths=jnp.array([1., 2., 3.])).shape, (11, 11, 3))
 
   def test_exponential_global_convolution(self):
     init_fn, apply_fn = neural_xc.exponential_global_convolution(
         num_channels=2, grids=jnp.linspace(-1, 1, 5), minval=0.1, maxval=2.)
 
-    output_shape, init_params = init_fn(
-        random.PRNGKey(0), input_shape=(-1, 5, 1))
+    output_shape, init_params = init_fn(random.PRNGKey(0),
+                                        input_shape=(-1, 5, 1))
     output = apply_fn(init_params, jnp.array(np.random.rand(1, 5, 1)))
 
     self.assertEqual(output_shape, (-1, 5, 2))
@@ -82,8 +82,7 @@ class NetworkTest(parameterized.TestCase):
             reshaped_density=density_integral * utils.gaussian(
                 grids=grids, center=1., sigma=1.)[jnp.newaxis, :, jnp.newaxis],
             dx=utils.get_dx(grids),
-            width=1.),
-        expected_weight)
+            width=1.), expected_weight)
 
   def test_self_interaction_layer_one_electron(self):
     grids = jnp.linspace(-5, 5, 11)
@@ -92,20 +91,20 @@ class NetworkTest(parameterized.TestCase):
 
     init_fn, apply_fn = neural_xc.self_interaction_layer(
         grids=grids, interaction_fn=utils.exponential_coulomb)
-    output_shape, init_params = init_fn(
-        random.PRNGKey(0), input_shape=((-1, 11, 1), (-1, 11, 1)))
+    output_shape, init_params = init_fn(random.PRNGKey(0),
+                                        input_shape=((-1, 11, 1), (-1, 11, 1)))
 
     self.assertEqual(output_shape, (-1, 11, 1))
     self.assertAlmostEqual(init_params, (1.,))
     np.testing.assert_allclose(
         # The features (second input) is not used for one electron.
-        apply_fn(
-            init_params, (reshaped_density, jnp.ones_like(reshaped_density))),
+        apply_fn(init_params,
+                 (reshaped_density, jnp.ones_like(reshaped_density))),
         -0.5 * scf.get_hartree_potential(
             density=density,
             grids=grids,
-            interaction_fn=utils.exponential_coulomb)[
-                jnp.newaxis, :, jnp.newaxis])
+            interaction_fn=utils.exponential_coulomb)[jnp.newaxis, :,
+                                                      jnp.newaxis])
 
   def test_self_interaction_layer_large_num_electrons(self):
     grids = jnp.linspace(-5, 5, 11)
@@ -115,30 +114,30 @@ class NetworkTest(parameterized.TestCase):
 
     init_fn, apply_fn = neural_xc.self_interaction_layer(
         grids=grids, interaction_fn=utils.exponential_coulomb)
-    output_shape, init_params = init_fn(
-        random.PRNGKey(0), input_shape=((-1, 11, 1), (-1, 11, 1)))
+    output_shape, init_params = init_fn(random.PRNGKey(0),
+                                        input_shape=((-1, 11, 1), (-1, 11, 1)))
 
     self.assertEqual(output_shape, (-1, 11, 1))
     self.assertAlmostEqual(init_params, (1.,))
     np.testing.assert_allclose(
         # The output is completely the features (second input).
-        apply_fn(init_params, (reshaped_density, features)), features)
+        apply_fn(init_params, (reshaped_density, features)),
+        features)
 
   def test_wrap_network_with_self_interaction_layer_one_electron(self):
     grids = jnp.linspace(-5, 5, 9, dtype=jnp.float32)
-    density = utils.gaussian(
-        grids=grids, center=1., sigma=1.).astype(jnp.float32)
+    density = utils.gaussian(grids=grids, center=1.,
+                             sigma=1.).astype(jnp.float32)
     reshaped_density = density[jnp.newaxis, :, jnp.newaxis]
 
     init_fn, apply_fn = neural_xc.wrap_network_with_self_interaction_layer(
-        network=neural_xc.build_unet(
-            num_filters_list=[2, 4],
-            core_num_filters=4,
-            activation='swish'),
+        network=neural_xc.build_unet(num_filters_list=[2, 4],
+                                     core_num_filters=4,
+                                     activation='swish'),
         grids=grids,
         interaction_fn=utils.exponential_coulomb)
-    output_shape, init_params = init_fn(
-        random.PRNGKey(0), input_shape=((-1, 9, 1)))
+    output_shape, init_params = init_fn(random.PRNGKey(0),
+                                        input_shape=((-1, 9, 1)))
 
     self.assertEqual(output_shape, (-1, 9, 1))
     np.testing.assert_allclose(
@@ -146,25 +145,23 @@ class NetworkTest(parameterized.TestCase):
         -0.5 * scf.get_hartree_potential(
             density=density,
             grids=grids,
-            interaction_fn=utils.exponential_coulomb)[
-                jnp.newaxis, :, jnp.newaxis])
+            interaction_fn=utils.exponential_coulomb)[jnp.newaxis, :,
+                                                      jnp.newaxis])
 
   def test_wrap_network_with_self_interaction_layer_large_num_electrons(self):
     grids = jnp.linspace(-5, 5, 9, dtype=jnp.float32)
-    density = 100. * utils.gaussian(
-        grids=grids, center=1., sigma=1.).astype(jnp.float32)
+    density = 100. * utils.gaussian(grids=grids, center=1., sigma=1.).astype(
+        jnp.float32)
     reshaped_density = density[jnp.newaxis, :, jnp.newaxis]
     inner_network_init_fn, inner_network_apply_fn = neural_xc.build_unet(
-        num_filters_list=[2, 4],
-        core_num_filters=4,
-        activation='swish')
+        num_filters_list=[2, 4], core_num_filters=4, activation='swish')
 
     init_fn, apply_fn = neural_xc.wrap_network_with_self_interaction_layer(
         network=(inner_network_init_fn, inner_network_apply_fn),
         grids=grids,
         interaction_fn=utils.exponential_coulomb)
-    output_shape, init_params = init_fn(
-        random.PRNGKey(0), input_shape=((-1, 9, 1)))
+    output_shape, init_params = init_fn(random.PRNGKey(0),
+                                        input_shape=((-1, 9, 1)))
 
     self.assertEqual(output_shape, (-1, 9, 1))
     self.assertEqual(apply_fn(init_params, reshaped_density).shape, (1, 9, 1))
@@ -172,88 +169,84 @@ class NetworkTest(parameterized.TestCase):
         apply_fn(init_params, reshaped_density),
         inner_network_apply_fn(
             # The initial parameters of the inner network.
-            init_params[1][1], reshaped_density))
+            init_params[1][1],
+            reshaped_density))
 
   @parameterized.parameters('relu', 'elu', 'softplus', 'swish')
   def test_downsampling_block(self, activation):
-    init_fn, apply_fn = neural_xc.downsampling_block(
-        num_filters=32, activation=activation)
-    output_shape, init_params = init_fn(
-        random.PRNGKey(0), input_shape=(-1, 9, 1))
+    init_fn, apply_fn = neural_xc.downsampling_block(num_filters=32,
+                                                     activation=activation)
+    output_shape, init_params = init_fn(random.PRNGKey(0),
+                                        input_shape=(-1, 9, 1))
     self.assertEqual(output_shape, (-1, 5, 32))
 
-    output = apply_fn(
-        init_params, jnp.array(np.random.randn(6, 9, 1), dtype=jnp.float32))
+    output = apply_fn(init_params,
+                      jnp.array(np.random.randn(6, 9, 1), dtype=jnp.float32))
     self.assertEqual(output.shape, (6, 5, 32))
 
   def test_linear_interpolation(self):
     init_fn, apply_fn = neural_xc.linear_interpolation()
-    output_shape, init_params = init_fn(
-        random.PRNGKey(0), input_shape=(-1, 3, 2))
+    output_shape, init_params = init_fn(random.PRNGKey(0),
+                                        input_shape=(-1, 3, 2))
     self.assertEqual(output_shape, (-1, 5, 2))
     self.assertEmpty(init_params)
 
     np.testing.assert_allclose(
         apply_fn((), jnp.array([[[1, 2], [3, 4], [5, 6]]], dtype=float)),
-        [[[1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]]
-    )
+        [[[1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]])
 
   def test_linear_interpolation_transpose(self):
     init_fn, apply_fn = neural_xc.linear_interpolation_transpose()
-    output_shape, init_params = init_fn(
-        random.PRNGKey(0), input_shape=(-1, 5, 2))
+    output_shape, init_params = init_fn(random.PRNGKey(0),
+                                        input_shape=(-1, 5, 2))
     self.assertEqual(output_shape, (-1, 3, 2))
     self.assertEmpty(init_params)
 
     np.testing.assert_allclose(
         apply_fn((), jnp.array([[[1.0, 2], [3, 4], [5, 6], [7, 8], [9, 10]]])),
-        [[[1.5, 2.5], [5, 6], [8.5, 9.5]]]
-    )
+        [[[1.5, 2.5], [5, 6], [8.5, 9.5]]])
 
   def test_upsampling_block(self):
-    init_fn, apply_fn = neural_xc.upsampling_block(
-        num_filters=32, activation='softplus')
-    output_shape, init_params = init_fn(
-        random.PRNGKey(0), input_shape=(-1, 9, 1))
+    init_fn, apply_fn = neural_xc.upsampling_block(num_filters=32,
+                                                   activation='softplus')
+    output_shape, init_params = init_fn(random.PRNGKey(0),
+                                        input_shape=(-1, 9, 1))
     self.assertEqual(output_shape, (-1, 17, 32))
 
-    output = apply_fn(
-        init_params, jnp.array(np.random.randn(6, 9, 1), dtype=jnp.float32))
+    output = apply_fn(init_params,
+                      jnp.array(np.random.randn(6, 9, 1), dtype=jnp.float32))
     self.assertEqual(output.shape, (6, 17, 32))
 
   def test_build_unet(self):
-    init_fn, apply_fn = neural_xc.build_unet(
-        num_filters_list=[2, 4, 8],
-        core_num_filters=16,
-        activation='softplus')
-    output_shape, init_params = init_fn(
-        random.PRNGKey(0), input_shape=(-1, 9, 1))
+    init_fn, apply_fn = neural_xc.build_unet(num_filters_list=[2, 4, 8],
+                                             core_num_filters=16,
+                                             activation='softplus')
+    output_shape, init_params = init_fn(random.PRNGKey(0),
+                                        input_shape=(-1, 9, 1))
     self.assertEqual(output_shape, (-1, 9, 1))
 
-    output = apply_fn(
-        init_params, jnp.array(np.random.randn(6, 9, 1), dtype=jnp.float32))
+    output = apply_fn(init_params,
+                      jnp.array(np.random.randn(6, 9, 1), dtype=jnp.float32))
     self.assertEqual(output.shape, (6, 9, 1))
 
   def test_build_sliding_net(self):
-    init_fn, apply_fn = neural_xc.build_sliding_net(
-        window_size=3,
-        num_filters_list=[2, 4, 8],
-        activation='softplus')
-    output_shape, init_params = init_fn(
-        random.PRNGKey(0), input_shape=(-1, 9, 1))
+    init_fn, apply_fn = neural_xc.build_sliding_net(window_size=3,
+                                                    num_filters_list=[2, 4, 8],
+                                                    activation='softplus')
+    output_shape, init_params = init_fn(random.PRNGKey(0),
+                                        input_shape=(-1, 9, 1))
     self.assertEqual(output_shape, (-1, 9, 1))
 
-    output = apply_fn(
-        init_params, jnp.array(np.random.randn(6, 9, 1), dtype=jnp.float32))
+    output = apply_fn(init_params,
+                      jnp.array(np.random.randn(6, 9, 1), dtype=jnp.float32))
     self.assertEqual(output.shape, (6, 9, 1))
 
   def test_build_sliding_net_invalid_window_size(self):
-    with self.assertRaisesRegex(
-        ValueError, 'window_size cannot be less than 1, but got 0'):
-      neural_xc.build_sliding_net(
-          window_size=0,
-          num_filters_list=[2, 4, 8],
-          activation='softplus')
+    with self.assertRaisesRegex(ValueError,
+                                'window_size cannot be less than 1, but got 0'):
+      neural_xc.build_sliding_net(window_size=0,
+                                  num_filters_list=[2, 4, 8],
+                                  activation='softplus')
 
 
 class LDAFunctionalTest(parameterized.TestCase):
@@ -279,8 +272,7 @@ class LDAFunctionalTest(parameterized.TestCase):
     init_params = init_fn(rng=random.PRNGKey(0))
 
     with self.assertRaisesRegex(
-        ValueError,
-        r'The output shape of the network '
+        ValueError, r'The output shape of the network '
         r'should be \(-1, 1\) but got \(11, 3\)'):
       xc_energy_density_fn(self.density, init_params)
 
@@ -294,11 +286,12 @@ class GlobalFunctionalTest(parameterized.TestCase):
 
   def test_spatial_shift_input(self):
     np.testing.assert_allclose(
-        neural_xc._spatial_shift_input(
-            features=jnp.array([[
-                [11., 21.], [12., 22.], [13., 23.], [14., 24.], [15., 25.]
-            ]]),
-            num_spatial_shift=4),
+        neural_xc._spatial_shift_input(features=jnp.array([[[11., 21.],
+                                                            [12., 22.],
+                                                            [13., 23.],
+                                                            [14., 24.],
+                                                            [15., 25.]]]),
+                                       num_spatial_shift=4),
         [
             # No shift.
             [[11., 21.], [12., 22.], [13., 23.], [14., 24.], [15., 25.]],
@@ -312,13 +305,11 @@ class GlobalFunctionalTest(parameterized.TestCase):
 
   def test_reverse_spatial_shift_output(self):
     np.testing.assert_allclose(
-        neural_xc._reverse_spatial_shift_output(
-            array=jnp.array([
-                [1., 2., 3., 4., 5.],
-                [12., 13., 14., 15., 0.],
-                [23., 24., 25., 0., 0.],
-            ])),
-        [
+        neural_xc._reverse_spatial_shift_output(array=jnp.array([
+            [1., 2., 3., 4., 5.],
+            [12., 13., 14., 15., 0.],
+            [23., 24., 25., 0., 0.],
+        ])), [
             [1., 2., 3., 4., 5.],
             [0., 12., 13., 14., 15.],
             [0., 0., 23., 24., 25.],
@@ -334,26 +325,22 @@ class GlobalFunctionalTest(parameterized.TestCase):
 
   @parameterized.parameters('relu', 'elu', 'softplus', 'swish')
   def test_global_functional_with_unet(self, activation):
-    init_fn, xc_energy_density_fn = (
-        neural_xc.global_functional(
-            neural_xc.build_unet(
-                num_filters_list=[4, 2],
-                core_num_filters=4,
-                activation=activation),
-            grids=self.grids))
+    init_fn, xc_energy_density_fn = (neural_xc.global_functional(
+        neural_xc.build_unet(num_filters_list=[4, 2],
+                             core_num_filters=4,
+                             activation=activation),
+        grids=self.grids))
     init_params = init_fn(rng=random.PRNGKey(0))
     xc_energy_density = xc_energy_density_fn(self.density, init_params)
     self.assertEqual(xc_energy_density.shape, (17,))
 
   @parameterized.parameters('relu', 'elu', 'softplus', 'swish')
   def test_global_functional_with_sliding_net(self, activation):
-    init_fn, xc_energy_density_fn = (
-        neural_xc.global_functional(
-            neural_xc.build_sliding_net(
-                window_size=3,
-                num_filters_list=[4, 2, 2],
-                activation=activation),
-            grids=self.grids))
+    init_fn, xc_energy_density_fn = (neural_xc.global_functional(
+        neural_xc.build_sliding_net(window_size=3,
+                                    num_filters_list=[4, 2, 2],
+                                    activation=activation),
+        grids=self.grids))
     init_params = init_fn(rng=random.PRNGKey(0))
     xc_energy_density = xc_energy_density_fn(self.density, init_params)
     self.assertEqual(xc_energy_density.shape, (17,))
@@ -362,10 +349,9 @@ class GlobalFunctionalTest(parameterized.TestCase):
     with self.assertRaisesRegex(
         ValueError, 'num_spatial_shift can not be less than 1 but got 0'):
       neural_xc.global_functional(
-          neural_xc.build_unet(
-              num_filters_list=[4, 2],
-              core_num_filters=4,
-              activation='swish'),
+          neural_xc.build_unet(num_filters_list=[4, 2],
+                               core_num_filters=4,
+                               activation='swish'),
           grids=self.grids,
           # Wrong num_spatial_shift
           num_spatial_shift=0)
@@ -376,10 +362,9 @@ class GlobalFunctionalTest(parameterized.TestCase):
         'The num_grids must be power of two plus one for global functional '
         'but got 6'):
       neural_xc.global_functional(
-          neural_xc.build_unet(
-              num_filters_list=[4, 2],
-              core_num_filters=4,
-              activation='softplus'),
+          neural_xc.build_unet(num_filters_list=[4, 2],
+                               core_num_filters=4,
+                               activation='softplus'),
           # grids with wrong num_grids.
           grids=jnp.linspace(-1, 1, 6))
 
@@ -387,20 +372,19 @@ class GlobalFunctionalTest(parameterized.TestCase):
     init_fn, xc_energy_density_fn = (
         neural_xc.global_functional(
             stax.serial(
-                neural_xc.build_unet(
-                    num_filters_list=[4, 2],
-                    core_num_filters=4,
-                    activation='softplus'),
+                neural_xc.build_unet(num_filters_list=[4, 2],
+                                     core_num_filters=4,
+                                     activation='softplus'),
                 # Additional conv layer to make the output shape wrong.
-                neural_xc.Conv1D(
-                    1, filter_shape=(3,), strides=(2,), padding='VALID')
-                ),
+                neural_xc.Conv1D(1,
+                                 filter_shape=(3,),
+                                 strides=(2,),
+                                 padding='VALID')),
             grids=self.grids))
     init_params = init_fn(rng=random.PRNGKey(0))
 
     with self.assertRaisesRegex(
-        ValueError,
-        r'The output shape of the network '
+        ValueError, r'The output shape of the network '
         r'should be \(-1, 17\) but got \(1, 8\)'):
       xc_energy_density_fn(self.density, init_params)
 
@@ -408,20 +392,19 @@ class GlobalFunctionalTest(parameterized.TestCase):
     init_fn, xc_energy_density_fn = (
         neural_xc.global_functional(
             stax.serial(
-                neural_xc.build_sliding_net(
-                    window_size=3,
-                    num_filters_list=[4, 2, 2],
-                    activation='softplus'),
+                neural_xc.build_sliding_net(window_size=3,
+                                            num_filters_list=[4, 2, 2],
+                                            activation='softplus'),
                 # Additional conv layer to make the output shape wrong.
-                neural_xc.Conv1D(
-                    1, filter_shape=(1,), strides=(2,), padding='VALID')
-                ),
+                neural_xc.Conv1D(1,
+                                 filter_shape=(1,),
+                                 strides=(2,),
+                                 padding='VALID')),
             grids=self.grids))
     init_params = init_fn(rng=random.PRNGKey(0))
 
     with self.assertRaisesRegex(
-        ValueError,
-        r'The output shape of the network '
+        ValueError, r'The output shape of the network '
         r'should be \(-1, 17\) but got \(1, 9\)'):
       xc_energy_density_fn(self.density, init_params)
 

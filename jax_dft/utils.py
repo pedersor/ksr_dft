@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2020 The Google Research Authors.
+# Copyright 2023 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Utility functions."""
 
 import jax
@@ -32,11 +31,10 @@ def shift(array, offset):
     Float numpy array with shape (num_grids,).
   """
   sliced = array[slice(offset, None) if offset >= 0 else slice(None, offset)]
-  return jnp.pad(
-      sliced,
-      pad_width=(-min(offset, 0), max(offset, 0)),
-      mode='constant',
-      constant_values=0)
+  return jnp.pad(sliced,
+                 pad_width=(-min(offset, 0), max(offset, 0)),
+                 mode='constant',
+                 constant_values=0)
 
 
 def get_dx(grids):
@@ -52,8 +50,7 @@ def get_dx(grids):
     ValueError: If grids.ndim is not 1.
   """
   if grids.ndim != 1:
-    raise ValueError(
-        'grids.ndim is expected to be 1 but got %d' % grids.ndim)
+    raise ValueError('grids.ndim is expected to be 1 but got %d' % grids.ndim)
   return (jnp.amax(grids) - jnp.amin(grids)) / (grids.size - 1)
 
 
@@ -68,12 +65,12 @@ def gaussian(grids, center, sigma=1.):
   Returns:
     Float numpy array with shape (num_grids,).
   """
-  return 1 / jnp.sqrt(2 * jnp.pi) * jnp.exp(
-      -0.5 * ((grids - center) / sigma) ** 2) / sigma
+  return 1 / jnp.sqrt(2 * jnp.pi) * jnp.exp(-0.5 * (
+      (grids - center) / sigma)**2) / sigma
 
 
-def soft_coulomb(
-    displacements, soften_factor=constants.SOFT_COULOMB_SOFTEN_FACTOR):
+def soft_coulomb(displacements,
+                 soften_factor=constants.SOFT_COULOMB_SOFTEN_FACTOR):
   """Soft Coulomb interaction.
 
   Args:
@@ -83,13 +80,12 @@ def soft_coulomb(
   Returns:
     Float numpy array with the same shape of displacements.
   """
-  return 1 / jnp.sqrt(displacements ** 2 + soften_factor)
+  return 1 / jnp.sqrt(displacements**2 + soften_factor)
 
 
-def exponential_coulomb(
-    displacements,
-    amplitude=constants.EXPONENTIAL_COULOMB_AMPLITUDE,
-    kappa=constants.EXPONENTIAL_COULOMB_KAPPA):
+def exponential_coulomb(displacements,
+                        amplitude=constants.EXPONENTIAL_COULOMB_AMPLITUDE,
+                        kappa=constants.EXPONENTIAL_COULOMB_KAPPA):
   """Exponential Coulomb interaction.
 
   v(x) = amplitude * exp(-abs(x) * kappa)
@@ -116,8 +112,8 @@ def exponential_coulomb(
   return amplitude * jnp.exp(-jnp.abs(displacements) * kappa)
 
 
-def get_atomic_chain_potential(
-    grids, locations, nuclear_charges, interaction_fn):
+def get_atomic_chain_potential(grids, locations, nuclear_charges,
+                               interaction_fn):
   """Gets atomic chain potential.
 
   Args:
@@ -136,22 +132,20 @@ def get_atomic_chain_potential(
     ValueError: If grids.ndim, locations.ndim or nuclear_charges.ndim is not 1.
   """
   if grids.ndim != 1:
-    raise ValueError(
-        'grids.ndim is expected to be 1 but got %d' % grids.ndim)
+    raise ValueError('grids.ndim is expected to be 1 but got %d' % grids.ndim)
   if locations.ndim != 1:
-    raise ValueError(
-        'locations.ndim is expected to be 1 but got %d' % locations.ndim)
+    raise ValueError('locations.ndim is expected to be 1 but got %d' %
+                     locations.ndim)
   if nuclear_charges.ndim != 1:
-    raise ValueError(
-        'nuclear_charges.ndim is expected to be 1 but got %d'
-        % nuclear_charges.ndim)
-  displacements = jnp.expand_dims(
-      grids, axis=0) - jnp.expand_dims(locations, axis=1)
+    raise ValueError('nuclear_charges.ndim is expected to be 1 but got %d' %
+                     nuclear_charges.ndim)
+  displacements = jnp.expand_dims(grids, axis=0) - jnp.expand_dims(locations,
+                                                                   axis=1)
   return jnp.dot(-nuclear_charges, interaction_fn(displacements))
 
 
-def get_atomic_chain_potential_batch(
-    grids, locations, nuclear_charges, interaction_fn):
+def get_atomic_chain_potential_batch(grids, locations, nuclear_charges,
+                                     interaction_fn):
   """Gets atomic chain potential.
 
   Args:
@@ -166,8 +160,9 @@ def get_atomic_chain_potential_batch(
   Returns:
     Float numpy array with shape (batch_size, num_grids).
   """
-  return jax.vmap(get_atomic_chain_potential, in_axes=(None, 0, 0, None))(
-      grids, locations, nuclear_charges, interaction_fn)
+  return jax.vmap(get_atomic_chain_potential,
+                  in_axes=(None, 0, 0, None))(grids, locations, nuclear_charges,
+                                              interaction_fn)
 
 
 def get_nuclear_interaction_energy(locations, nuclear_charges, interaction_fn):
@@ -188,24 +183,22 @@ def get_nuclear_interaction_energy(locations, nuclear_charges, interaction_fn):
     ValueError: If locations.ndim or nuclear_charges.ndim is not 1.
   """
   if locations.ndim != 1:
-    raise ValueError(
-        'locations.ndim is expected to be 1 but got %d' % locations.ndim)
+    raise ValueError('locations.ndim is expected to be 1 but got %d' %
+                     locations.ndim)
   if nuclear_charges.ndim != 1:
-    raise ValueError(
-        'nuclear_charges.ndim is expected to be 1 but got %d'
-        % nuclear_charges.ndim)
+    raise ValueError('nuclear_charges.ndim is expected to be 1 but got %d' %
+                     nuclear_charges.ndim)
   # Convert locations and nuclear_charges to jax.numpy array.
   locations = jnp.array(locations)
   nuclear_charges = jnp.array(nuclear_charges)
   indices_0, indices_1 = jnp.triu_indices(locations.size, k=1)
   charges_products = nuclear_charges[indices_0] * nuclear_charges[indices_1]
-  return jnp.sum(
-      charges_products * interaction_fn(
-          locations[indices_0] - locations[indices_1]))
+  return jnp.sum(charges_products *
+                 interaction_fn(locations[indices_0] - locations[indices_1]))
 
 
-def get_nuclear_interaction_energy_batch(
-    locations, nuclear_charges, interaction_fn):
+def get_nuclear_interaction_energy_batch(locations, nuclear_charges,
+                                         interaction_fn):
   """Gets nuclear interaction energy for atomic chain in batch.
 
   Args:
@@ -219,8 +212,9 @@ def get_nuclear_interaction_energy_batch(
   Returns:
     Float numpy array with shape (batch_size,).
   """
-  return jax.vmap(get_nuclear_interaction_energy, in_axes=(0, 0, None))(
-      locations, nuclear_charges, interaction_fn)
+  return jax.vmap(get_nuclear_interaction_energy,
+                  in_axes=(0, 0, None))(locations, nuclear_charges,
+                                        interaction_fn)
 
 
 def _float_value_in_array(value, array, atol=1e-7):
@@ -265,10 +259,9 @@ def flip_and_average(locations, grids, array):
   radius = min([left_index, len(grids) - right_index - 1])
   range_slice = slice(left_index - radius, right_index + radius + 1)
   array_to_flip = array[range_slice]
-  return jax.ops.index_update(
-      array,
-      idx=range_slice,
-      y=(array_to_flip + jnp.flip(array_to_flip)) / 2)
+  return jax.ops.index_update(array,
+                              idx=range_slice,
+                              y=(array_to_flip + jnp.flip(array_to_flip)) / 2)
 
 
 def location_center_at_grids_center_point(locations, grids):
@@ -285,8 +278,8 @@ def location_center_at_grids_center_point(locations, grids):
   num_grids = grids.shape[0]
   return bool(
       # If num_grids is odd, there is no single center point on the grids.
-      num_grids % 2
-      and jnp.abs(jnp.mean(locations) - grids[num_grids // 2]) < 1e-8)
+      num_grids % 2 and
+      jnp.abs(jnp.mean(locations) - grids[num_grids // 2]) < 1e-8)
 
 
 def compute_distances_between_nuclei(locations, nuclei_indices):
@@ -306,14 +299,14 @@ def compute_distances_between_nuclei(locations, nuclei_indices):
         nuclei_indices is not 2.
   """
   if locations.ndim != 2:
-    raise ValueError(
-        'The ndim of locations is expected to be 2 but got %d' % locations.ndim)
+    raise ValueError('The ndim of locations is expected to be 2 but got %d' %
+                     locations.ndim)
   size = len(nuclei_indices)
   if size != 2:
     raise ValueError(
         'The size of nuclei_indices is expected to be 2 but got %d' % size)
-  return jnp.abs(
-      locations[:, nuclei_indices[0]] - locations[:, nuclei_indices[1]])
+  return jnp.abs(locations[:, nuclei_indices[0]] -
+                 locations[:, nuclei_indices[1]])
 
 
 def get_unif_separated_nuclei_positions(grids, num_locations, separation):
@@ -347,7 +340,7 @@ def get_unif_separated_nuclei_positions(grids, num_locations, separation):
   else:
     # odd num_locations. First place nuclei in center.
     nuclear_locations.append(grids[grids_center_idx])
-    for i in range(2, num_locations+1):
+    for i in range(2, num_locations + 1):
       location = grids_center_idx + (-1)**i * (i // 2) * sep_steps
       nuclear_locations.append(grids[location])
 

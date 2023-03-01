@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2020 The Google Research Authors.
+# Copyright 2023 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tests for jax_dft.jit_scf."""
 
 from absl.testing import absltest
@@ -29,7 +28,6 @@ from jax_dft import neural_xc
 from jax_dft import scf
 from jax_dft import utils
 
-
 # Set the default dtype as float64
 config.update('jax_enable_x64', True)
 
@@ -44,28 +42,22 @@ class FlipAndAverageOnCenterTest(absltest.TestCase):
   def test_flip_and_average_on_center_fn(self):
     averaged_fn = jit_scf._flip_and_average_on_center_fn(
         lambda x: jnp.array([4., 5., 6.]))
-    np.testing.assert_allclose(
-        averaged_fn(jnp.array([1., 2., 3.])), [5., 5., 5.])
+    np.testing.assert_allclose(averaged_fn(jnp.array([1., 2., 3.])),
+                               [5., 5., 5.])
 
 
 class ConnectionWeightsTest(parameterized.TestCase):
 
   @parameterized.parameters(
-      (5, 2,
-       [[1., 0., 0., 0., 0.],
-        [0.5, 0.5, 0., 0., 0.],
-        [0., 0.5, 0.5, 0., 0.],
-        [0., 0., 0.5, 0.5, 0.],
-        [0., 0., 0., 0.5, 0.5]]),
-      (5, 4,
-       [[1., 0., 0., 0., 0.],
-        [0.5, 0.5, 0., 0., 0.],
-        [0.33333334, 0.33333334, 0.33333334, 0., 0.],
-        [0.25, 0.25, 0.25, 0.25, 0.],
-        [0., 0.25, 0.25, 0.25, 0.25]]),
-      )
-  def test_connection_weights(
-      self, num_iterations, num_mixing_iterations, expected_mask):
+      (5, 2, [[1., 0., 0., 0., 0.], [0.5, 0.5, 0., 0., 0.],
+              [0., 0.5, 0.5, 0., 0.], [0., 0., 0.5, 0.5, 0.],
+              [0., 0., 0., 0.5, 0.5]]),
+      (5, 4, [[1., 0., 0., 0., 0.], [0.5, 0.5, 0., 0., 0.],
+              [0.33333334, 0.33333334, 0.33333334, 0., 0.],
+              [0.25, 0.25, 0.25, 0.25, 0.], [0., 0.25, 0.25, 0.25, 0.25]]),
+  )
+  def test_connection_weights(self, num_iterations, num_mixing_iterations,
+                              expected_mask):
     np.testing.assert_allclose(
         jit_scf._connection_weights(num_iterations, num_mixing_iterations),
         expected_mask)
@@ -82,8 +74,8 @@ class KohnShamIterationTest(parameterized.TestCase):
     locations = jnp.array([-0.5, 0.5])
     nuclear_charges = jnp.array([1, 1])
     return scf.KohnShamState(
-        density=self.num_electrons * utils.gaussian(
-            grids=self.grids, center=0., sigma=1.),
+        density=self.num_electrons *
+        utils.gaussian(grids=self.grids, center=0., sigma=1.),
         # Set initial energy as inf, the actual value is not used in Kohn-Sham
         # calculation.
         total_energy=jnp.inf,
@@ -109,10 +101,10 @@ class KohnShamIterationTest(parameterized.TestCase):
     # locations, nuclear_charges, external_potential, grids and num_electrons
     # remain unchanged.
     np.testing.assert_allclose(initial_state.locations, state.locations)
-    np.testing.assert_allclose(
-        initial_state.nuclear_charges, state.nuclear_charges)
-    np.testing.assert_allclose(
-        initial_state.external_potential, state.external_potential)
+    np.testing.assert_allclose(initial_state.nuclear_charges,
+                               state.nuclear_charges)
+    np.testing.assert_allclose(initial_state.external_potential,
+                               state.external_potential)
     np.testing.assert_allclose(initial_state.grids, state.grids)
     self.assertEqual(initial_state.num_electrons, state.num_electrons)
     self.assertGreater(state.gap, 0)
@@ -127,8 +119,8 @@ class KohnShamIterationTest(parameterized.TestCase):
     next_state = jit_scf.kohn_sham_iteration(
         state=initial_state,
         num_electrons=self.num_electrons,
-        xc_energy_density_fn=tree_util.Partial(
-            xc_energy_density_fn, params=params_init),
+        xc_energy_density_fn=tree_util.Partial(xc_energy_density_fn,
+                                               params=params_init),
         interaction_fn=utils.exponential_coulomb,
         enforce_reflection_symmetry=enforce_reflection_symmetry)
     self._test_state(next_state, initial_state)
@@ -163,14 +155,13 @@ class KohnShamTest(parameterized.TestCase):
     # remain unchanged.
     np.testing.assert_allclose(state.locations, self.locations)
     np.testing.assert_allclose(state.nuclear_charges, self.nuclear_charges)
-    np.testing.assert_allclose(
-        external_potential, state.external_potential)
+    np.testing.assert_allclose(external_potential, state.external_potential)
     np.testing.assert_allclose(state.grids, self.grids)
     self.assertEqual(state.num_electrons, self.num_electrons)
     self.assertGreater(state.gap, 0)
 
-  @parameterized.parameters(
-      (jnp.inf, [False, True, True]), (-1, [False, False, False]))
+  @parameterized.parameters((jnp.inf, [False, True, True]),
+                            (-1, [False, False, False]))
   def test_kohn_sham_neural_xc_density_mse_converge_tolerance(
       self, density_mse_converge_tolerance, expected_converged):
     init_fn, xc_energy_density_fn = neural_xc.local_density_approximation(
@@ -183,11 +174,11 @@ class KohnShamTest(parameterized.TestCase):
         num_electrons=self.num_electrons,
         num_iterations=3,
         grids=self.grids,
-        xc_energy_density_fn=tree_util.Partial(
-            xc_energy_density_fn, params=params_init),
+        xc_energy_density_fn=tree_util.Partial(xc_energy_density_fn,
+                                               params=params_init),
         interaction_fn=utils.exponential_coulomb,
-        initial_density=self.num_electrons * utils.gaussian(
-            grids=self.grids, center=0., sigma=0.5),
+        initial_density=self.num_electrons *
+        utils.gaussian(grids=self.grids, center=0., sigma=0.5),
         density_mse_converge_tolerance=density_mse_converge_tolerance)
 
     np.testing.assert_array_equal(states.converged, expected_converged)
@@ -198,8 +189,8 @@ class KohnShamTest(parameterized.TestCase):
           self._create_testing_external_potential(utils.exponential_coulomb))
 
   @parameterized.parameters(2, 3, 4, 5)
-  def test_kohn_sham_neural_xc_num_mixing_iterations(
-      self, num_mixing_iterations):
+  def test_kohn_sham_neural_xc_num_mixing_iterations(self,
+                                                     num_mixing_iterations):
     init_fn, xc_energy_density_fn = neural_xc.local_density_approximation(
         stax.serial(stax.Dense(8), stax.Elu, stax.Dense(1)))
     params_init = init_fn(rng=random.PRNGKey(0))
@@ -210,11 +201,11 @@ class KohnShamTest(parameterized.TestCase):
         num_electrons=self.num_electrons,
         num_iterations=3,
         grids=self.grids,
-        xc_energy_density_fn=tree_util.Partial(
-            xc_energy_density_fn, params=params_init),
+        xc_energy_density_fn=tree_util.Partial(xc_energy_density_fn,
+                                               params=params_init),
         interaction_fn=utils.exponential_coulomb,
-        initial_density=self.num_electrons * utils.gaussian(
-            grids=self.grids, center=0., sigma=0.5),
+        initial_density=self.num_electrons *
+        utils.gaussian(grids=self.grids, center=0., sigma=0.5),
         num_mixing_iterations=num_mixing_iterations)
 
     for single_state in scf.state_iterator(states):

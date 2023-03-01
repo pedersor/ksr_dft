@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2020 The Google Research Authors.
+# Copyright 2023 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import numpy as np
 
 from jax_dft import np_utils
 
-
 # Set the default dtype as float64
 config.update('jax_enable_x64', True)
 
@@ -31,8 +30,10 @@ config.update('jax_enable_x64', True)
 class OnpUtilsTest(absltest.TestCase):
 
   def test_flatten(self):
-    (tree, shapes), vec = np_utils.flatten(
-        [(jnp.array([1, 2, 3]), (jnp.array([4, 5]))), jnp.array([99])])
+    (tree, shapes), vec = np_utils.flatten([(jnp.array([1, 2,
+                                                        3]), (jnp.array([4,
+                                                                         5]))),
+                                            jnp.array([99])])
     self.assertIsInstance(vec, np.ndarray)
     np.testing.assert_allclose(vec, [1., 2., 3., 4., 5., 99.])
     self.assertEqual(shapes, [(3,), (2,), (1,)])

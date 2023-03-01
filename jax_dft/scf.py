@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2020 The Google Research Authors.
+# Copyright 2023 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,12 +48,11 @@ def discrete_laplacian(num_grids):
   """
   # TODO(leeley): Add an option for selecting particular order of accuracy.
   # https://en.wikipedia.org/wiki/Finite_difference_coefficient
-  return (
-      jnp.diag(-2.5 * jnp.ones(num_grids))
-      + jnp.diag(4. / 3 * jnp.ones(num_grids - 1), k=1)
-      + jnp.diag(4. / 3 * jnp.ones(num_grids - 1), k=-1)
-      + jnp.diag(-1. / 12 * jnp.ones(num_grids - 2), k=2)
-      + jnp.diag(-1. / 12 * jnp.ones(num_grids - 2), k=-2))
+  return (jnp.diag(-2.5 * jnp.ones(num_grids)) +
+          jnp.diag(4. / 3 * jnp.ones(num_grids - 1), k=1) +
+          jnp.diag(4. / 3 * jnp.ones(num_grids - 1), k=-1) +
+          jnp.diag(-1. / 12 * jnp.ones(num_grids - 2), k=2) +
+          jnp.diag(-1. / 12 * jnp.ones(num_grids - 2), k=-2))
 
 
 @jax.jit
@@ -75,15 +74,14 @@ def _wavefunctions_to_density(num_electrons, wavefunctions, grids):
   """Converts wavefunctions to density."""
   # create one hot-type vector to retrieve relevant lowest eigenvectors
   counts = jnp.arange(len(grids) * 2)
-  one_hot = jnp.where(counts < num_electrons,
-    1.0, 0.0)
+  one_hot = jnp.where(counts < num_electrons, 1.0, 0.0)
   one_hot = jnp.expand_dims(one_hot, axis=1)
   # Normalize the wavefunctions.
-  wavefunctions = wavefunctions / jnp.sqrt(jnp.sum(
-    wavefunctions ** 2, axis=1, keepdims=True) * utils.get_dx(grids))
+  wavefunctions = wavefunctions / jnp.sqrt(
+      jnp.sum(wavefunctions**2, axis=1, keepdims=True) * utils.get_dx(grids))
   wavefunctions = jnp.repeat(wavefunctions, repeats=2, axis=0) * one_hot
   # Each eigenstate has spin up and spin down.
-  return jnp.sum(wavefunctions ** 2, axis=0)
+  return jnp.sum(wavefunctions**2, axis=0)
 
 
 def wavefunctions_to_density(num_electrons, wavefunctions, grids):
@@ -146,12 +144,13 @@ def get_gap(num_electrons, eigen_energies):
 def _solve_noninteracting_system(external_potential, num_electrons, grids):
   """Solves noninteracting system."""
   eigen_energies, wavefunctions_transpose = jnp.linalg.eigh(
-    # Hamiltonian matrix.
-    get_kinetic_matrix(grids) + jnp.diag(external_potential))
-  density = wavefunctions_to_density(
-    num_electrons, jnp.transpose(wavefunctions_transpose), grids)
-  total_eigen_energies = get_total_eigen_energies(
-    num_electrons=num_electrons, eigen_energies=eigen_energies)
+      # Hamiltonian matrix.
+      get_kinetic_matrix(grids) + jnp.diag(external_potential))
+  density = wavefunctions_to_density(num_electrons,
+                                     jnp.transpose(wavefunctions_transpose),
+                                     grids)
+  total_eigen_energies = get_total_eigen_energies(num_electrons=num_electrons,
+                                                  eigen_energies=eigen_energies)
   gap = get_gap(num_electrons, eigen_energies)
   return density, total_eigen_energies, gap
 
@@ -182,7 +181,7 @@ def _get_hartree_energy(density, grids, interaction_fn):
   r1 = jnp.expand_dims(grids, axis=0)
   r2 = jnp.expand_dims(grids, axis=1)
   return 0.5 * jnp.sum(
-    n1 * n2 * interaction_fn(r1 - r2)) * utils.get_dx(grids) ** 2
+      n1 * n2 * interaction_fn(r1 - r2)) * utils.get_dx(grids)**2
 
 
 def get_hartree_energy(density, grids, interaction_fn):
@@ -274,8 +273,8 @@ def get_xc_potential(density, xc_energy_density_fn, grids):
   Returns:
     Float numpy array with shape (num_grids,).
   """
-  return jax.grad(get_xc_energy)(
-    density, xc_energy_density_fn, grids) / utils.get_dx(grids)
+  return jax.grad(get_xc_energy)(density, xc_energy_density_fn,
+                                 grids) / utils.get_dx(grids)
 
 
 class KohnShamState(typing.NamedTuple):
@@ -319,20 +318,18 @@ def _flip_and_average_fn(fn, locations, grids):
   """Flips and averages a function at the center of the locations."""
 
   def output_fn(array):
-    output_array = utils.flip_and_average(
-      locations=locations, grids=grids, array=array)
-    return utils.flip_and_average(
-      locations=locations, grids=grids, array=fn(output_array))
+    output_array = utils.flip_and_average(locations=locations,
+                                          grids=grids,
+                                          array=array)
+    return utils.flip_and_average(locations=locations,
+                                  grids=grids,
+                                  array=fn(output_array))
 
   return output_fn
 
 
-def kohn_sham_iteration(
-    state,
-    num_electrons,
-    xc_energy_density_fn,
-    interaction_fn,
-    enforce_reflection_symmetry):
+def kohn_sham_iteration(state, num_electrons, xc_energy_density_fn,
+                        interaction_fn, enforce_reflection_symmetry):
   """One iteration of Kohn-Sham calculation.
 
   Note xc_energy_density_fn must be wrapped by jax.tree_util.Partial so this
@@ -355,89 +352,83 @@ def kohn_sham_iteration(
     KohnShamState, the next state of Kohn-Sham iteration.
   """
   if enforce_reflection_symmetry:
-    xc_energy_density_fn = _flip_and_average_fn(
-      xc_energy_density_fn, locations=state.locations, grids=state.grids)
+    xc_energy_density_fn = _flip_and_average_fn(xc_energy_density_fn,
+                                                locations=state.locations,
+                                                grids=state.grids)
     xc_potential = get_xc_potential(state.density, xc_energy_density_fn,
-      state.grids)
+                                    state.grids)
     # nan values may appear in regions where the density value is very small.
     xc_potential = jnp.nan_to_num(xc_potential)
   else:
     # NOTE(Ryan): jitting `get_xc_potential` can be quite faster.
-    xc_potential = jax.jit(get_xc_potential, static_argnums=1)(state.density,
-      xc_energy_density_fn, state.grids)
+    xc_potential = jax.jit(get_xc_potential,
+                           static_argnums=1)(state.density,
+                                             xc_energy_density_fn, state.grids)
     # nan values may appear in regions where the density value is very small.
     xc_potential = jnp.nan_to_num(xc_potential)
 
-  hartree_potential = get_hartree_potential(
-    density=state.density,
-    grids=state.grids,
-    interaction_fn=interaction_fn)
+  hartree_potential = get_hartree_potential(density=state.density,
+                                            grids=state.grids,
+                                            interaction_fn=interaction_fn)
 
   ks_potential = hartree_potential + xc_potential + state.external_potential
   xc_energy_density = xc_energy_density_fn(state.density)
 
   # Solve Kohn-Sham equation.
   density, total_eigen_energies, gap = solve_noninteracting_system(
-    external_potential=ks_potential,
-    num_electrons=num_electrons,
-    grids=state.grids)
+      external_potential=ks_potential,
+      num_electrons=num_electrons,
+      grids=state.grids)
 
   # KS kinetic energy = total_eigen_energies - external_potential_energy
   kinetic_energy = total_eigen_energies - get_external_potential_energy(
-    external_potential=ks_potential,
-    density=density,
-    grids=state.grids)
+      external_potential=ks_potential, density=density, grids=state.grids)
 
   # xc energy
-  xc_energy = get_xc_energy(
-    density=density,
-    xc_energy_density_fn=xc_energy_density_fn,
-    grids=state.grids)
+  xc_energy = get_xc_energy(density=density,
+                            xc_energy_density_fn=xc_energy_density_fn,
+                            grids=state.grids)
 
   total_energy = (
-    # kinetic energy
+      # kinetic energy
       kinetic_energy
       # Hartree energy
       + get_hartree_energy(
-    density=density,
-    grids=state.grids,
-    interaction_fn=interaction_fn)
+          density=density, grids=state.grids, interaction_fn=interaction_fn)
       # xc energy
       + xc_energy
       # external energy
-      + get_external_potential_energy(
-    external_potential=state.external_potential,
-    density=density,
-    grids=state.grids)
-  )
+      +
+      get_external_potential_energy(external_potential=state.external_potential,
+                                    density=density,
+                                    grids=state.grids))
 
   if enforce_reflection_symmetry:
-    density = utils.flip_and_average(
-      locations=state.locations, grids=state.grids, array=density)
+    density = utils.flip_and_average(locations=state.locations,
+                                     grids=state.grids,
+                                     array=density)
 
-  return state._replace(
-    density=density,
-    total_energy=total_energy,
-    hartree_potential=hartree_potential,
-    xc_energy=xc_energy,
-    kinetic_energy=kinetic_energy,
-    xc_energy_density=xc_energy_density)
+  return state._replace(density=density,
+                        total_energy=total_energy,
+                        hartree_potential=hartree_potential,
+                        xc_energy=xc_energy,
+                        kinetic_energy=kinetic_energy,
+                        xc_energy_density=xc_energy_density)
 
 
-def kohn_sham(
-    locations,
-    nuclear_charges,
-    num_electrons,
-    num_iterations,
-    grids,
-    xc_energy_density_fn,
-    interaction_fn,
-    initial_density=None,
-    alpha=0.5,
-    alpha_decay=0.9,
-    enforce_reflection_symmetry=False,
-    num_mixing_iterations=2,
-    density_mse_converge_tolerance=-1.):
+def kohn_sham(locations,
+              nuclear_charges,
+              num_electrons,
+              num_iterations,
+              grids,
+              xc_energy_density_fn,
+              interaction_fn,
+              initial_density=None,
+              alpha=0.5,
+              alpha_decay=0.9,
+              enforce_reflection_symmetry=False,
+              num_mixing_iterations=2,
+              density_mse_converge_tolerance=-1.):
   """Runs Kohn-Sham to solve ground state of external potential.
 
   Args:
@@ -479,27 +470,26 @@ def kohn_sham(
     KohnShamState, the states of all the Kohn-Sham iteration steps.
   """
   external_potential = utils.get_atomic_chain_potential(
-    grids=grids,
-    locations=locations,
-    nuclear_charges=nuclear_charges,
-    interaction_fn=interaction_fn)
+      grids=grids,
+      locations=locations,
+      nuclear_charges=nuclear_charges,
+      interaction_fn=interaction_fn)
   if initial_density is None:
     # Use the non-interacting solution from the external_potential as initial
     # guess.
     initial_density, _, _ = solve_noninteracting_system(
-      external_potential=external_potential,
-      num_electrons=num_electrons,
-      grids=grids)
+        external_potential=external_potential,
+        num_electrons=num_electrons,
+        grids=grids)
 
   # Create initial state.
-  state = KohnShamState(
-    density=initial_density,
-    total_energy=jnp.inf,
-    locations=locations,
-    nuclear_charges=nuclear_charges,
-    external_potential=external_potential,
-    grids=grids,
-    num_electrons=num_electrons)
+  state = KohnShamState(density=initial_density,
+                        total_energy=jnp.inf,
+                        locations=locations,
+                        nuclear_charges=nuclear_charges,
+                        external_potential=external_potential,
+                        grids=grids,
+                        num_electrons=num_electrons)
   states = []
   differences = None
   converged = False
@@ -510,11 +500,11 @@ def kohn_sham(
 
     old_state = state
     state = kohn_sham_iteration(
-      state=old_state,
-      num_electrons=num_electrons,
-      xc_energy_density_fn=xc_energy_density_fn,
-      interaction_fn=interaction_fn,
-      enforce_reflection_symmetry=enforce_reflection_symmetry)
+        state=old_state,
+        num_electrons=num_electrons,
+        xc_energy_density_fn=xc_energy_density_fn,
+        interaction_fn=interaction_fn,
+        enforce_reflection_symmetry=enforce_reflection_symmetry)
     density_difference = state.density - old_state.density
     if differences is None:
       differences = jnp.array([density_difference])
@@ -526,8 +516,8 @@ def kohn_sham(
     state = state._replace(converged=converged)
     # Density mixing.
     state = state._replace(
-      density=old_state.density
-              + alpha * jnp.mean(differences[-num_mixing_iterations:], axis=0))
+        density=old_state.density +
+        alpha * jnp.mean(differences[-num_mixing_iterations:], axis=0))
     states.append(state)
     alpha *= alpha_decay
 
@@ -577,9 +567,7 @@ def get_initial_density(states, method):
     return states.density
   elif method == 'noninteracting':
     solve = jax.vmap(solve_noninteracting_system, in_axes=(0, 0, None))
-    return solve(
-      states.external_potential,
-      states.num_electrons,
-      states.grids[0])[0]
+    return solve(states.external_potential, states.num_electrons,
+                 states.grids[0])[0]
   else:
     raise ValueError(f'Unknown initialization method {method}')

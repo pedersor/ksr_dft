@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2020 The Google Research Authors.
+# Copyright 2023 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,21 +27,33 @@ from jax_dft import utils
 
 # pytype: disable=attribute-error
 
-
-_TEST_DISTANCE_X100 = {'h2_plus': set(
-  [64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 248, 256, 264, 272,
-    288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512,
-    528, 544, 560, 576, 592, 608, 624, 640, 656, 672, 688, 704, 720, 736, 752,
-    768, 784, 800, 816, 832, 848]), 'h2': set(
-  [40, 56, 72, 88, 104, 120, 136, 152, 184, 200, 216, 232, 248, 264, 280, 312,
-    328, 344, 360, 376, 392, 408, 424, 456, 472, 488, 504, 520, 536, 568, 584,
-    600]), 'h4': set(
-  [104, 120, 136, 152, 168, 200, 216, 232, 248, 280, 296, 312, 344, 360, 376,
-    392, 408, 424, 440, 456, 472, 488, 520, 536, 552, 568, 584, 600]),
-  'h2_h2': set(
-    [16, 48, 80, 112, 144, 176, 208, 240, 272, 304, 336, 368, 400, 432, 464,
-      496, 528, 560, 592, 624, 656, 688, 720, 752, 784, 816, 848, 880, 912, 944,
-      976]), }
+_TEST_DISTANCE_X100 = {
+    'h2_plus':
+        set([
+            64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 248, 256,
+            264, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448,
+            464, 480, 496, 512, 528, 544, 560, 576, 592, 608, 624, 640, 656,
+            672, 688, 704, 720, 736, 752, 768, 784, 800, 816, 832, 848
+        ]),
+    'h2':
+        set([
+            40, 56, 72, 88, 104, 120, 136, 152, 184, 200, 216, 232, 248, 264,
+            280, 312, 328, 344, 360, 376, 392, 408, 424, 456, 472, 488, 504,
+            520, 536, 568, 584, 600
+        ]),
+    'h4':
+        set([
+            104, 120, 136, 152, 168, 200, 216, 232, 248, 280, 296, 312, 344,
+            360, 376, 392, 408, 424, 440, 456, 472, 488, 520, 536, 552, 568,
+            584, 600
+        ]),
+    'h2_h2':
+        set([
+            16, 48, 80, 112, 144, 176, 208, 240, 272, 304, 336, 368, 400, 432,
+            464, 496, 528, 560, 592, 624, 656, 688, 720, 752, 784, 816, 848,
+            880, 912, 944, 976
+        ]),
+}
 
 
 class Dataset(object):
@@ -49,8 +61,12 @@ class Dataset(object):
 
   """
 
-  def __init__(self, path=None, data=None, num_grids=None,
-      interaction_fn=utils.exponential_coulomb, name=None):
+  def __init__(self,
+               path=None,
+               data=None,
+               num_grids=None,
+               interaction_fn=utils.exponential_coulomb,
+               name=None):
     """Initializer.
 
     Args:
@@ -131,8 +147,8 @@ class Dataset(object):
     else:
       if num_grids > original_num_grids:
         raise ValueError('num_grids (%d) cannot be '
-                         'greater than the original number of grids (%d).' % (
-                           num_grids, original_num_grids))
+                         'greater than the original number of grids (%d).' %
+                         (num_grids, original_num_grids))
       self.num_grids = num_grids
       diff = original_num_grids - num_grids
       if diff % 2:
@@ -141,15 +157,16 @@ class Dataset(object):
       else:
         left_grids_removed = diff // 2
         right_grids_removed = diff // 2
-      self.grids = self.grids[
-      left_grids_removed: original_num_grids - right_grids_removed]
-      self.densities = self.densities[:,
-      left_grids_removed: original_num_grids - right_grids_removed]
-      self.external_potentials = self.external_potentials[:,
-      left_grids_removed: original_num_grids - right_grids_removed]
+      self.grids = self.grids[left_grids_removed:original_num_grids -
+                              right_grids_removed]
+      self.densities = self.densities[:, left_grids_removed:original_num_grids -
+                                      right_grids_removed]
+      self.external_potentials = self.external_potentials[:, left_grids_removed:
+                                                          original_num_grids -
+                                                          right_grids_removed]
       logging.info(
-        'The original number of grids (%d) are trimmed into %d grids.',
-        original_num_grids, self.num_grids)
+          'The original number of grids (%d) are trimmed into %d grids.',
+          original_num_grids, self.num_grids)
 
   def _check_external_potential_consistency(self, interaction_fn):
     """Checks whether external_potential.npy is consistent with given
@@ -157,9 +174,10 @@ class Dataset(object):
 
     for external_potential, nuclear_charges, locations in zip(
         self.external_potentials, self.nuclear_charges, self.locations):
-      if np.allclose(external_potential,
+      if np.allclose(
+          external_potential,
           utils.get_atomic_chain_potential(self.grids, locations,
-            nuclear_charges, interaction_fn)):
+                                           nuclear_charges, interaction_fn)):
         pass
       else:
         raise ValueError('external_potentials.npy is not consistent with given '
@@ -183,12 +201,13 @@ class Dataset(object):
       mask = np.ones(self.total_num_samples, dtype=bool)
     else:
       selected_distance_x100 = set(selected_distance_x100)
-      mask = np.array([distance in selected_distance_x100 for distance in
-        self.distances_x100])
+      mask = np.array([
+          distance in selected_distance_x100 for distance in self.distances_x100
+      ])
       if len(selected_distance_x100) != np.sum(mask):
         raise ValueError(
-          'selected_distance_x100 contains distance that is not in the '
-          'dataset.')
+            'selected_distance_x100 contains distance that is not in the '
+            'dataset.')
     return mask
 
   def get_test_mask(self):
@@ -210,18 +229,24 @@ class Dataset(object):
     else:
       spin_densities = np.repeat(None, repeats=num_samples)
 
-    return scf.KohnShamState(density=self.densities[mask],
-      spin_density=spin_densities, total_energy=self.total_energies[mask],
-      locations=self.locations[mask],
-      nuclear_charges=self.nuclear_charges[mask],
-      external_potential=self.external_potentials[mask],
-      grids=np.tile(np.expand_dims(self.grids, axis=0), reps=(num_samples, 1)),
-      num_electrons=self.num_electrons[mask],
-      num_unpaired_electrons=num_unpaired_electrons,
-      converged=np.repeat(True, repeats=num_samples), )
+    return scf.KohnShamState(
+        density=self.densities[mask],
+        spin_density=spin_densities,
+        total_energy=self.total_energies[mask],
+        locations=self.locations[mask],
+        nuclear_charges=self.nuclear_charges[mask],
+        external_potential=self.external_potentials[mask],
+        grids=np.tile(np.expand_dims(self.grids, axis=0),
+                      reps=(num_samples, 1)),
+        num_electrons=self.num_electrons[mask],
+        num_unpaired_electrons=num_unpaired_electrons,
+        converged=np.repeat(True, repeats=num_samples),
+    )
 
-  def get_subdataset(self, mask=None, exceptions={'grids'},
-      downsample_step=None):
+  def get_subdataset(self,
+                     mask=None,
+                     exceptions={'grids'},
+                     downsample_step=None):
     """Gets subdataset."""
     if mask is None:
       mask = np.ones(self.total_num_samples, dtype=bool)
@@ -247,13 +272,15 @@ class Dataset(object):
       mask = np.ones(self.total_num_samples, dtype=bool)
     else:
       selected_ions = set(selected_ions)
-      mask = np.array([(nuclear_charge[0], num_electron) in selected_ions for
-        (nuclear_charge, num_electron) in
-        zip(self.nuclear_charges, self.num_electrons)])
+      mask = np.array([
+          (nuclear_charge[0], num_electron) in selected_ions
+          for (nuclear_charge,
+               num_electron) in zip(self.nuclear_charges, self.num_electrons)
+      ])
       if len(selected_ions) != np.sum(mask):
         raise ValueError(
-          'selected_ions contains (nuclear_charge, num_electron) that is not in'
-          ' the dataset.')
+            'selected_ions contains (nuclear_charge, num_electron) that is not in'
+            ' the dataset.')
     return mask
 
   def get_ions(self, selected_ions=None):
@@ -272,15 +299,19 @@ class Dataset(object):
     else:
       spin_densities = np.repeat(None, repeats=num_samples)
 
-    return scf.KohnShamState(density=self.densities[mask],
-      spin_density=spin_densities, total_energy=self.total_energies[mask],
-      locations=self.locations[mask],
-      nuclear_charges=self.nuclear_charges[mask],
-      external_potential=self.external_potentials[mask],
-      grids=np.tile(np.expand_dims(self.grids, axis=0), reps=(num_samples, 1)),
-      num_electrons=self.num_electrons[mask],
-      num_unpaired_electrons=num_unpaired_electrons,
-      converged=np.repeat(True, repeats=num_samples), )
+    return scf.KohnShamState(
+        density=self.densities[mask],
+        spin_density=spin_densities,
+        total_energy=self.total_energies[mask],
+        locations=self.locations[mask],
+        nuclear_charges=self.nuclear_charges[mask],
+        external_potential=self.external_potentials[mask],
+        grids=np.tile(np.expand_dims(self.grids, axis=0),
+                      reps=(num_samples, 1)),
+        num_electrons=self.num_electrons[mask],
+        num_unpaired_electrons=num_unpaired_electrons,
+        converged=np.repeat(True, repeats=num_samples),
+    )
 
 
 def concatenate_kohn_sham_states(*ks_states):
@@ -288,7 +319,7 @@ def concatenate_kohn_sham_states(*ks_states):
 
   density = np.concatenate([ks_state.density for ks_state in ks_states])
   total_energy = np.concatenate(
-    [ks_state.total_energy for ks_state in ks_states])
+      [ks_state.total_energy for ks_state in ks_states])
 
   # support jagged arrays
   locations = [list(ks_state.locations) for ks_state in ks_states]
@@ -297,16 +328,22 @@ def concatenate_kohn_sham_states(*ks_states):
   nuclear_charges = np.asarray(sum(nuclear_charges, []))
 
   external_potential = np.concatenate(
-    [ks_state.external_potential for ks_state in ks_states])
+      [ks_state.external_potential for ks_state in ks_states])
   grids = np.concatenate([ks_state.grids for ks_state in ks_states])
   num_electrons = np.concatenate(
-    [ks_state.num_electrons for ks_state in ks_states])
+      [ks_state.num_electrons for ks_state in ks_states])
   num_unpaired_electrons = np.concatenate(
-    [ks_state.num_unpaired_electrons for ks_state in ks_states])
+      [ks_state.num_unpaired_electrons for ks_state in ks_states])
   converged = np.concatenate([ks_state.converged for ks_state in ks_states])
 
-  return scf.KohnShamState(density=density, total_energy=total_energy,
-    locations=locations, nuclear_charges=nuclear_charges,
-    external_potential=external_potential, grids=grids,
-    num_electrons=num_electrons, num_unpaired_electrons=num_unpaired_electrons,
-    converged=converged, )
+  return scf.KohnShamState(
+      density=density,
+      total_energy=total_energy,
+      locations=locations,
+      nuclear_charges=nuclear_charges,
+      external_potential=external_potential,
+      grids=grids,
+      num_electrons=num_electrons,
+      num_unpaired_electrons=num_unpaired_electrons,
+      converged=converged,
+  )

@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2020 The Google Research Authors.
+# Copyright 2023 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Solves a non-interacting system."""
 
 from absl import app
@@ -28,8 +27,7 @@ import numpy as np
 # Set the default dtype as float64
 config.update('jax_enable_x64', True)
 
-flags.DEFINE_integer(
-    'num_electrons', 1, 'Number of electrons in the system.')
+flags.DEFINE_integer('num_electrons', 1, 'Number of electrons in the system.')
 
 FLAGS = flags.FLAGS
 

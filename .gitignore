@@ -11,7 +11,7 @@ __pycache__/
 .idea/
 
 # virtual envs
-venv_*
+venv*
 
 # misc output data
 ckpt-*
