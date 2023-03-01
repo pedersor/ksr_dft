@@ -1,6 +1,0 @@
-WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
-2021-02-11 15:39:48.451997: E external/org_tensorflow/tensorflow/compiler/xla/service/slow_operation_alarm.cc:55] 
-********************************
-Very slow compile?  If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
-Compiling module jit_loss_fn.79579
-********************************

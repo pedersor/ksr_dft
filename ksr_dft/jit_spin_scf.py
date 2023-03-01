@@ -23,11 +23,6 @@ from ksr_dft import scf
 from ksr_dft import utils
 from ksr_dft import spin_scf
 
-# testing: to delete
-import matplotlib.pyplot as plt
-import sys
-import time
-
 
 def _flip_and_average_on_center(array):
   """Flips and averages array on the center."""

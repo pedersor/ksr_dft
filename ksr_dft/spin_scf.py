@@ -8,11 +8,6 @@ import jax.numpy as jnp
 from ksr_dft import utils
 from ksr_dft import scf
 
-# testing: to delete
-import matplotlib.pyplot as plt
-import sys
-import time
-
 ArrayLike = Union[float, bool, jnp.ndarray]
 
 
