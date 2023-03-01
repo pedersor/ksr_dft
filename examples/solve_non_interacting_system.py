@@ -20,8 +20,8 @@ from absl import logging
 
 import jax
 from jax.config import config
-from jax_dft import scf
-from jax_dft import utils
+from ksr_dft import scf
+from ksr_dft import utils
 import numpy as np
 
 # Set the default dtype as float64
