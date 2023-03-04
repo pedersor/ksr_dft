@@ -12,6 +12,7 @@ __pycache__/
 
 # virtual envs
 venv*
+.venv
 
 # pip install info
 *.egg-info

@@ -77,10 +77,12 @@ class SpinKSR(object):
 
     return self
 
-  def set_init_model_params(self,
-                            init_fn,
-                            key=jax.random.PRNGKey(0),
-                            verbose=1):
+  def set_init_model_params(
+      self,
+      init_fn,
+      key=jax.random.PRNGKey(0),
+      verbose=1,
+  ):
     """Set initial model parameters from init_fn."""
 
     init_params = init_fn(key)
@@ -93,8 +95,6 @@ class SpinKSR(object):
     if verbose == 1:
       num_parameters = len(flatten_init_params)
       print(f'number of parameters = {num_parameters}')
-
-    return self
 
   def set_ks_params(self, **kwargs):
     """Sets KS parameters:
